@@ -1,0 +1,501 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Models\WalletRequest;
+use App\Services\WalletService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+
+class WalletController extends Controller
+{
+    public function __construct(
+        protected WalletService $walletService
+    ) {
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $transactions = Transaction::query()->where('user_id', $user->id)->latest('id')->paginate(15);
+        $totalCredited = Transaction::query()
+            ->where('user_id', $user->id)
+            ->where('type', 'credit')
+            ->where('status', 'completed')
+            ->sum('amount');
+
+        $totalDebited = Transaction::query()
+            ->where('user_id', $user->id)
+            ->where('type', 'debit')
+            ->where('status', 'completed')
+            ->sum('amount');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'balance' => (float) $user->balance,
+                'total_credited' => (float) $totalCredited,
+                'total_debited' => (float) $totalDebited,
+                'transactions' => [
+                    'data' => collect($transactions->items())
+                        ->map(fn ($transaction) => [
+                            'id' => $transaction->id,
+                            'txn_id' => 'TXN' . str_pad(
+                                $transaction->id,
+                                8,
+                                '0',
+                                STR_PAD_LEFT
+                            ),
+                            'description' => $transaction->subject,
+                            'type' => $transaction->type,
+                            'amount' => (float) $transaction->amount,
+                            'status' => $transaction->status === 'completed'
+                                ? 'success'
+                                : $transaction->status,
+                            'created_at' => $transaction->created_at,
+                        ])
+                        ->values(),
+
+                    'current_page' => $transactions->currentPage(),
+                    'last_page' => $transactions->lastPage(),
+                    'per_page' => $transactions->perPage(),
+                    'total' => $transactions->total(),
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Manual UPI information.
+     */
+    public function paymentMethods()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'manual_upi' => [
+                    'upi_id' => config('services.manual_upi.upi_id'),
+                    'name' => config('services.manual_upi.name'),
+                    'qr_url' => config('services.manual_upi.qr_url'),
+                ],
+                'gateway' => [
+                    'enabled' => filled(config('services.upi_gateway.key')),
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Manual UPI Add Money Request.
+     */
+    public function addMoneyRequest(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
+            'utr' => ['required', 'string', 'max:100'],
+            'screenshot' => [
+                'required',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
+        ]);
+
+        $user = $request->user();
+
+        $pendingExists = WalletRequest::query()
+            ->where('user_id', $user->id)
+            ->where('request_type', 'credit')
+            ->where('payment_method', 'manual_upi')
+            ->where('status', 'pending')
+            ->where('amount', $validated['amount'])
+            ->exists();
+
+        if ($pendingExists) {
+            throw ValidationException::withMessages([
+                'amount' => 'A similar payment request is already pending.',
+            ]);
+        }
+        $path = $request->file('screenshot')->store(
+            'wallet/manual-payments',
+            'public'
+        );
+        $walletRequest = WalletRequest::create([
+            'user_id' => $user->id,
+            'request_type' => 'credit',
+            'payment_method' => 'manual_upi',
+            'amount' => $validated['amount'],
+            'utr' => $validated['utr'],
+            'screenshot' => $path,
+            'status' => 'pending',
+            'remark' => 'Manual UPI wallet top-up',
+        ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment submitted successfully. Admin will verify your payment.',
+            'data' => [
+                'id' => $walletRequest->id,
+                'status' => $walletRequest->status,
+            ],
+        ], 201);
+    }
+
+    public function createGatewayOrder(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
+        ]);
+
+        $user = $request->user();
+
+        $clientTxnId = 'WLT-' .
+            now()->format('YmdHis') .
+            '-' .
+            strtoupper(Str::random(8));
+
+        $walletRequest = WalletRequest::create([
+            'user_id' => $user->id,
+            'request_type' => 'credit',
+            'payment_method' => 'gateway',
+            'amount' => $validated['amount'],
+            'status' => 'processing',
+            'client_txn_id' => $clientTxnId,
+            'remark' => 'Automated UPI gateway payment',
+        ]);
+
+        try {
+            $response = Http::timeout(30)
+                ->acceptJson()
+                ->post(
+                    config('services.upi_gateway.create_order_url'),
+                    [
+                        'key' => config('services.upi_gateway.key'),
+                        'client_txn_id' => $clientTxnId,
+                        'amount' => $validated['amount'],
+                        'p_info' => 'Wallet Top-up',
+                        'customer_name' => $user->name,
+                        'customer_email' => $user->email ?? 'noemail@gmail.com',
+                        'customer_mobile' => $user->phone,
+
+                        'redirect_url' => config(
+                            'services.upi_gateway.return_url'
+                        ),
+
+                        'udf1' => (string) $user->id,
+                        'udf2' => 'wallet',
+                        'udf3' => (string) $walletRequest->id,
+                    ]
+                );
+
+            if (!$response->successful()) {
+                $walletRequest->update([
+                    'status' => 'failed',
+                    'gateway_status' => 'gateway_error',
+                    'remark' => 'Gateway order creation failed.',
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to create payment order.',
+                ], 422);
+            }
+
+            $result = $response->json();
+
+            if (($result['status'] ?? false) !== true) {
+                $walletRequest->update([
+                    'status' => 'failed',
+                    'gateway_status' => 'order_creation_failed',
+                    'remark' => $result['msg'] ?? 'Gateway rejected order.',
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['msg'] ?? 'Payment gateway rejected the request.',
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment order created.',
+                'data' => [
+                    'request_id' => $walletRequest->id,
+                    'client_txn_id' => $clientTxnId,
+                    'payment_url' => $result['data']['payment_url'] ?? null,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            $walletRequest->update([
+                'status' => 'failed',
+                'gateway_status' => 'exception',
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment gateway is temporarily unavailable.',
+            ], 500);
+        }
+    }
+
+    public function gatewayReturn(Request $request): JsonResponse
+    {
+        $clientTxnId = $request->query('client_txn_id');
+
+        if (!$clientTxnId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid transaction.',
+            ], 422);
+        }
+
+        $walletRequest = WalletRequest::query()
+            ->where('client_txn_id', $clientTxnId)
+            ->first();
+
+        if (!$walletRequest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaction not found.',
+            ], 404);
+        }
+
+        $this->verifyGatewayTransaction($walletRequest);
+
+        $walletRequest->refresh();
+
+        return response()->json([
+            'success' => $walletRequest->status === 'approved',
+            'message' => match ($walletRequest->status) {
+                'approved' => 'Payment successful and wallet credited.',
+                'failed' => 'Payment failed.',
+                default => 'Payment is being verified.',
+            },
+            'data' => [
+                'status' => $walletRequest->status,
+                'request_id' => $walletRequest->id,
+            ],
+        ]);
+    }
+
+    /**
+     * Gateway webhook.
+     */
+    public function gatewayWebhook(Request $request): JsonResponse
+    {
+        $clientTxnId = $request->input('client_txn_id');
+
+        if (!$clientTxnId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing transaction ID.',
+            ], 422);
+        }
+
+        $walletRequest = WalletRequest::query()
+            ->where('client_txn_id', $clientTxnId)
+            ->first();
+
+        if (!$walletRequest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaction not found.',
+            ], 404);
+        }
+
+        $gatewayStatus = $request->input('status');
+
+        $walletRequest->update([
+            'gateway_txn_id' => $request->input('id'),
+            'customer_vpa' => $request->input('customer_vpa'),
+            'gateway_status' => $gatewayStatus,
+            'utr' => $request->input('upi_txn_id') ?: $walletRequest->utr,
+        ]);
+
+        if ($gatewayStatus === 'success') {
+            $this->approveGatewayRequest($walletRequest);
+        } elseif ($gatewayStatus === 'failure') {
+            $walletRequest->update([
+                'status' => 'failed',
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+        ]);
+    }
+
+    /**
+     * Verify payment directly from gateway.
+     */
+    protected function verifyGatewayTransaction(
+        WalletRequest $walletRequest
+    ): void {
+        $response = Http::timeout(30)
+            ->acceptJson()
+            ->post(
+                config('services.upi_gateway.status_url'),
+                [
+                    'key' => config('services.upi_gateway.key'),
+                    'client_txn_id' => $walletRequest->client_txn_id,
+                    'txn_date' => now()->format('d-m-Y'),
+                ]
+            );
+
+        if (!$response->successful()) {
+            return;
+        }
+
+        $result = $response->json();
+
+        if (($result['status'] ?? false) !== true) {
+            return;
+        }
+
+        $data = $result['data'] ?? [];
+
+        $walletRequest->update([
+            'gateway_txn_id' => $data['id'] ?? $walletRequest->gateway_txn_id,
+            'customer_vpa' => $data['customer_vpa'] ?? $walletRequest->customer_vpa,
+            'gateway_status' => $data['status'] ?? null,
+            'utr' => $data['upi_txn_id'] ?? $walletRequest->utr,
+        ]);
+
+        if (($data['status'] ?? null) === 'success') {
+            $this->approveGatewayRequest($walletRequest);
+        }
+
+        if (($data['status'] ?? null) === 'failure') {
+            $walletRequest->update([
+                'status' => 'failed',
+            ]);
+        }
+    }
+
+    /**
+     * Credit wallet exactly once.
+     */
+    protected function approveGatewayRequest(
+        WalletRequest $walletRequest
+    ): void {
+        DB::transaction(function () use ($walletRequest) {
+            $requestRow = WalletRequest::query()
+                ->lockForUpdate()
+                ->findOrFail($walletRequest->id);
+
+            if ($requestRow->status === 'approved') {
+                return;
+            }
+
+            if ($requestRow->request_type !== 'credit') {
+                return;
+            }
+
+            $user = User::findOrFail($requestRow->user_id);
+
+            $this->walletService->credit(
+                $user,
+                (float) $requestRow->amount,
+                'Wallet top-up via UPI Gateway'
+            );
+
+            $requestRow->update([
+                'status' => 'approved',
+                'processed_at' => now(),
+                'admin_remark' => 'Automatically approved by payment gateway.',
+            ]);
+        });
+    }
+
+    /**
+     * Withdrawal request.
+     */
+    public function withdraw(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1'],
+            'mode' => ['required', 'in:bank,upi'],
+
+            'account_name' => ['required_if:mode,bank', 'nullable', 'string', 'max:150'],
+            'account_number' => ['required_if:mode,bank', 'nullable', 'string', 'max:100'],
+            'ifsc' => ['required_if:mode,bank', 'nullable', 'string', 'max:20'],
+
+            'upi_id' => ['required_if:mode,upi', 'nullable', 'string', 'max:150'],
+
+            'qr_code_image' => [
+                'nullable',
+                'file',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+            ],
+        ]);
+
+        $user = $request->user();
+
+        $amount = (float) $validated['amount'];
+
+        if ($amount > (float) $user->balance) {
+            throw ValidationException::withMessages([
+                'amount' => 'Insufficient wallet balance.',
+            ]);
+        }
+
+        $qrPath = null;
+
+        if ($request->hasFile('qr_code_image')) {
+            $qrPath = $request->file('qr_code_image')
+                ->store('wallet/withdrawal-qr', 'public');
+        }
+
+        $walletRequest = WalletRequest::create([
+            'user_id' => $user->id,
+            'request_type' => 'debit',
+            'payment_method' => $validated['mode'],
+            'amount' => $amount,
+            'status' => 'pending',
+
+            'account_name' => $validated['account_name'] ?? null,
+            'account_number' => $validated['account_number'] ?? null,
+            'ifsc' => strtoupper($validated['ifsc'] ?? '') ?: null,
+
+            'upi_id' => $validated['upi_id'] ?? null,
+            'qr_code_image' => $qrPath,
+
+            'remark' => 'Wallet withdrawal request',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Withdrawal request submitted successfully.',
+            'data' => [
+                'id' => $walletRequest->id,
+                'status' => $walletRequest->status,
+            ],
+        ], 201);
+    }
+
+    /**
+     * User wallet requests.
+     */
+    public function requests(Request $request): JsonResponse
+    {
+        $requests = WalletRequest::query()
+            ->where('user_id', $request->user()->id)
+            ->latest('id')
+            ->paginate(15);
+
+        return response()->json([
+            'success' => true,
+            'data' => $requests,
+        ]);
+    }
+}

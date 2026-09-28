@@ -1,0 +1,37 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\Game;
+use Illuminate\Support\Str;
+
+class GameSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $games = [
+            'Gali',
+            'Disawar',
+            'Gaziabad',
+            'Faridabad',
+            'Mohali',
+            'Shree Ganesh',
+            'Maa Kali',
+            'Laxmi',
+        ];
+
+        foreach ($games as $index => $name) {
+            Game::create([
+                'name'        => $name,
+                'slug'        => Str::slug($name),
+                'result_time' => '18:00:00',
+                'play_start'  => '10:00:00',
+                'play_end'    => '17:00:00',
+                'last_result' => '00',
+                'status'      => 'active',
+                'serial'      => $index + 1,
+            ]);
+        }
+    }
+}

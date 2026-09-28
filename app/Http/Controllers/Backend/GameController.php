@@ -38,9 +38,9 @@ class GameController extends Controller
         Game::create([
             'name'        => $request->name,
             'slug'        => Str::slug($request->name),
-            'result_time' => Carbon::parse($request->result_time)->format('h:i A'),
-            'play_start'  => Carbon::parse($request->play_start)->format('h:i A'),
-            'play_end'    => Carbon::parse($request->play_end)->format('h:i A'),
+            'result_time' => Carbon::parse($request->result_time)->format('H:i:s'),
+            'play_start'  => Carbon::parse($request->play_start)->format('H:i:s'),
+            'play_end'    => Carbon::parse($request->play_end)->format('H:i:s'),
             'status'      => $request->status,
             'serial'      => $request->serial,
         ]);
@@ -71,9 +71,9 @@ class GameController extends Controller
         $game->update([
             'name'        => $request->name,
             'slug'        => Str::slug($request->name),
-            'result_time' => Carbon::parse($request->result_time)->format('h:i A'),
-            'play_start'  => Carbon::parse($request->play_start)->format('h:i A'),
-            'play_end'    => Carbon::parse($request->play_end)->format('h:i A'),
+            'result_time' => Carbon::parse($request->result_time)->format('H:i:s'),
+            'play_start'  => Carbon::parse($request->play_start)->format('H:i:s'),
+            'play_end'    => Carbon::parse($request->play_end)->format('H:i:s'),
             'status'      => $request->status,
             'serial'      => $request->serial,
         ]);
@@ -88,59 +88,4 @@ class GameController extends Controller
         return redirect()->back()->with('success', 'Game deleted along with its results.');
     }
 
-    // public function viewBid(Request $request, $id)
-    // {
-    //     $gameId = $id;
-    //     $type = $request->query('type');
-    //     $date = $request->query('time') ? date('Y-m-d', strtotime($request->query('time'))) : date('Y-m-d');
-    //     $bids = Bid::where('gameid', $gameId)
-    //         ->where('time', $date)
-    //         ->where('type', $type)
-    //         ->get();
-
-    //     $game = Game::find($gameId);
-
-    //     $bidsData = $bids->map(function ($bid) use ($game) {
-    //         $user = User::where('phone', $bid->phone)->where('status', 1)->first();
-    //         return [
-    //             'username' => $user->name ?? 'Unknown',
-    //             'mobile' => $user->phone ?? '-',
-    //             'game' => $game->name ?? '-',
-    //             'amount' => $bid->amount,
-    //             'number' => $bid->number,
-    //             'value' => $bid->value,
-    //             'time' => $bid->time,
-    //             'date' => $bid->date
-    //         ];
-    //     });
-    //     return view('backend.view_bid', compact('bidsData', 'gameId', 'type', 'date'));
-    // }
-
-    // public function viewWinner(Request $request, $id)
-    // {
-    //     $gameId = $id;
-    //     $date = $request->query('time') ? date('Y-m-d', strtotime($request->query('time'))) : date('Y-m-d');
-
-    //     $winners = Gamewiner::where('gameid', $gameId)
-    //         ->where('time', $date)
-    //         ->get();
-
-    //     $game = Game::find($gameId);
-
-    //     $winnerData = $winners->map(function ($winner) use ($game) {
-    //         $user = User::where('phone', $winner->phone)->first();
-    //         return [
-    //             'username' => $user->name ?? 'Unknown',
-    //             'mobile' => $user->phone ?? '-',
-    //             'game' => $game->name ?? '-',
-    //             'number' => $winner->number,
-    //             'amount' => $winner->amount,
-    //             'winamount' => $winner->winamount,
-    //             'type' => $winner->type,
-    //             'time' => $winner->time
-    //         ];
-    //     });
-
-    //     return view('backend.view_winner', compact('winnerData', 'gameId', 'date'));
-    // }
 }

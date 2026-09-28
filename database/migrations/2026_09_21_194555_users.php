@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->string('city', 200)->nullable();
             $table->string('gender', 100)->nullable();
-            $table->integer('balance')->default(0);
+            $table->decimal('balance', 15, 2)->default(0);
             $table->string('bank', 100)->nullable();
             $table->string('acc', 100)->nullable();
             $table->string('ifsc', 100)->nullable();

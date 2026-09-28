@@ -34,5 +34,24 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'upi_gateway' => [
+        'key' => env('UPI_GATEWAY_KEY'),
+        'create_order_url' => env(
+            'UPI_GATEWAY_CREATE_ORDER_URL',
+            'https://api.ekqr.in/api/create_order'
+        ),
+        'status_url' => env(
+            'UPI_GATEWAY_STATUS_URL',
+            'https://api.ekqr.in/api/check_order_status'
+        ),
+        'return_url' => env('UPI_GATEWAY_RETURN_URL'),
+        'webhook_url' => env('UPI_GATEWAY_WEBHOOK_URL'),
+    ],
+
+    'manual_upi' => [
+        'upi_id' => env('MANUAL_UPI_ID'),
+        'name' => env('MANUAL_UPI_NAME'),
+        'qr_url' => env('MANUAL_UPI_QR_URL'),
+    ],
 
 ];

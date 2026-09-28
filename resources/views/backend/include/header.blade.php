@@ -87,7 +87,7 @@
                  </h6>
                  <div class="dropdown-divider">
                  </div>
-                 <a class="dropdown-item" href="dashboard-1.html#!">
+                 <a class="dropdown-item" href="{{ route('admin.profile') }}">
                      <div class="dropdown-item-icon">
                          <i data-feather="settings">
                          </i>

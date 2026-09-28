@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->string('slug');
-            $table->string('result_time');
-            $table->string('play_start');
-            $table->string('play_end');
+            $table->time('result_time');
+            $table->time('play_start');
+            $table->time('play_end');
+            $table->string('last_result')->index();
             $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->bigInteger('serial');
+            $table->unsignedInteger('serial')->default(0)->index();
             $table->timestamps();
             $table->softDeletes();
         });

@@ -43,7 +43,7 @@ return [
             [
                 'text'  => 'Today Result',
                 'icon'  => 'calendar',
-                'route' => 'admin.games.index',
+                'route' => 'admin.results.index',
                 'permission' => '',
             ],
             [
@@ -83,7 +83,7 @@ return [
             [
                 'text'  => 'View Bids',
                 'icon'  => 'eye',
-                'route' => 'admin.games.index',
+                'route' => 'admin.bidding-desk.index',
                 'permission' => '',
             ],
             [
@@ -101,9 +101,15 @@ return [
         'id'    => 'collapseWithdrawal',
         'items' => [
             [
+                'text'  => 'Add Money Request',
+                'icon'  => 'arrow-up-right',
+                'route' => 'admin.wallet.request-add',
+                'permission' => '',
+            ],
+            [
                 'text'  => 'Withdrawal Request',
                 'icon'  => 'arrow-up-right',
-                'route' => 'admin.games.create',
+                'route' => 'admin.wallet.request-withdraw',
                 'permission' => '',
             ],
             [
@@ -115,27 +121,32 @@ return [
         ],
     ],
     [
-        'text'  => 'HomePage',
-        'icon'  => 'home',
-        'route' => 'admin.dashboard',
-    ],
-    [
         'type'  => 'dropdown',
-        'text'  => 'Pages',
+        'text'  => 'Content Section',
         'icon'  => 'layers',
         'id'    => 'collapsePages',
         'items' => [
             [
-                'text'  => 'Page List',
+                'text'  => 'Pages',
                 'icon'  => 'list',
                 'route' => 'admin.pages.index',
                 'permission' => '',
             ],
+            // [
+            //     'text'  => 'Add Pages',
+            //     'icon'  => 'file-plus',
+            //     'route' => 'admin.pages.create',
+            //     'permission' => '',
+            // ],
             [
-                'text'  => 'Add Pages',
-                'icon'  => 'file-plus',
-                'route' => 'admin.pages.create',
-                'permission' => '',
+                'text'  => 'HomePage',
+                'icon'  => 'home',
+                'route' => 'admin.dashboard',
+            ],
+            [
+                'text'  => 'Faqs',
+                'icon'  => 'help-circle',
+                'route' => 'admin.faqs.index',
             ],
         ],
     ],
@@ -184,15 +195,15 @@ return [
                 'permission' => '',
             ],
             [
-                'text'  => 'Roles & Permissions',
-                'icon'  => 'shield',
-                'route' => 'admin.games.create',
+                'text'  => 'Member & Roles',
+                'icon'  => 'user-check',
+                'route' => 'admin.member.index',
                 'permission' => '',
             ],
             [
-                'text'  => 'Member & Roles',
-                'icon'  => 'user-check',
-                'route' => 'admin.games.create',
+                'text'  => 'Roles & Permissions',
+                'icon'  => 'shield',
+                'route' => 'admin.roles.index',
                 'permission' => '',
             ],
             [
@@ -218,7 +229,7 @@ return [
             [
                 'text'  => 'Banner',
                 'icon'  => 'image',
-                'route' => 'admin.games.index',
+                'route' => 'admin.banner.index',
                 'permission' => '',
             ],
             [

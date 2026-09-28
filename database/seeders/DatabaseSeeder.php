@@ -20,6 +20,11 @@ class DatabaseSeeder extends Seeder
             'name' => 'SUper Admin',
             'email' => 'admin@gmail.com',
             'password' => 'qwerty',
+            'status' => 'active'
+        ]);
+         $this->call([
+            GameSeeder::class,
+            UserSeeder::class,
         ]);
     }
 }

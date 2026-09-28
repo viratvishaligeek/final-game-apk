@@ -12,7 +12,7 @@ class Result extends Model
     public $timestamps = true;
     protected $guarded = ['id'];
 
-    public function Game()
+    public function game()
     {
         return $this->belongsTo(Game::class);
     }

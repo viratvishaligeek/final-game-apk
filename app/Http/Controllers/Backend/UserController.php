@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bid;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -31,7 +34,7 @@ class UserController extends Controller
             'gender'     => 'nullable|string|in:Male,Female,Other',
             'city'       => 'nullable|string|max:200',
             'address'    => 'nullable|string|max:255',
-            'balance'    => 'required|integer|min:0',
+            'balance' => ['required', 'numeric', 'min:0'],
             'bank'       => 'nullable|string|max:100',
             'acc'        => 'nullable|string|max:100',
             'ifsc'       => 'nullable|string|max:100',
@@ -47,12 +50,34 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User added successfully.');
     }
 
-    public function show(string $id)
+    public function show(User $user)
     {
-        $pageName = 'User Details';
-        $user = User::findOrFail($id);
-        return view('backend.users.show', compact('user', 'pageName'));
+        $transactions = $user->transactions()->latest('id')->paginate(15, ['*'], 'transactions_page');
+
+        $bids = $user->bids()->with('game:id,name')->latest('id')->paginate(15, ['*'], 'bids_page');
+
+        $walletStats = $user->completedTransactions()
+            ->selectRaw("
+            COALESCE(SUM(CASE WHEN type = 'credit' THEN amount ELSE 0 END), 0) as credit,
+            COALESCE(SUM(CASE WHEN type = 'debit' THEN amount ELSE 0 END), 0) as debit
+        ")->first();
+
+        $gameStats = $user->bids()
+            ->selectRaw("
+            COUNT(*) as total_bids,
+            COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) as total_amount
+        ")->first();
+
+        return view('backend.users.show', [
+            'pageName'     => 'User Details',
+            'user'         => $user,
+            'transactions' => $transactions,
+            'bids'         => $bids,
+            'walletStats'  => $walletStats,
+            'gameStats'    => $gameStats,
+        ]);
     }
+
 
     public function edit(string $id)
     {
@@ -72,7 +97,7 @@ class UserController extends Controller
             'gender'     => 'nullable|string|in:Male,Female,Other',
             'city'       => 'nullable|string|max:200',
             'address'    => 'nullable|string|max:255',
-            'balance'    => 'required|integer|min:0',
+            'balance' => ['required', 'numeric', 'min:0'],
             'bank'       => 'nullable|string|max:100',
             'acc'        => 'nullable|string|max:100',
             'ifsc'       => 'nullable|string|max:100',
