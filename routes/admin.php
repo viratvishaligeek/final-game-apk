@@ -4,6 +4,7 @@ use App\Http\Controllers\Backend\BiddingDeskController;
 use App\Http\Controllers\Backend\MemberController;
 use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\WalletController;
+use App\Http\Controllers\Backend\WinnerController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Backend\Auth\AuthController;
 use App\Http\Controllers\Backend\BannerController;
@@ -51,7 +52,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
             Route::post('/request/{walletRequest}/reject', 'reject')->name('request.reject');
         });
     });
-
     Route::controller(ResultController::class)->prefix('results')->name('results.')->group(function () {
         Route::get('/results', 'index')->name('index');
         Route::post('/results/save', 'storeOrUpdate')->name('storeOrUpdate');
@@ -62,6 +62,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
     Route::resource('roles', RoleController::class);
     Route::resource('faqs', FaqController::class);
     Route::resource('banner', BannerController::class);
+
+    Route::resource('winner', WinnerController::class);
 
     Route::controller(BiddingDeskController::class)->prefix('bidding-desk')->name('bidding-desk.')->group(function () {
         Route::get('/index', 'index')->name('index');
@@ -79,8 +81,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
 
     // Route::controller(GameHistoryController::class)->group(function () { // dashboard routes
     //     Route::get('/profit-loss-history', 'profitLossHistory')->name('profit_loss_history');
-    //     Route::get('/bid-history', 'bidHistory')->name('bid_history');
-    //     Route::post('/bid-users', 'bidUsers')->name('bid_users');
     // });
 
     // Route::controller(UtilityController::class)->group(function () { // dashboard routes

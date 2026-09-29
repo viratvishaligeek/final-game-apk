@@ -11,7 +11,9 @@ class Result extends Model
     protected $primaryKey = 'id';
     public $timestamps = true;
     protected $guarded = ['id'];
-
+    protected $casts = [
+        'number_date' => 'date',
+    ];
     public function game()
     {
         return $this->belongsTo(Game::class);

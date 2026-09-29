@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ResultChartController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BidController;
@@ -16,16 +17,16 @@ Route::prefix('v1')->group(function () {
         Route::post('forgot/reset', 'resetPasswordWithOtp');
     });
 
-
     // after login routes
     Route::middleware(['auth:sanctum', EnsureUserIsActive::class])->group(function () {
-
         Route::controller(DashboardController::class)->group(function () {
             Route::get('dashboard', 'getDashboard');
             Route::post('logout', 'logout');
             Route::get('user', 'user');
             Route::put('/update-profile', 'updateProfile');
             Route::put('/update-password', 'changePassword');
+            Route::get('/notifications', 'notificationList');
+            Route::get('/notifications-count', 'unreadCount');
         });
 
         Route::controller(WalletController::class)->prefix('wallet')->group(function () {
@@ -40,10 +41,17 @@ Route::prefix('v1')->group(function () {
                 Route::post('/webhook', 'gatewayWebhook');
             });
         });
+
         Route::controller(GameController::class)->prefix('games')->group(function () {
             Route::get('/list', 'index',);
             Route::get('/{game}', 'show',);
             Route::post('/{game}/bids', [BidController::class, 'store',]);
+        });
+
+        Route::get('/play-history', [BidController::class, 'history']);
+
+        Route::controller(ResultChartController::class)->prefix('result-chart')->group(function () {
+            Route::get('/index', 'index',);
         });
     });
 });

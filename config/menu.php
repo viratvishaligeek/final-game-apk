@@ -46,12 +46,6 @@ return [
                 'route' => 'admin.results.index',
                 'permission' => '',
             ],
-            [
-                'text'  => 'Old Result',
-                'icon'  => 'clock',
-                'route' => 'admin.games.create',
-                'permission' => '',
-            ],
         ],
     ],
     [
@@ -89,6 +83,12 @@ return [
             [
                 'text'  => 'View Winner',
                 'icon'  => 'eye',
+                'route' => 'admin.winner.index',
+                'permission' => '',
+            ],
+            [
+                'text'  => 'Profit / Loss',
+                'icon'  => 'trending-up',
                 'route' => 'admin.games.create',
                 'permission' => '',
             ],
@@ -96,7 +96,7 @@ return [
     ],
     [
         'type'  => 'dropdown',
-        'text'  => 'Withdrawal',
+        'text'  => 'Money Request',
         'icon'  => 'dollar-sign',
         'id'    => 'collapseWithdrawal',
         'items' => [
@@ -110,12 +110,6 @@ return [
                 'text'  => 'Withdrawal Request',
                 'icon'  => 'arrow-up-right',
                 'route' => 'admin.wallet.request-withdraw',
-                'permission' => '',
-            ],
-            [
-                'text'  => 'Withdrawal History',
-                'icon'  => 'file-text',
-                'route' => 'admin.games.create',
                 'permission' => '',
             ],
         ],
@@ -132,12 +126,6 @@ return [
                 'route' => 'admin.pages.index',
                 'permission' => '',
             ],
-            // [
-            //     'text'  => 'Add Pages',
-            //     'icon'  => 'file-plus',
-            //     'route' => 'admin.pages.create',
-            //     'permission' => '',
-            // ],
             [
                 'text'  => 'HomePage',
                 'icon'  => 'home',
@@ -147,38 +135,6 @@ return [
                 'text'  => 'Faqs',
                 'icon'  => 'help-circle',
                 'route' => 'admin.faqs.index',
-            ],
-        ],
-    ],
-    [
-        'type'  => 'dropdown',
-        'text'  => 'Reports',
-        'icon'  => 'pie-chart',
-        'id'    => 'collapseReports',
-        'items' => [
-            [
-                'text'  => 'Bid History',
-                'icon'  => 'rotate-ccw',
-                'route' => 'admin.games.index',
-                'permission' => '',
-            ],
-            [
-                'text'  => 'Winner History',
-                'icon'  => 'award',
-                'route' => 'admin.games.create',
-                'permission' => '',
-            ],
-            [
-                'text'  => 'Transaction History',
-                'icon'  => 'repeat',
-                'route' => 'admin.games.create',
-                'permission' => '',
-            ],
-            [
-                'text'  => 'Profit / Loss',
-                'icon'  => 'trending-up',
-                'route' => 'admin.games.create',
-                'permission' => '',
             ],
         ],
     ],

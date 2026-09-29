@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\Game;
+use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -91,6 +92,54 @@ class DashboardController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Password changed successfully!'
+        ]);
+    }
+     public function notificationList(Request $request)
+    {
+        $user = $request->user();
+
+        $perPage = min(
+            max((int) $request->input('per_page', 20), 1),
+            100
+        );
+
+        $notifications = Notification::query()
+            ->where('user_id', $user->id)
+            ->latest('created_at')
+            ->paginate($perPage);
+
+        $data = $notifications->getCollection()->map(function ($notification) {
+            return [
+                'id' => $notification->id,
+                'subject' => $notification->subject,
+                'message' => $notification->message,
+                'created_at' => $notification->created_at?->toISOString(),
+                'updated_at' => $notification->updated_at?->toISOString(),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data->values(),
+            'meta' => [
+                'current_page' => $notifications->currentPage(),
+                'last_page' => $notifications->lastPage(),
+                'per_page' => $notifications->perPage(),
+                'total' => $notifications->total(),
+                'has_more' => $notifications->hasMorePages(),
+            ],
+        ]);
+    }
+
+    public function unreadCount(Request $request)
+    {
+        $count = Notification::query()
+            ->where('user_id', $request->user()->id)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'count' => $count,
         ]);
     }
 }

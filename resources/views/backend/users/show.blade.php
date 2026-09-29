@@ -471,9 +471,6 @@
                                             Type
                                         </th>
                                         <th>
-                                            Play Type
-                                        </th>
-                                        <th>
                                             Amount
                                         </th>
                                         <th>
@@ -492,10 +489,7 @@
                                             </td>
                                             <td>
                                                 <div class="fw-semibold">
-                                                    {{ $bid->game_name ?? 'Unknown Game' }}
-                                                </div>
-                                                <div class="small text-muted">
-                                                    Game #{{ $bid->gameid }}
+                                                    {{ $bid->game->name ?? 'Game Deleted' }}
                                                 </div>
                                             </td>
                                             <td>
@@ -506,11 +500,6 @@
                                             <td>
                                                 <span class="badge bg-primary-subtle text-primary">
                                                     {{ strtoupper($bid->type) }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="text-capitalize">
-                                                    {{ $bid->playtype ?: '-' }}
                                                 </span>
                                             </td>
                                             <td>

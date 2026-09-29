@@ -3,23 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Bid extends Model
+class Winner extends Model
 {
-    use HasFactory;
-
-    protected $guarded = ['id'];
-
     protected $fillable = [
-        'order_no',
+        'bid_id',
         'user_id',
         'game_id',
-        'game_date',
-        'type',
         'number',
+        'type',
+        'game_date',
         'amount',
-        'status',
         'winning_amount',
     ];
 
@@ -29,18 +24,18 @@ class Bid extends Model
         'winning_amount' => 'decimal:2',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function game()
+    public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class);
     }
 
-    public function winner()
+    public function bid(): BelongsTo
     {
-        return $this->hasOne(Winner::class);
+        return $this->belongsTo(Bid::class);
     }
 }

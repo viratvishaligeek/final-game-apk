@@ -13,13 +13,12 @@ return new class extends Migration
     {
         Schema::create('results', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('game_id')->constrained('games')->onDelete('cascade');
-            $table->string('number', 10)->default('Wait');
-            $table->date('number_date');
+            $table->foreignId('game_id')->constrained('games')->cascadeOnDelete();
+            $table->date('game_date');
             $table->enum('type', ['ah', 'bh', 'jodi']);
+            $table->string('number', 20);
             $table->timestamps();
-            $table->index(['game_id', 'number_date', 'type']);
-            $table->unique(['game_id', 'number_date', 'type']);
+            $table->unique(['game_id', 'game_date', 'type']);
         });
     }
 

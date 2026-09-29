@@ -13,15 +13,16 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->string('phone');
-            $table->bigInteger('user_id');
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->decimal('amount', 15, 2);
-            $table->string('subject');
             $table->decimal('balance', 15, 2);
-            $table->enum('status', ['pending','rejected','completed']);
-            $table->enum('type', ['debit', 'credit']);
+            $table->string('subject', 255);
+            $table->enum('type', ['credit', 'debit']);
+            $table->enum('status', ['pending', 'completed', 'rejected'])->default('completed');
             $table->timestamps();
-            $table->index('user_id');
+            $table->index(['user_id', 'type', 'created_at']);
+            $table->foreignId('game_id')->nullable()->constrained('games')->nullOnDelete();
+            $table->foreignId('bid_id')->nullable()->constrained('bids')->nullOnDelete();
         });
     }
 

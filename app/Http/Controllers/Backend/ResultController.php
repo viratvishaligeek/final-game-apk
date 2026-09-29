@@ -5,192 +5,216 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Models\Bid;
 use App\Models\Game;
-use App\Models\Gamewiner;
 use App\Models\Notification;
 use App\Models\Result;
-use App\Models\Trans;
+use App\Models\Transaction;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Models\Winner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class ResultController extends Controller
 {
     public function index(Request $request)
     {
-        $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
-        $allGames = Game::where('status', 'active')->orderBy('serial', 'asc')->get();
-        $existingResults = Result::where('type', 'jodi')->where('number_date', $selectedDate)->get()->keyBy('game_id');
-        return view('backend.result.index', compact('allGames', 'existingResults', 'selectedDate'));
+        $selectedDate = $request->input('date', now()->toDateString());
+        $allGames = Game::query()
+            ->where('status', 'active')
+            ->orderBy('serial')
+            ->get();
+        $existingResults = Result::query()
+            ->where('type', 'jodi')
+            ->where('game_date', $selectedDate)
+            ->get()
+            ->keyBy('game_id');
+        return view('backend.result.index', compact(
+            'allGames',
+            'existingResults',
+            'selectedDate',
+        ));
     }
-
     public function storeOrUpdate(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'game_id'     => 'required|exists:games,id',
-            'number_date' => 'required|date',
-            'new_result'  => 'required|digits:2',
+        $validated = $request->validate([
+            'game_id' => ['required', 'integer', 'exists:games,id',],
+            'game_date' => ['required', 'date_format:Y-m-d',],
+            'result' => ['required', 'digits:2',],
         ]);
-        if ($validator->fails()) {
-            return redirect()->back()->with('error', $validator->errors()->first());
-        }
+        $gameId = (int) $validated['game_id'];
+        $gameDate = $validated['game_date'];
+        $jodi = str_pad((string) $validated['result'], 2, '0', STR_PAD_LEFT);
+        $ah = $jodi[0];
+        $bh = $jodi[1];
         try {
-            DB::beginTransaction();
-            $gameId      = $request->game_id;
-            $numberDate  = $request->number_date;
-            $number      = $request->new_result;
-            $numberA     = substr($number, 0, 1);
-            $numberB     = substr($number, -1);
-
-            $game = Game::findOrFail($gameId);
-            Result::updateOrCreate(
-                ['game_id' => $gameId, 'number_date' => $numberDate, 'type' => 'ah'],
-                ['number' => $numberA]
-            );
-            Result::updateOrCreate(
-                ['game_id' => $gameId, 'number_date' => $numberDate, 'type' => 'bh'],
-                ['number' => $numberB]
-            );
-            Result::updateOrCreate(
-                ['game_id' => $gameId, 'number_date' => $numberDate, 'type' => 'jodi'],
-                ['number' => $number]
-            );
-            $isToday = Carbon::parse($numberDate)->isToday();
-            if ($isToday) {
-                $reward = $game->reward ?? 1;
-                $types  = ['jodi' => $number, 'ah' => $numberA, 'bh' => $numberB];
-                foreach ($types as $type => $winningValue) {
-                    $bids = Bid::where('game_id', $gameId)
-                        ->where('time', $numberDate)
-                        ->where('number', $winningValue)
-                        ->where('type', $type)
-                        ->get();
-                    foreach ($bids as $bid) {
-                        $user = User::where('phone', $bid->phone)->first();
-                        if (!$user) continue;
-
-                        $winAmount = ($type === 'jodi')
-                            ? ($bid->value * $reward)
-                            : ($bid->value * ($reward / 10));
-
-                        // Credit User Wallet
-                        $user->wallet += $winAmount;
-                        $user->save();
-
-                        // Record Game Winner
-                        Gamewiner::create([
-                            'phone'     => $bid->phone,
-                            'gameid'    => $gameId,
-                            'number'    => $winningValue,
-                            'amount'    => $bid->value,
-                            'winamount' => $winAmount,
-                            'time'      => $numberDate,
-                            'type'      => $type,
-                            'date'      => $numberDate,
-                        ]);
-
-                        // Log Transaction
-                        Trans::create([
-                            'phone'    => $bid->phone,
-                            'amount'   => $winAmount,
-                            'subject'  => 'You Win ' . $game->name . ' (' . strtoupper($type) . ')',
-                            'time'     => $numberDate,
-                            'mobile'   => $bid->phone,
-                            'wallet'   => $user->wallet,
-                            'status'   => 1,
-                            'type'     => 'CREDIT',
-                            'gameid'   => $gameId,
-                            'gametype' => $type,
-                        ]);
-                    }
-                }
-
-                // In-App Notification Log
-                $msg = "Today's Result for {$game->name} is {$number}";
-                Notification::create([
-                    'name'    => $msg,
-                    'subject' => 'Game Result Out',
-                    'time'    => now('Asia/Kolkata')->format('d-m-Y'),
-                    'phone'   => 0,
+            $settlement = DB::transaction(function () use (
+                $gameId,
+                $gameDate,
+                $jodi,
+                $ah,
+                $bh
+            ) {
+                $game = Game::query()->lockForUpdate()->findOrFail($gameId);
+                $game->update([
+                    'last_result' => $jodi,
                 ]);
+                Result::updateOrCreate([
+                    'game_id' => $gameId,
+                    'game_date' => $gameDate,
+                    'type' => 'ah',
+                ], ['number' => $ah,]);
+                Result::updateOrCreate([
+                    'game_id' => $gameId,
+                    'game_date' => $gameDate,
+                    'type' => 'bh',
+                ], ['number' => $bh,]);
+                Result::updateOrCreate([
+                    'game_id' => $gameId,
+                    'game_date' => $gameDate,
+                    'type' => 'jodi',
+                ], ['number' => $jodi,]);
 
-                // Push FCM Notification
-                try {
-                    Http::withHeaders([
-                        'Authorization' => 'key=AAAAV_zN780:APA91bG4WGXQyWXynkZb1OiGJyOJHeBWtK5MKI2GDbgljREeSCTk-rOoT7be7FoRC7jO3Kv4FFy0ndri0fsPTkQ7ILNut95X-Vu8cr3WCmEEO0bnH2bfvIwdJYhKWOOmTNzUH_EnP-o',
-                        'Content-Type'  => 'application/json',
-                    ])->post('https://fcm.googleapis.com/fcm/send', [
-                        'to'           => '/topics/weather',
-                        'notification' => [
-                            'title' => $game->name . ' Result Published',
-                            'body'  => $msg,
-                        ],
-                    ]);
-                } catch (\Exception $e) {
-                    // Ignore FCM failures
-                }
-            }
+                $stats = $this->settleGameBids(
+                    game: $game,
+                    gameId: $gameId,
+                    gameDate: $gameDate,
+                    jodi: $jodi,
+                    ah: $ah,
+                    bh: $bh
+                );
+                return ['game' => $game, 'stats' => $stats,];
+            });
+            $game = $settlement['game'];
+            $stats = $settlement['stats'];
+            $message = sprintf('Result for %s is %s', $game->name, $jodi);
 
-            DB::commit();
-            $successMsg = $isToday
-                ? "Live Result ($number) published! Winners credited and notifications sent."
-                : "History Result ($number) updated for $numberDate.";
-
-            return redirect()->back()->with('success', $successMsg);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Operation failed: ' . $e->getMessage());
+            Notification::create([
+                'user_id' => null,
+                'subject' => 'Game Result Out',
+                'message' => $message,
+            ]);
+            $this->sendResultNotification($game, $gameDate, $jodi);
+            return redirect()->back()->with('success', "Result ({$jodi}) published for {$gameDate}. " . "{$stats['winners']} winner(s) credited.");
+        } catch (\Throwable $e) {
+            Log::error('Result settlement failed', [
+                'game_id' => $gameId,
+                'game_date' => $gameDate,
+                'result' => $jodi,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()->back()->with('error', 'Unable to publish result. Please try again.');
         }
     }
+    private function settleGameBids(
+        Game $game,
+        int $gameId,
+        string $gameDate,
+        string $jodi,
+        string $ah,
+        string $bh
+    ): array {
+        $reward = (float) ($game->reward ?? 1);
+        $winningNumbers = [
+            'jodi' => [$jodi,],
+            'haruf' => ['ander-' . $ah, 'bahar-' . $bh,],
+        ];
+        $bids = Bid::query()
+            ->where('game_id', $gameId)
+            ->where('game_date', $gameDate)
+            ->where('status', 'pending')
+            ->where(function ($query) use ($winningNumbers) {
+                foreach ($winningNumbers as $type => $numbers) {
+                    $query->orWhere(function ($query) use ($type, $numbers) {
+                        $query->where('type', $type)->whereIn('number', $numbers);
+                    });
+                }
+            })->lockForUpdate()->get();
+        $winnerCount = 0;
+        $totalWinningAmount = 0;
+        foreach ($bids as $bid) {
+            $user = User::query()->lockForUpdate()->find($bid->user_id);
+            if (!$user) {
+                continue;
+            }
+            $bidAmount = (float) $bid->amount;
+            $winningAmount = $bid->type === 'jodi' ? $bidAmount * $reward : $bidAmount * ($reward / 10);
+            $winningAmount = round($winningAmount, 2);
+            $newBalance = round((float) $user->balance + $winningAmount, 2);
+            $user->update(['balance' => $newBalance,]);
 
-    /**
-     * Revert Result to 'Wait' state & Rollback Credited Balances
-     */
+            $bid->update(['status' => 'win', 'winning_amount' => $winningAmount,]);
+
+            Winner::create([
+                'bid_id' => $bid->id,
+                'user_id' => $user->id,
+                'game_id' => $gameId,
+                'game_date' => $gameDate,
+                'type' => $bid->type,
+                'number' => $bid->number,
+                'amount' => $bidAmount,
+                'winning_amount' => $winningAmount,
+            ]);
+            Transaction::create([
+                'user_id' => $user->id,
+                'amount' => $winningAmount,
+                'balance' => $newBalance,
+                'subject' => sprintf('You Win %s (%s)', $game->name, strtoupper($bid->type)),
+                'type' => 'credit',
+                'status' => 'completed',
+            ]);
+            $winnerCount++;
+            $totalWinningAmount += $winningAmount;
+        }
+        return ['winners' => $winnerCount, 'total_amount' => round($totalWinningAmount, 2),];
+    }
+    /** * Send FCM result notification. */
+    private function sendResultNotification(Game $game, string $gameDate, string $result): void
+    {
+        try {
+            Http::timeout(10)->withHeaders(['Authorization' => 'key=' . config('services.fcm.server_key'), 'Content-Type' => 'application/json',])->post(config('services.fcm.url'), ['to' => '/topics/weather', 'notification' => ['title' => $game->name . ' Result Published', 'body' => "Result for {$game->name} is {$result}",],]);
+        } catch (\Throwable $e) {
+            Log::error('FCM notification failed', ['game_id' => $game->id, 'game_date' => $gameDate, 'error' => $e->getMessage(),]);
+        }
+    }
+    /** * Revert result and all settlements for a game/date. */
     public function revert(Request $request)
     {
-        $request->validate([
-            'game_id'     => 'required|exists:games,id',
-            'number_date' => 'required|date'
-        ]);
-
-        DB::beginTransaction();
-
+        $validated = $request->validate(['game_id' => ['required', 'integer', 'exists:games,id',], 'game_date' => ['required', 'date_format:Y-m-d',],]);
+        $gameId = (int) $validated['game_id'];
+        $gameDate = $validated['game_date'];
         try {
-            // Update results back to 'Wait'
-            Result::where('game_id', $request->game_id)
-                ->where('number_date', $request->number_date)
-                ->update(['number' => 'Wait']);
-
-            // Deduct user wallet balances
-            $winners = Gamewiner::where('gameid', $request->game_id)
-                ->where('time', $request->number_date)
-                ->get();
-
-            foreach ($winners as $winner) {
-                $user = User::where('phone', $winner->phone)->first();
-                if ($user) {
-                    $user->wallet -= $winner->winamount;
+            DB::transaction(function () use ($gameId, $gameDate) { /* * Lock winners so another settlement/revert * cannot process them simultaneously. */
+                $winners = Winner::query()->where('game_id', $gameId)->where('game_date', $gameDate)->lockForUpdate()->get();
+                foreach ($winners as $winner) {
+                    $user = User::query()->lockForUpdate()->find($winner->user_id);
+                    if (!$user) {
+                        continue;
+                    } /* * Reverse winning amount. */
+                    $user->balance = round((float) $user->balance - (float) $winner->winning_amount, 2);
                     $user->save();
+                    $previousResult = Result::query()
+                        ->where('game_id', $gameId)
+                        ->where('type', 'jodi')
+                        ->where('game_date', '<', $gameDate)
+                        ->latest('game_date')
+                        ->value('number');
+
+                    Game::query()
+                        ->whereKey($gameId)
+                        ->update([
+                            'last_result' => $previousResult ?? 'Wait',
+                        ]);
+
+                    Bid::query()->whereKey($winner->bid_id)->update(['status' => 'pending', 'winning_amount' => 0,]);
                 }
-            }
-
-            // Remove logs
-            Gamewiner::where('gameid', $request->game_id)
-                ->where('time', $request->number_date)
-                ->delete();
-
-            Trans::where('gameid', $request->game_id)
-                ->where('time', $request->number_date)
-                ->delete();
-
-            DB::commit();
-
-            return redirect()->back()->with('success', 'Result reverted to Wait & wallet balances adjusted successfully.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->with('error', 'Error reverting result: ' . $e->getMessage());
+                Winner::query()->where('game_id', $gameId)->where('game_date', $gameDate)->delete(); /* * Delete result records. */
+                Result::query()->where('game_id', $gameId)->where('game_date', $gameDate)->delete();
+            });
+            return redirect()->back()->with('success', 'Result reverted and winner amounts reversed successfully.');
+        } catch (\Throwable $e) {
+            Log::error('Result revert failed', ['game_id' => $gameId, 'game_date' => $gameDate, 'error' => $e->getMessage(),]);
+            return redirect()->back()->with('error', 'Unable to revert result.');
         }
     }
 }

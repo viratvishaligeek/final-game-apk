@@ -10,19 +10,19 @@ class Transaction extends Model
     public $timestamps = true;
     protected $guarded = ['id'];
     protected $fillable = [
-        'phone',
         'user_id',
         'amount',
-        'subject',
         'balance',
-        'status',
+        'subject',
         'type',
+        'status',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'balance' => 'decimal:2',
     ];
+
 
     public function user()
     {

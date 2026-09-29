@@ -25,11 +25,12 @@ class GameSeeder extends Seeder
             Game::create([
                 'name'        => $name,
                 'slug'        => Str::slug($name),
-                'result_time' => '18:00:00',
-                'play_start'  => '10:00:00',
-                'play_end'    => '17:00:00',
+                'result_time' => '23:00:00',
+                'play_start'  => '18:00:00',
+                'play_end'    => '20:00:00',
                 'last_result' => '00',
                 'status'      => 'active',
+                'reward'      => 98,
                 'serial'      => $index + 1,
             ]);
         }

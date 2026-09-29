@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bid;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletRequest;
@@ -19,58 +20,145 @@ class WalletController extends Controller
 {
     public function __construct(
         protected WalletService $walletService
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $transactions = Transaction::query()->where('user_id', $user->id)->latest('id')->paginate(15);
+        $perPage = min(
+            max((int) $request->input('per_page', 15), 5),
+            50
+        );
+        $page = max(
+            (int) $request->input('page', 1),
+            1
+        );
+        $transactions = Transaction::query()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->paginate(
+                $perPage,
+                ['*'],
+                'page',
+                $page
+            );
+
         $totalCredited = Transaction::query()
             ->where('user_id', $user->id)
             ->where('type', 'credit')
-            ->where('status', 'completed')
+            ->whereIn('status', [
+                'completed',
+                'success',
+            ])
             ->sum('amount');
 
         $totalDebited = Transaction::query()
             ->where('user_id', $user->id)
             ->where('type', 'debit')
-            ->where('status', 'completed')
+            ->whereIn('status', [
+                'completed',
+                'success',
+            ])
             ->sum('amount');
+
+        $totalPlayedBet = Bid::query()
+            ->where('user_id', $user->id)
+            ->sum('amount');
+        $totalWin = Bid::query()
+            ->where('user_id', $user->id)
+            ->sum('winning_amount');
+
+        $transactionData = collect(
+            $transactions->items()
+        )->map(function ($transaction) {
+            return [
+                'id' => $transaction->id,
+                'txn_id' => 'TXN' . str_pad(
+                    $transaction->id,
+                    8,
+                    '0',
+                    STR_PAD_LEFT
+                ),
+                'description' => $transaction->subject,
+                'type' => strtolower(
+                    $transaction->type
+                ),
+                'amount' => (float) $transaction->amount,
+                'balance' => (float) $transaction->balance,
+                'status' => $this->normalizeTransactionStatus(
+                    $transaction->status
+                ),
+                'created_at' => $transaction->created_at,
+            ];
+        })->values();
+
 
         return response()->json([
             'success' => true,
+            'message' => 'Wallet data fetched successfully.',
             'data' => [
                 'balance' => (float) $user->balance,
-                'total_credited' => (float) $totalCredited,
-                'total_debited' => (float) $totalDebited,
+                'summary' => [
+                    'cash_added' => round(
+                        (float) $totalCredited,
+                        2
+                    ),
+                    'withdrawn' => round(
+                        (float) $totalDebited,
+                        2
+                    ),
+                    'played_bet' => round(
+                        (float) $totalPlayedBet,
+                        2
+                    ),
+                    'total_win' => round(
+                        (float) $totalWin,
+                        2
+                    ),
+                ],
                 'transactions' => [
-                    'data' => collect($transactions->items())
-                        ->map(fn ($transaction) => [
-                            'id' => $transaction->id,
-                            'txn_id' => 'TXN' . str_pad(
-                                $transaction->id,
-                                8,
-                                '0',
-                                STR_PAD_LEFT
-                            ),
-                            'description' => $transaction->subject,
-                            'type' => $transaction->type,
-                            'amount' => (float) $transaction->amount,
-                            'status' => $transaction->status === 'completed'
-                                ? 'success'
-                                : $transaction->status,
-                            'created_at' => $transaction->created_at,
-                        ])
-                        ->values(),
-
-                    'current_page' => $transactions->currentPage(),
-                    'last_page' => $transactions->lastPage(),
-                    'per_page' => $transactions->perPage(),
-                    'total' => $transactions->total(),
+                    'data' => $transactionData,
+                    'current_page' =>
+                    $transactions->currentPage(),
+                    'last_page' =>
+                    $transactions->lastPage(),
+                    'per_page' =>
+                    $transactions->perPage(),
+                    'total' =>
+                    $transactions->total(),
+                    'from' =>
+                    $transactions->firstItem(),
+                    'to' =>
+                    $transactions->lastItem(),
                 ],
             ],
         ]);
+    }
+
+    /**
+     * Normalize database transaction status
+     */
+    private function normalizeTransactionStatus(
+        ?string $status
+    ): string {
+
+        $status = strtolower(
+            (string) $status
+        );
+
+        return match ($status) {
+            'completed',
+            'success',
+            'successful' => 'success',
+            'pending',
+            'processing' => 'pending',
+            'failed',
+            'failure' => 'failed',
+            'rejected',
+            'cancelled',
+            'canceled' => 'rejected',
+            default => $status ?: 'pending',
+        };
     }
 
     /**
@@ -185,45 +273,37 @@ class WalletController extends Controller
                         'customer_name' => $user->name,
                         'customer_email' => $user->email ?? 'noemail@gmail.com',
                         'customer_mobile' => $user->phone,
-
                         'redirect_url' => config(
                             'services.upi_gateway.return_url'
                         ),
-
                         'udf1' => (string) $user->id,
                         'udf2' => 'wallet',
                         'udf3' => (string) $walletRequest->id,
                     ]
                 );
-
             if (!$response->successful()) {
                 $walletRequest->update([
                     'status' => 'failed',
                     'gateway_status' => 'gateway_error',
                     'remark' => 'Gateway order creation failed.',
                 ]);
-
                 return response()->json([
                     'success' => false,
                     'message' => 'Unable to create payment order.',
                 ], 422);
             }
-
             $result = $response->json();
-
             if (($result['status'] ?? false) !== true) {
                 $walletRequest->update([
                     'status' => 'failed',
                     'gateway_status' => 'order_creation_failed',
                     'remark' => $result['msg'] ?? 'Gateway rejected order.',
                 ]);
-
                 return response()->json([
                     'success' => false,
                     'message' => $result['msg'] ?? 'Payment gateway rejected the request.',
                 ], 422);
             }
-
             return response()->json([
                 'success' => true,
                 'message' => 'Payment order created.',
@@ -390,23 +470,18 @@ class WalletController extends Controller
             $requestRow = WalletRequest::query()
                 ->lockForUpdate()
                 ->findOrFail($walletRequest->id);
-
             if ($requestRow->status === 'approved') {
                 return;
             }
-
             if ($requestRow->request_type !== 'credit') {
                 return;
             }
-
             $user = User::findOrFail($requestRow->user_id);
-
             $this->walletService->credit(
                 $user,
                 (float) $requestRow->amount,
                 'Wallet top-up via UPI Gateway'
             );
-
             $requestRow->update([
                 'status' => 'approved',
                 'processed_at' => now(),
@@ -423,13 +498,10 @@ class WalletController extends Controller
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],
             'mode' => ['required', 'in:bank,upi'],
-
             'account_name' => ['required_if:mode,bank', 'nullable', 'string', 'max:150'],
             'account_number' => ['required_if:mode,bank', 'nullable', 'string', 'max:100'],
             'ifsc' => ['required_if:mode,bank', 'nullable', 'string', 'max:20'],
-
             'upi_id' => ['required_if:mode,upi', 'nullable', 'string', 'max:150'],
-
             'qr_code_image' => [
                 'nullable',
                 'file',
@@ -462,14 +534,11 @@ class WalletController extends Controller
             'payment_method' => $validated['mode'],
             'amount' => $amount,
             'status' => 'pending',
-
             'account_name' => $validated['account_name'] ?? null,
             'account_number' => $validated['account_number'] ?? null,
             'ifsc' => strtoupper($validated['ifsc'] ?? '') ?: null,
-
             'upi_id' => $validated['upi_id'] ?? null,
             'qr_code_image' => $qrPath,
-
             'remark' => 'Wallet withdrawal request',
         ]);
 

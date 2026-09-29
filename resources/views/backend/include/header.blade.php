@@ -8,35 +8,6 @@
 
      <ul class="navbar-nav align-items-center ms-auto">
          <li class="nav-item dropdown no-caret d-none d-sm-block me-3 dropdown-notifications">
-             <a class="btn btn-icon btn-transparent-dark dropdown-toggle" id="navbarDropdownAlerts"
-                 href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
-                 aria-expanded="false">
-                 <i data-feather="bell">
-                 </i>
-             </a>
-             <div class="dropdown-menu dropdown-menu-end border-0 shadow animated--fade-in-up"
-                 aria-labelledby="navbarDropdownAlerts">
-                 <h6 class="dropdown-header dropdown-notifications-header">
-                     <i class="me-2" data-feather="bell">
-                     </i>
-                     Alerts Center
-                 </h6>
-                 <a class="dropdown-item dropdown-notifications-item" href="dashboard-1.html#!">
-                     <div class="dropdown-notifications-item-icon bg-warning">
-                         <i data-feather="activity">
-                         </i>
-                     </div>
-                     <div class="dropdown-notifications-item-content">
-                         <div class="dropdown-notifications-item-content-details">December 29, 2021</div>
-                         <div class="dropdown-notifications-item-content-text">This is an alert message. It's
-                             nothing serious, but it requires your attention.</div>
-                     </div>
-                 </a>
-                 <a class="dropdown-item dropdown-notifications-footer" href="dashboard-1.html#!">View All
-                     Alerts</a>
-             </div>
-         </li>
-         <li class="nav-item dropdown no-caret d-none d-sm-block me-3 dropdown-notifications">
              <a class="btn btn-icon btn-transparent-dark dropdown-toggle" id="navbarDropdownMessages"
                  href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
                  aria-expanded="false">
