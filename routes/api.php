@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BidController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\GameController;
+use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Middleware\EnsureUserIsActive;
 
@@ -26,7 +27,7 @@ Route::prefix('v1')->group(function () {
             Route::put('/update-profile', 'updateProfile');
             Route::put('/update-password', 'changePassword');
             Route::get('/notifications', 'notificationList');
-            Route::get('/notifications-count', 'unreadCount');
+            Route::get('/settings', 'getSetting');
         });
 
         Route::controller(WalletController::class)->prefix('wallet')->group(function () {
@@ -35,11 +36,11 @@ Route::prefix('v1')->group(function () {
             Route::post('/add-money-request', 'addMoneyRequest');
             Route::post('/gateway/create-order', 'createGatewayOrder');
             Route::post('/withdraw', 'withdraw');
-            Route::get('/requests', 'requests');
             Route::prefix('gateway')->group(function () {
                 Route::get('/return', 'gatewayReturn');
                 Route::post('/webhook', 'gatewayWebhook');
             });
+            Route::get('/get-money-request', 'getMoneyRequest');
         });
 
         Route::controller(GameController::class)->prefix('games')->group(function () {
@@ -53,5 +54,7 @@ Route::prefix('v1')->group(function () {
         Route::controller(ResultChartController::class)->prefix('result-chart')->group(function () {
             Route::get('/index', 'index',);
         });
+        Route::get('/pages/{slug}', [PageController::class, 'show']);
+
     });
 });

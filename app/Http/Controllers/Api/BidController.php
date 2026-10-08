@@ -312,39 +312,78 @@ class BidController extends Controller
 
         $date = $validated['date'] ?? now()->toDateString();
         $perPage = $validated['per_page'] ?? 50;
+        $page = $validated['page'] ?? 1;
 
-        $query = Bid::query()
+        /*
+    |--------------------------------------------------------------------------
+    | First get slip/order numbers
+    |--------------------------------------------------------------------------
+    */
+
+        $orderQuery = Bid::query()
+            ->where('user_id', $user->id)
+            ->whereDate('game_date', $date)
+            ->select('order_no')
+            ->groupBy('order_no')
+            ->orderByDesc(DB::raw('MAX(id)'));
+
+        $orderPaginator = $orderQuery->paginate(
+            $perPage,
+            ['order_no'],
+            'page',
+            $page
+        );
+
+        $orderNos = collect($orderPaginator->items())
+            ->pluck('order_no')
+            ->values();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Now get ALL bids belonging to those slips
+    |--------------------------------------------------------------------------
+    */
+
+        $bids = Bid::query()
             ->with([
                 'game:id,name,status',
             ])
             ->where('user_id', $user->id)
             ->whereDate('game_date', $date)
-            ->orderByDesc('id');
+            ->whereIn('order_no', $orderNos)
+            ->orderByDesc('id')
+            ->get();
 
-        $paginator = $query->paginate(
-            $perPage,
-            ['*'],
-            'page',
-            $validated['page'] ?? 1
-        );
+        /*
+    |--------------------------------------------------------------------------
+    | Format complete slips
+    |--------------------------------------------------------------------------
+    */
 
-        $slips = collect($paginator->items())
+        $slips = $bids
             ->groupBy('order_no')
-            ->map(function ($bids) {
-                return $this->formatSlip($bids);
+            ->map(function ($slipBids) {
+                return $this->formatSlip($slipBids);
             })
             ->values();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Stats
+    |--------------------------------------------------------------------------
+    */
 
         $totalSpent = $slips->sum('total_amount');
         $totalWon = $slips->sum('win_amount');
 
         return response()->json([
             'success' => true,
+
             'data' => [
                 'date' => $date,
 
                 'stats' => [
-                    'total_slips' => $slips->count(),
+                    'total_slips' => $orderPaginator->total(),
                     'total_spent' => round($totalSpent, 2),
                     'total_won' => round($totalWon, 2),
                 ],
@@ -352,17 +391,16 @@ class BidController extends Controller
                 'slips' => $slips,
 
                 'pagination' => [
-                    'current_page' => $paginator->currentPage(),
-                    'last_page' => $paginator->lastPage(),
-                    'per_page' => $paginator->perPage(),
-                    'total' => $paginator->total(),
-                    'from' => $paginator->firstItem(),
-                    'to' => $paginator->lastItem(),
+                    'current_page' => $orderPaginator->currentPage(),
+                    'last_page' => $orderPaginator->lastPage(),
+                    'per_page' => $orderPaginator->perPage(),
+                    'total' => $orderPaginator->total(),
+                    'from' => $orderPaginator->firstItem(),
+                    'to' => $orderPaginator->lastItem(),
                 ],
             ],
         ]);
     }
-
     private function formatSlip($bids): array
     {
         $firstBid = $bids->first();
@@ -386,14 +424,24 @@ class BidController extends Controller
             return $bid->status === 'pending';
         });
 
+        /*
+    |--------------------------------------------------------------------------
+    | Get complete result
+    |--------------------------------------------------------------------------
+    */
+
+        $result = $this->getGameResult(
+            $game,
+            $firstBid->game_date
+        );
+
         $status = $this->getSlipStatus(
             $game,
             $bids,
             $hasWon,
-            $isPending
+            $isPending,
+            $result
         );
-
-        $winningNumber = $this->getWinningNumber($game, $firstBid->game_date);
 
         return [
             'id' => $firstBid->id,
@@ -420,35 +468,84 @@ class BidController extends Controller
 
             'status' => $status,
 
-            'winning_number' => $winningNumber,
+            /*
+        |--------------------------------------------------------------------------
+        | Results
+        |--------------------------------------------------------------------------
+        */
+
+            'winning_number' => $result['jodi'],
+
+            'harup_result' => [
+                'ander' => $result['ander'],
+                'bahar' => $result['bahar'],
+            ],
+
+            /*
+        |--------------------------------------------------------------------------
+        | Winning amount
+        |--------------------------------------------------------------------------
+        */
 
             'win_amount' => $winningAmount,
 
-            'single_bets' => $this->getSingleBets($bids, $mode),
+            /*
+        |--------------------------------------------------------------------------
+        | Bet details
+        |--------------------------------------------------------------------------
+        */
 
-            'harup_bets' => $this->getHarupBets($bids, $mode),
+            'single_bets' => $this->getSingleBets(
+                $bids,
+                $mode
+            ),
 
-            'crossing_digits' => $this->getCrossingDigits($bids, $mode),
+            'harup_bets' => $this->getHarupBets(
+                $bids,
+                $mode
+            ),
 
-            'crossing_amount_per_jodi' => $this->getCrossingAmount($bids, $mode),
+            'crossing_digits' => $this->getCrossingDigits(
+                $bids,
+                $mode
+            ),
 
-            'crossing_jodis' => $this->getCrossingJodis($bids, $mode),
+            'crossing_amount_per_jodi' => $this->getCrossingAmount(
+                $bids,
+                $mode
+            ),
+
+            'crossing_jodis' => $this->getCrossingJodis(
+                $bids,
+                $mode
+            ),
         ];
     }
+
 
     private function getSlipStatus(
         $game,
         $bids,
         bool $hasWon,
-        bool $isPending
+        bool $isPending,
+        array $result
     ): string {
+
+        /*
+    |--------------------------------------------------------------------------
+    | If winning amount exists, definitely won
+    |--------------------------------------------------------------------------
+    */
+
         if ($hasWon) {
             return 'won';
         }
 
-        if ($isPending && $game?->is_playable) {
-            return 'running';
-        }
+        /*
+    |--------------------------------------------------------------------------
+    | Explicit failed/lost/rejected
+    |--------------------------------------------------------------------------
+    */
 
         if ($bids->contains(function ($bid) {
             return in_array(
@@ -460,6 +557,37 @@ class BidController extends Controller
             return 'lost';
         }
 
+        /*
+    |--------------------------------------------------------------------------
+    | Result exists
+    |--------------------------------------------------------------------------
+    */
+
+        $hasResult =
+            !empty($result['jodi']) ||
+            !empty($result['ander']) ||
+            !empty($result['bahar']);
+
+        if ($hasResult) {
+            return 'lost';
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Game still running
+    |--------------------------------------------------------------------------
+    */
+
+        if ($isPending && $game?->is_playable) {
+            return 'running';
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | No pending + no win
+    |--------------------------------------------------------------------------
+    */
+
         if (!$isPending) {
             return 'lost';
         }
@@ -467,28 +595,73 @@ class BidController extends Controller
         return 'running';
     }
 
-    private function getWinningNumber($game, $date): ?string
+    private function getGameResult($game, $date): array
     {
+        $result = [
+            'ander' => null,
+            'bahar' => null,
+            'jodi' => null,
+        ];
+
         if (!$game) {
-            return null;
+            return $result;
         }
 
-        $result = $game->results()
-            ->whereDate('number_date', $date)
-            ->where('type', 'jodi')
-            ->latest('id')
-            ->first();
+        $results = $game->results()
+            ->whereDate('game_date', $date)
+            ->whereIn('type', ['ah', 'bh', 'jodi'])
+            ->orderByDesc('id')
+            ->get();
 
-        if (!$result || !$result->number) {
-            return null;
+        foreach ($results as $item) {
+
+            $number = $item->number;
+
+            if ($number === null || $number === 'Wait') {
+                continue;
+            }
+
+            switch ($item->type) {
+
+                case 'ah':
+                    $result['ander'] = (string) $number;
+                    break;
+
+                case 'bh':
+                    $result['bahar'] = (string) $number;
+                    break;
+
+                case 'jodi':
+                    $result['jodi'] = (string) $number;
+                    break;
+            }
         }
 
-        if ($result->number === 'Wait') {
-            return null;
-        }
-
-        return (string) $result->number;
+        return $result;
     }
+
+    // private function getWinningNumber($game, $date): ?string
+    // {
+    //     if (!$game) {
+    //         return null;
+    //     }
+
+    //     $result = $game->results()
+    //         ->whereDate('game_date', $date)
+    //         ->where('type', 'jodi')
+    //         ->latest('id')
+    //         ->first();
+
+    //     if (!$result || !$result->number) {
+    //         return null;
+    //     }
+
+    //     if ($result->number === 'Wait') {
+    //         return null;
+    //     }
+
+    //     return (string) $result->number;
+    // }
 
     private function getSingleBets($bids, string $mode): array
     {

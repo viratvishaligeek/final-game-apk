@@ -49,19 +49,16 @@
         </div>
 
         <div class="resultmain">
-            <p class="resultmaintime">29 September 2026 07:50 PM</p>
+            <p class="resultmaintime">{{ now()->format('d F Y h:i A') }}</p>
             <p class="resultmaintoday">Live Satta King Results – लाइव सट्टा किंग रिजल्ट</p>
-            <p class="livegame">FARIDABAD </p><br>
-            <p class="liveresult">90</p><br>
 
-            <p class="livegame">SHRI GANESH </p><br>
-            <p class="liveresult">61</p><br>
-
-            <p class="livegame">DELHI BAZAR</p><br>
-            <p class="liveresult">51</p>
+            @foreach ($frontendResults as $game)
+                <p class="livegame">{{ $game['name'] }}</p><br>
+                <p class="liveresult">{{ $game['today'] }}</p><br>
+            @endforeach
         </div>
-
     </section>
+
     {{-- Result today top start --}}
 
     <!-- Quick Link: Guessing Forum (after result, before records) -->
@@ -196,61 +193,29 @@
                             <th>TODAY</th>
                         </tr>
                     </thead>
+
                     <tbody>
-                        <tr class="">
-                            <td class="qr-market">DELHI BAZAR</td>
-                            <td class="qr-time">03:00 PM</td>
-                            <td class="qr-link">
-                                <a href="delhi-bazar-satta-786.php">Record Chart</a>
-                            </td>
-                            <td class="qr-val">66</td>
-                            <td class="qr-val">40ad</td>
-                        </tr>
-                        <tr class="">
-                            <td class="qr-market">SHRI GANESH </td>
-                            <td class="qr-time">04:30 PM</td>
-                            <td class="qr-link">
-                                <a href="shri-ganesh-satta-786.php">Record Chart</a>
-                            </td>
-                            <td class="qr-val">90</td>
-                            <td class="qr-val">61</td>
-                        </tr>
-                        <tr class="is-featured">
-                            <td class="qr-market">FARIDABAD </td>
-                            <td class="qr-time">06:00 PM</td>
-                            <td class="qr-link">
-                                <a href="faridabad-satta-786.php">Record Chart</a>
-                            </td>
-                            <td class="qr-val">58</td>
-                            <td class="qr-val">90</td>
-                        </tr>
-                        <tr class="">
-                            <td class="qr-market">GHAZIABAD</td>
-                            <td class="qr-time">08:30 PM</td>
-                            <td class="qr-link">
-                                <a href="ghaziabad-satta-786.php">Record Chart</a>
-                            </td>
-                            <td class="qr-val">03</td>
-                            <td class="qr-val">--</td>
-                        </tr>
-                        <tr class="">
-                            <td class="qr-market">GALI </td>
-                            <td class="qr-time">11:30 PM</td>
-                            <td class="qr-link">
-                                <a href="gali-satta-786.php">Record Chart</a>
-                            </td>
-                            <td class="qr-val">03</td>
-                            <td class="qr-val">--</td>
-                        </tr>
-                        <tr class="">
-                            <td class="qr-market">DISAWAR </td>
-                            <td class="qr-time">05:05 AM</td>
-                            <td class="qr-link">
-                                <a href="disawar-satta-786.php">Record Chart</a>
-                            </td>
-                            <td class="qr-val">49</td>
-                            <td class="qr-val">43</td>
-                        </tr>
+                        @foreach ($frontendResults as $game)
+                            <tr class="">
+                                <td class="qr-market">{{ $game['name'] }}</td>
+
+                                <td class="qr-time">{{ $game['time'] }}</td>
+
+                                <td class="qr-link">
+                                    <a href="{{ url('/' . $game['slug'] . '-satta-786.php') }}">
+                                        Record Chart
+                                    </a>
+                                </td>
+
+                                <td class="qr-val">
+                                    {{ $game['yesterday'] }}
+                                </td>
+
+                                <td class="qr-val">
+                                    {{ $game['today'] }}
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
             </div>
@@ -261,74 +226,35 @@
     {{-- result box start --}}
     <section id="markets">
         <div class="market-list">
-            <div class="market-card market-card--full">
-                <div class="market-card-head">
-                    <div class="market-card-name">
-                        <a href="shri-ganesh-satta-786.php" title="SHRI GANESH  Gali Disawar Record">SHRI GANESH </a>
+            @foreach ($marketResults as $game)
+                <div class="market-card {{ $loop->first ? 'market-card--full' : '' }}">
+                    <div class="market-card-head">
+                        <div class="market-card-name">
+                            <a href="{{ url('/' . $game['slug'] . '-satta-786.php') }}"
+                                title="{{ $game['name'] }} Gali Disawar Record">
+                                {{ $game['name'] }}
+                            </a>
+                        </div>
+
+                        <div class="market-card-time">
+                            ({{ $game['time'] }})
+                        </div>
                     </div>
-                    <div class="market-card-time">( 04:30 PM )</div>
-                </div>
-                <div class="market-card-body">
-                    <div class="market-card-res">{ 90 } <span class="market-arrow">➜</span> [ 61 ]</div>
-                </div>
-            </div>
-            <div class="market-card ">
-                <div class="market-card-head">
-                    <div class="market-card-name">
-                        <a href="disawar-satta-786.php" title="DISAWAR  Gali Disawar Record">DISAWAR </a>
+
+                    <div class="market-card-body">
+                        <div class="market-card-res">
+                            { {{ $game['yesterday'] }} }
+
+                            <span class="market-arrow">➜</span>
+
+                            [ {{ $game['today'] }} ]
+                        </div>
                     </div>
-                    <div class="market-card-time">( 05:05 AM )</div>
                 </div>
-                <div class="market-card-body">
-                    <div class="market-card-res">{ 49 } <span class="market-arrow">➜</span> [ 43 ]</div>
-                </div>
-            </div>
-            <div class="market-card ">
-                <div class="market-card-head">
-                    <div class="market-card-name">
-                        <a href="faridabad-satta-786.php" title="FARIDABAD  Gali Disawar Record">FARIDABAD </a>
-                    </div>
-                    <div class="market-card-time">( 06:00 PM )</div>
-                </div>
-                <div class="market-card-body">
-                    <div class="market-card-res">{ 58 } <span class="market-arrow">➜</span> [ 90 ]</div>
-                </div>
-            </div>
-            <div class="market-card ">
-                <div class="market-card-head">
-                    <div class="market-card-name">
-                        <a href="delhi-bazar-satta-786.php" title="DELHI BAZAR Gali Disawar Record">DELHI BAZAR</a>
-                    </div>
-                    <div class="market-card-time">( 03:00 PM )</div>
-                </div>
-                <div class="market-card-body">
-                    <div class="market-card-res">{ 66 } <span class="market-arrow">➜</span> [ 40ad ]</div>
-                </div>
-            </div>
-            <div class="market-card ">
-                <div class="market-card-head">
-                    <div class="market-card-name">
-                        <a href="ghaziabad-satta-786.php" title="GHAZIABAD Gali Disawar Record">GHAZIABAD</a>
-                    </div>
-                    <div class="market-card-time">( 08:30 PM )</div>
-                </div>
-                <div class="market-card-body">
-                    <div class="market-card-res">{ 03 } <span class="market-arrow">➜</span> [ -- ]</div>
-                </div>
-            </div>
-            <div class="market-card ">
-                <div class="market-card-head">
-                    <div class="market-card-name">
-                        <a href="gali-satta-786.php" title="GALI  Gali Disawar Record">GALI </a>
-                    </div>
-                    <div class="market-card-time">( 11:30 PM )</div>
-                </div>
-                <div class="market-card-body">
-                    <div class="market-card-res">{ 03 } <span class="market-arrow">➜</span> [ -- ]</div>
-                </div>
-            </div>
+            @endforeach
         </div>
     </section>
+
     {{-- result box start --}}
 
 
@@ -391,22 +317,36 @@
     <!-- Reference-style Old Record / Charts -->
     <section id="records">
         <div class="result-heading">
-            <a href="chart.php" title="Satta King Record Chart">Satta King Old Record — सट्टा किंग चार्ट रिकॉर्ड
-                <br>2014 TO 2026</a>
-            <p>DESAWER | FARIDABAD | GHAZIABAD | GALI </p>
+            <a href="chart.php" title="Satta King Record Chart">
+                Satta King Old Record — सट्टा किंग चार्ट रिकॉर्ड
+                <br>{{ $recordYears ? min($recordYears) : date('Y') }} TO
+                {{ $recordYears ? max($recordYears) : date('Y') }}
+            </a>
+
+            <p>DESAWER | FARIDABAD | GHAZIABAD | GALI</p>
         </div>
         <table class="hotlink yearline">
-            <tr>
-                <td><a href="ds-charts/desawer2026.php" title="Desawar Satta Chart 2026">DESAWER Satta Chart 2026</a>
-                </td>
-                <td><a href="fb-charts/faridabad2026.php" title="Faridabad Satta Chart 2026">FARIDABAD Satta Chart
-                        2026</a></td>
-                <td><a href="gb-charts/gaziyabad2026.php" title="Ghaziabad Satta Chart 2026">GHAZIABAD Satta Chart
-                        2026</a></td>
-                <td><a href="gl-charts/gali2026.php" title="Gali Satta Chart 2026">GALI Satta Chart 2026</a></td>
+            @foreach ($recordYears as $year)
+                <tr>
+                    @foreach ($marketResults as $game)
+                        <td>
+                            <a href="{{ url('/' . $game['slug'] . '-charts/' . $year) }}"
+                                title="{{ $game['name'] }} Satta Chart {{ $year }}">
+                                {{ strtoupper($game['name']) }} Satta Chart {{ $year }}
+                            </a>
+                        </td>
+                        @if ($loop->iteration % 8 === 0)
+                </tr>
+                @if (!$loop->last)
+                    <tr>
+                @endif
+            @endif
+            @endforeach
             </tr>
+            @endforeach
         </table>
     </section>
+
     <!-- Reference-style Old Record / Charts -->
 
 

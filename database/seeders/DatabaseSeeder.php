@@ -22,9 +22,11 @@ class DatabaseSeeder extends Seeder
             'password' => 'qwerty',
             'status' => 'active'
         ]);
+
          $this->call([
             GameSeeder::class,
             UserSeeder::class,
+            PageSeeder::class,
         ]);
     }
 }

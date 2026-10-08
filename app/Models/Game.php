@@ -3,9 +3,10 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Game extends Model
 {
@@ -22,9 +23,11 @@ class Game extends Model
         'last_result',
         'status',
         'serial',
+        'reward'
     ];
 
     protected $casts = [
+        'status' => 'string',
         'serial' => 'integer',
     ];
     protected $appends = [
@@ -81,5 +84,116 @@ class Game extends Model
             return true;
         }
         return $now->lessThan($endToday);
+    }
+
+
+    /**
+     * Resolve today's/current play window using application timezone.
+     *
+     * Handles normal windows:
+     * 10:00 -> 20:00
+     *
+     * And overnight windows:
+     * 20:00 -> 02:00
+     */
+    public function getPlayWindow(?Carbon $now = null): ?array
+    {
+        $now = ($now ?: now())->copy()->timezone(config('app.timezone'));
+
+        if (!$this->play_start || !$this->play_end) {
+            return null;
+        }
+
+        try {
+            $startTime = Carbon::createFromFormat(
+                'H:i:s',
+                strlen($this->play_start) === 5
+                    ? $this->play_start . ':00'
+                    : $this->play_start,
+                config('app.timezone')
+            );
+
+            $endTime = Carbon::createFromFormat(
+                'H:i:s',
+                strlen($this->play_end) === 5
+                    ? $this->play_end . ':00'
+                    : $this->play_end,
+                config('app.timezone')
+            );
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        $start = $now->copy()->setTime(
+            $startTime->hour,
+            $startTime->minute,
+            $startTime->second
+        );
+
+        $end = $now->copy()->setTime(
+            $endTime->hour,
+            $endTime->minute,
+            $endTime->second
+        );
+
+        /*
+         * Same time / overnight market.
+         *
+         * Example:
+         * 20:00 -> 02:00
+         */
+        if ($end->lessThanOrEqualTo($start)) {
+            if ($now->greaterThanOrEqualTo($start)) {
+                // Today's 20:00 -> tomorrow 02:00
+                $end->addDay();
+            } else {
+                // We are between 00:00 and 02:00,
+                // so the window started yesterday.
+                $start->subDay();
+            }
+        }
+
+        return [
+            'start' => $start,
+            'end' => $end,
+        ];
+    }
+
+    public function isPlayableAt(?Carbon $now = null): bool
+    {
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        $window = $this->getPlayWindow($now);
+
+        if (!$window) {
+            return false;
+        }
+
+        $now = ($now ?: now())->copy()->timezone(config('app.timezone'));
+
+        return $now->greaterThanOrEqualTo($window['start'])
+            && $now->lessThan($window['end']);
+    }
+
+    public function remainingSeconds(?Carbon $now = null): int
+    {
+        if (!$this->isPlayableAt($now)) {
+            return 0;
+        }
+
+        $window = $this->getPlayWindow($now);
+
+        if (!$window) {
+            return 0;
+        }
+
+        $now = ($now ?: now())->copy()->timezone(config('app.timezone'));
+
+        return max(
+            0,
+            $now->diffInSeconds($window['end'], false)
+        );
     }
 }

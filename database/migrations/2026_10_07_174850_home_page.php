@@ -11,14 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pages', function (Blueprint $table) {
+        Schema::create('home_pages', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->string('slug');
-            $table->mediumText('content');
+            $table->string('title');
+            $table->longText('short_desc')->nullable();
+            $table->longText('content')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->string('location')->nullable();
+            $table->string('whatsapp')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('telegram')->nullable();
+            $table->string('background')->nullable();
             $table->timestamps();
-            $table->enum('is_editable', ['yes', 'no'])->default('yes');
             $table->softDeletes();
         });
     }
@@ -28,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pages');
+        Schema::dropIfExists('home_pages');
     }
 };

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Backend;
+namespace App\Http\Controllers\Backend\Game;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bid;
@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class BiddingDeskController extends Controller
 {
-    /**
-     * Bidding Desk Page
-     */
     public function index()
     {
         $games = Game::query()
@@ -22,9 +19,6 @@ class BiddingDeskController extends Controller
         return view('backend.bidding-desk', compact('games'));
     }
 
-    /**
-     * AJAX: Bidding Desk Data
-     */
     public function data(Request $request)
     {
         $validated = $request->validate([
@@ -45,17 +39,6 @@ class BiddingDeskController extends Controller
         $date = $validated['date']
             ?? now()->toDateString();
 
-        /*
-        |--------------------------------------------------------------------------
-        | JODI + CROSSING
-        |--------------------------------------------------------------------------
-        |
-        | type:
-        | jodi
-        | cross
-        |
-        */
-
         $jodiCrossing = Bid::query()
             ->where('game_id', $gameId)
             ->where('game_date', $date)
@@ -69,12 +52,6 @@ class BiddingDeskController extends Controller
             ->groupBy('number')
             ->get()
             ->keyBy('number');
-
-        /*
-        |--------------------------------------------------------------------------
-        | CREATE 00 - 99
-        |--------------------------------------------------------------------------
-        */
 
         $jodiCrossingNumbers = [];
 
@@ -105,16 +82,6 @@ class BiddingDeskController extends Controller
                     : 0,
             ];
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | HARUF
-        |--------------------------------------------------------------------------
-        |
-        | ander-0 ... ander-9
-        | bahar-0 ... bahar-9
-        |
-        */
 
         $haruf = Bid::query()
             ->where('game_id', $gameId)
@@ -221,22 +188,9 @@ class BiddingDeskController extends Controller
     public function details(Request $request)
     {
         $validated = $request->validate([
-            'game_id' => [
-                'required',
-                'integer',
-                'exists:games,id',
-            ],
-
-            'date' => [
-                'required',
-                'date',
-            ],
-
-            'number' => [
-                'required',
-                'string',
-                'max:30',
-            ],
+            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'date' => ['required', 'date'],
+            'number' => ['required', 'string', 'max:30'],
         ]);
 
         $bids = Bid::query()
@@ -270,7 +224,6 @@ class BiddingDeskController extends Controller
                 'id',
                 'order_no',
                 'user_id',
-                'phone',
                 'type',
                 'number',
                 'amount',

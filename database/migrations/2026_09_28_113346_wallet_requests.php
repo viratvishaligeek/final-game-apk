@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('wallet_requests', function (Blueprint $table) {
+        Schema::create('wallet_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->enum('request_type', ['credit', 'debit']);
@@ -40,6 +40,10 @@ return new class extends Migration
             $table->index(['payment_method', 'status']);
             $table->index('utr');
             $table->index('gateway_txn_id');
+            $table->index(
+                ['request_type', 'status', 'processed_at'],
+                'wallet_requests_dashboard_chart_index'
+            );
         });
     }
 

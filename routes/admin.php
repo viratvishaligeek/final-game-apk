@@ -1,20 +1,23 @@
 <?php
 
-use App\Http\Controllers\Backend\BiddingDeskController;
-use App\Http\Controllers\Backend\MemberController;
-use App\Http\Controllers\Backend\UserController;
-use App\Http\Controllers\Backend\WalletController;
-use App\Http\Controllers\Backend\WinnerController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Backend\Auth\AuthController;
 use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\FaqController;
-use App\Http\Controllers\Backend\GameController;
+use App\Http\Controllers\Backend\Game\BiddingDeskController;
+use App\Http\Controllers\Backend\Game\GameController;
+use App\Http\Controllers\Backend\Game\ResultController;
+use App\Http\Controllers\Backend\Game\WinnerController;
+use App\Http\Controllers\Backend\HomePageController;
+use App\Http\Controllers\Backend\MobileAppController;
 use App\Http\Controllers\Backend\PagesController;
-use App\Http\Controllers\Backend\ResultController;
-use App\Http\Controllers\Backend\RoleController;
-use App\Http\Controllers\Backend\WalletRequestController;
+use App\Http\Controllers\Backend\SettingController;
+use App\Http\Controllers\Backend\User\MemberController;
+use App\Http\Controllers\Backend\User\RoleController;
+use App\Http\Controllers\Backend\User\UserController;
+use App\Http\Controllers\Backend\User\WalletController;
+use App\Http\Controllers\Backend\User\WalletRequestController;
+use Illuminate\Support\Facades\Route;
 
 // ------------------Admin Routes-------------------------------------
 Route::controller(AuthController::class)->group(function () {
@@ -36,6 +39,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
 
     Route::resource('games', GameController::class);
     Route::resource('pages', PagesController::class);
+    Route::resource('home-page', HomePageController::class);
 
     Route::resource('users', UserController::class);
     Route::patch('/users/toggle-status/{id}', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
@@ -70,29 +74,23 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
         Route::get('/data', 'data')->name('data');
         Route::get('/details', 'details')->name('details');
     });
-    // Route::controller(PagesController::class)->group(function () { // dashboard routes
-    //     Route::get('homepage', 'homepage')->name('homepage');
-    //     Route::post('homepage/store', 'homepageStore')->name('homepage.store');
-    //     Route::post('homepage/edit', 'homepageEdit')->name('homepage.edit');
-    //     Route::post('homepage/update', 'homepageUpdate')->name('homepage.update');
-    // });
 
-    // Route::resource('setting', SettingController::class);
+    Route::resource('setting', SettingController::class);
 
-    // Route::controller(GameHistoryController::class)->group(function () { // dashboard routes
-    //     Route::get('/profit-loss-history', 'profitLossHistory')->name('profit_loss_history');
-    // });
+    Route::controller(MobileAppController::class)->prefix('mobile-app')->name('mobile-app.')->group(function () {
+        Route::get('/marque', 'marque')->name('marque');
+        Route::post('/marque', 'updateMarque')->name('update_marque');
 
-    // Route::controller(UtilityController::class)->group(function () { // dashboard routes
-    //     Route::group(['prefix' => 'application', 'as' => 'application.'], function () {
-    //         Route::get('/utilities', 'utilities')->name('utilities');
-    //         Route::post('/update-utilities', 'updateUtilities')->name('update_utilities');
-    //         Route::get('/slider', 'slider')->name('slider');
-    //         Route::post('/store-slider', 'storeSlider')->name('store_slider');
-    //         Route::delete('/delete-slider/{id}', 'deleteSlider')->name('delete_slider');
-    //         Route::get('/spinner', 'spinner')->name('spinner');
-    //         Route::post('/store-spinner', 'storeSpinner')->name('store_spinner');
-    //         Route::delete('/delete-spinner/{id}', 'deleteSpinner')->name('delete_spinner');
-    //     });
-    // });
+        Route::get('/contact-details', 'contactDetails')->name('contact_details');
+        Route::post('/contact-details', 'updateContactDetails')->name('update_contact_details');
+
+        Route::get('/limits', 'limits')->name('limits');
+        Route::post('/limits', 'updateLimits')->name('update_limits');
+
+        Route::get('/notice', 'notice')->name('notice');
+        Route::post('/notice', 'updateNotice')->name('update_notice');
+
+        Route::get('/live-chat', 'liveChat')->name('live_chat');
+        Route::post('/live-chat', 'updateLiveChat')->name('update_live_chat');
+    });
 });

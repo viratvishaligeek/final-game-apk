@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Backend;
+namespace App\Http\Controllers\Backend\Game;
 
 use App\Http\Controllers\Controller;
 use App\Models\Game;
-use App\Models\GameResult;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -33,6 +32,7 @@ class GameController extends Controller
             'play_end'    => 'required',
             'status'      => 'required|in:active,inactive',
             'serial'      => 'required|integer|min:1',
+            'reward' => 'required|numeric|min:1|decimal:0,2',
         ]);
 
         Game::create([
@@ -43,6 +43,8 @@ class GameController extends Controller
             'play_end'    => Carbon::parse($request->play_end)->format('H:i:s'),
             'status'      => $request->status,
             'serial'      => $request->serial,
+            'reward'      => $request->reward,
+
         ]);
 
         return redirect()->route('admin.games.index')->with('success', 'New game added successfully.');
@@ -66,6 +68,7 @@ class GameController extends Controller
             'play_end'    => 'required',
             'status'      => 'required|in:active,inactive',
             'serial'      => 'required|integer|min:1',
+            'reward' => 'required|numeric|min:1|decimal:0,2',
         ]);
 
         $game->update([
@@ -76,6 +79,7 @@ class GameController extends Controller
             'play_end'    => Carbon::parse($request->play_end)->format('H:i:s'),
             'status'      => $request->status,
             'serial'      => $request->serial,
+            'reward'      => $request->reward,
         ]);
 
         return redirect()->route('admin.games.index')->with('success', 'Game updated successfully.');
@@ -87,5 +91,4 @@ class GameController extends Controller
         $game->delete();
         return redirect()->back()->with('success', 'Game deleted along with its results.');
     }
-
 }

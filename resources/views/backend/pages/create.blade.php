@@ -31,12 +31,22 @@
                 <form action="{{ route('admin.pages.store') }}" method="POST">
                     @csrf
                     <div class="row gx-3 mb-3">
-                        <div class="col-md-8 mb-3">
+                        <div class="col-md-6">
                             <label class="small mb-1" for="name">Page Title <span class="text-danger">*</span></label>
                             <input class="form-control" id="name" name="name" type="text"
                                 placeholder="e.g. About Us, Privacy Policy" value="{{ old('name') }}" required />
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3">
+                            <label class="small mb-1" for="is_editable">Is Editable ? ( Choose Carefully !!) <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" id="is_editable" name="is_editable" required>
+                                <option value="yes" {{ old('is_editable') === 'yes' ? 'selected' : '' }}>Yes
+                                </option>
+                                <option value="no" {{ old('is_editable') === 'no' ? 'selected' : '' }}>No
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label class="small mb-1" for="status">Status <span class="text-danger">*</span></label>
                             <select class="form-select" id="status" name="status" required>
                                 <option value="active" {{ old('status') === 'active' ? 'selected' : '' }}>Active</option>

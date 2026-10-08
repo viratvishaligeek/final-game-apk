@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\Game;
 use App\Models\Notification;
+use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,22 +16,45 @@ class DashboardController extends Controller
 {
     public function getDashboard(): JsonResponse
     {
-        $banners = Banner::where('status', 'active')
-            ->get(['id', 'name', 'image']);
-        $games = Game::where('status', 'active')
-            ->orderBy('serial', 'asc')
-            ->get();
-        $featuredGame = Game::where('status', 'active')
-            ->latest()
-            ->first() ?? $games->first();
+        $banners = Banner::query()
+            ->where('status', 'active')
+            ->orderByDesc('id')
+            ->get([
+                'id',
+                'name',
+                'image',
+            ])
+            ->map(function ($banner) {
+                return [
+                    'id' => $banner->id,
+                    'name' => $banner->name,
+                    'image' => $banner->image,
+                    'image_url' => $banner->image_url ?? $banner->image,
+                ];
+            })
+            ->values();
+
+        $noticeStatus = setting('notice_status', 'inactive');
+        $noticeContent = setting('admin_notice');
+
+        $marqueeContent = setting('marquee');
+
         return response()->json([
             'status' => true,
-            'message' => 'Data fetched successfully',
-            'banners' => $banners,
-            'featured_game' => $featuredGame,
-            'games' => $games,
+            'message' => 'Dashboard data fetched successfully',
+            'server_time' => now()->toIso8601String(),
+            'timezone' => config('app.timezone'),
+            'banner' => $banners,
+            'notice' => [
+                'status' => $noticeStatus === 'active',
+                'content' => $noticeContent,
+            ],
+            'marquee' => [
+                'content' => $marqueeContent,
+            ],
         ], 200);
     }
+
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
@@ -94,7 +118,7 @@ class DashboardController extends Controller
             'message' => 'Password changed successfully!'
         ]);
     }
-     public function notificationList(Request $request)
+    public function notificationList(Request $request)
     {
         $user = $request->user();
 
@@ -131,15 +155,51 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function unreadCount(Request $request)
+    public function getSetting(Request $request)
     {
-        $count = Notification::query()
-            ->where('user_id', $request->user()->id)
-            ->count();
+        $allowedKeys = [
+            'min_deposit',
+            'min_withdraw',
+            'max_withdraw',
+            'admin_notice',
+            'marquee',
+            'notice_status',
+            'contact_phone',
+            'contact_whatsapp',
+            'contact_telegram',
+            'contact_email',
+            'contact_address',
+        ];
+        $keys = $request->input('keys', []);
+        if ($request->filled('key')) {
+            $keys[] = $request->input('key');
+        }
+        if (!is_array($keys)) {
+            $keys = explode(',', $keys);
+        }
 
+        $keys = collect($keys)
+            ->map(fn($key) => trim((string) $key))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($keys)) {
+            $keys = $allowedKeys;
+        }
+
+        $keys = array_values(
+            array_intersect(
+                $keys,
+                $allowedKeys
+            )
+        );
+
+        $data = settings($keys);
         return response()->json([
             'success' => true,
-            'count' => $count,
+            'data' => $data,
         ]);
     }
 }

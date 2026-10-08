@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Backend;
+namespace App\Http\Controllers\Backend\Game;
 
 use App\Http\Controllers\Controller;
 use App\Models\Game;
-use App\Models\User;
 use App\Models\Winner;
 use Carbon\Carbon;
 use Illuminate\Http\Request;

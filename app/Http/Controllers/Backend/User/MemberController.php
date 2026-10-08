@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Backend;
+namespace App\Http\Controllers\Backend\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 
 class MemberController extends Controller

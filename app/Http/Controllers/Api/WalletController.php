@@ -25,16 +25,49 @@ class WalletController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+
         $perPage = min(
             max((int) $request->input('per_page', 15), 5),
             50
         );
+
         $page = max(
             (int) $request->input('page', 1),
             1
         );
-        $transactions = Transaction::query()
-            ->where('user_id', $user->id)
+
+        $type = strtolower(
+            trim((string) $request->input('type', 'all'))
+        );
+
+        if (!in_array($type, ['all', 'credit', 'debit'], true)) {
+            $type = 'all';
+        }
+
+        /*
+    |--------------------------------------------------------------------------
+    | Successful transaction statuses
+    |--------------------------------------------------------------------------
+    */
+        $successfulStatuses = [
+            'completed',
+            'success',
+            'successful',
+        ];
+
+        /*
+    |--------------------------------------------------------------------------
+    | Transaction listing
+    |--------------------------------------------------------------------------
+    */
+        $transactionQuery = Transaction::query()
+            ->where('user_id', $user->id);
+
+        if ($type !== 'all') {
+            $transactionQuery->where('type', $type);
+        }
+
+        $transactions = $transactionQuery
             ->latest('id')
             ->paginate(
                 $perPage,
@@ -43,97 +76,178 @@ class WalletController extends Controller
                 $page
             );
 
+        /*
+    |--------------------------------------------------------------------------
+    | CASH ADDED
+    |--------------------------------------------------------------------------
+    |
+    | Only successful CREDIT transactions which represent money added
+    | by the user.
+    |
+    */
         $totalCredited = Transaction::query()
             ->where('user_id', $user->id)
-            ->where('type', 'credit')
-            ->whereIn('status', [
-                'completed',
-                'success',
-            ])
+            ->whereRaw('LOWER(type) = ?', ['credit'])
+            ->whereIn('status', $successfulStatuses)
+            ->where(function ($query) {
+                $query
+                    ->whereRaw('LOWER(subject) LIKE ?', ['%add money%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%added money%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%deposit%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%Automated UPI gateway%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%cash added%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%wallet top%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%top up%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%topup%']);
+            })
             ->sum('amount');
 
+        /*
+    |--------------------------------------------------------------------------
+    | WITHDRAWN
+    |--------------------------------------------------------------------------
+    */
         $totalDebited = Transaction::query()
             ->where('user_id', $user->id)
-            ->where('type', 'debit')
-            ->whereIn('status', [
-                'completed',
-                'success',
-            ])
+            ->whereRaw('LOWER(type) = ?', ['debit'])
+            ->whereIn('status', $successfulStatuses)
+            ->where(function ($query) {
+                $query
+                    ->whereRaw('LOWER(subject) LIKE ?', ['%withdraw%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%withdrawal%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%bank transfer%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%cash out%'])
+                    ->orWhereRaw('LOWER(subject) LIKE ?', ['%payout%']);
+            })
             ->sum('amount');
 
+        /*
+    |--------------------------------------------------------------------------
+    | PLAYED BET
+    |--------------------------------------------------------------------------
+    |
+    | Only actual bet amount.
+    |
+    */
         $totalPlayedBet = Bid::query()
             ->where('user_id', $user->id)
             ->sum('amount');
+
+        /*
+    |--------------------------------------------------------------------------
+    | TOTAL WIN
+    |--------------------------------------------------------------------------
+    |
+    | Only positive winning amounts.
+    |
+    */
         $totalWin = Bid::query()
             ->where('user_id', $user->id)
+            ->whereNotNull('winning_amount')
+            ->where('winning_amount', '>', 0)
             ->sum('winning_amount');
 
-        $transactionData = collect(
-            $transactions->items()
-        )->map(function ($transaction) {
-            return [
-                'id' => $transaction->id,
-                'txn_id' => 'TXN' . str_pad(
-                    $transaction->id,
-                    8,
-                    '0',
-                    STR_PAD_LEFT
-                ),
-                'description' => $transaction->subject,
-                'type' => strtolower(
-                    $transaction->type
-                ),
-                'amount' => (float) $transaction->amount,
-                'balance' => (float) $transaction->balance,
-                'status' => $this->normalizeTransactionStatus(
-                    $transaction->status
-                ),
-                'created_at' => $transaction->created_at,
-            ];
-        })->values();
+        /*
+    |--------------------------------------------------------------------------
+    | Normalize transaction response
+    |--------------------------------------------------------------------------
+    */
+        $transactionData = collect($transactions->items())
+            ->map(function ($transaction) {
+                return [
+                    'id' => $transaction->id,
 
+                    'txn_id' => 'TXN' . str_pad(
+                        $transaction->id,
+                        8,
+                        '0',
+                        STR_PAD_LEFT
+                    ),
 
+                    'description' => $transaction->subject
+                        ?: 'Wallet Transaction',
+
+                    'type' => strtolower(
+                        (string) $transaction->type
+                    ),
+
+                    'amount' => round(
+                        (float) $transaction->amount,
+                        2
+                    ),
+
+                    'balance' => round(
+                        (float) ($transaction->balance ?? 0),
+                        2
+                    ),
+
+                    'status' => $this->normalizeTransactionStatus(
+                        $transaction->status
+                    ),
+
+                    'created_at' => $transaction->created_at,
+                ];
+            })
+            ->values();
+
+        /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
         return response()->json([
             'success' => true,
+
             'message' => 'Wallet data fetched successfully.',
+
             'data' => [
-                'balance' => (float) $user->balance,
+                'balance' => round(
+                    (float) $user->balance,
+                    2
+                ),
+
                 'summary' => [
                     'cash_added' => round(
                         (float) $totalCredited,
                         2
                     ),
+
                     'withdrawn' => round(
                         (float) $totalDebited,
                         2
                     ),
+
                     'played_bet' => round(
                         (float) $totalPlayedBet,
                         2
                     ),
+
                     'total_win' => round(
                         (float) $totalWin,
                         2
                     ),
                 ],
+
                 'transactions' => [
                     'data' => $transactionData,
-                    'current_page' =>
-                    $transactions->currentPage(),
-                    'last_page' =>
-                    $transactions->lastPage(),
-                    'per_page' =>
-                    $transactions->perPage(),
-                    'total' =>
-                    $transactions->total(),
-                    'from' =>
-                    $transactions->firstItem(),
-                    'to' =>
-                    $transactions->lastItem(),
+
+                    'current_page' => $transactions->currentPage(),
+
+                    'last_page' => $transactions->lastPage(),
+
+                    'per_page' => $transactions->perPage(),
+
+                    'total' => $transactions->total(),
+
+                    'from' => $transactions->firstItem(),
+
+                    'to' => $transactions->lastItem(),
                 ],
             ],
         ]);
     }
+
+
 
     /**
      * Normalize database transaction status
@@ -555,11 +669,13 @@ class WalletController extends Controller
     /**
      * User wallet requests.
      */
-    public function requests(Request $request): JsonResponse
+    public function getMoneyRequest(Request $request): JsonResponse
     {
         $requests = WalletRequest::query()
             ->where('user_id', $request->user()->id)
             ->latest('id')
+            ->where('status', $request->status)
+            ->where('request_type', $request->type)
             ->paginate(15);
 
         return response()->json([

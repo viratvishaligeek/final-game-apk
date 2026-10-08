@@ -31,12 +31,17 @@
                 <form action="{{ route('admin.games.store') }}" method="POST">
                     @csrf
                     <div class="row gx-3 mb-3">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-5 mb-3">
                             <label class="small mb-1" for="name">Game Name <span class="text-danger">*</span></label>
                             <input class="form-control" id="name" name="name" type="text"
                                 placeholder="e.g. Gali, Disawar" value="{{ old('name') }}" required />
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-2 mb-3">
+                            <label class="small mb-1" for="reward">Reward <span class="text-danger">*</span></label>
+                            <input class="form-control" id="reward" name="reward" type="number" step="0.01"
+                                min="1" placeholder="1" value="{{ old('reward', 98) }}" required />
+                        </div>
+                        <div class="col-md-2 mb-3">
                             <label class="small mb-1" for="serial">Serial / Position <span
                                     class="text-danger">*</span></label>
                             <input class="form-control" id="serial" name="serial" type="number" placeholder="1"

@@ -15,9 +15,27 @@
                 </a>
                 @php
                     $menuItems = config('menu', []);
+
                     $isRouteActive = function ($routeName) {
                         return !empty($routeName) && request()->routeIs($routeName);
                     };
+
+                    $isRouteGroupActive = function ($routeName) {
+                        if (empty($routeName)) {
+                            return false;
+                        }
+
+                        $parts = explode('.', $routeName);
+
+                        if (count($parts) < 2) {
+                            return request()->routeIs($routeName);
+                        }
+
+                        $pattern = implode('.', array_slice($parts, 0, -1)) . '.*';
+
+                        return request()->routeIs($pattern);
+                    };
+
                     $hasPermission = function ($permission) {
                         if (empty($permission)) {
                             return true;
@@ -52,7 +70,6 @@
                         <div class="sidenav-menu-heading">
                             {{ $item['text'] }}
                         </div>
-
                     @elseif (($item['type'] ?? 'link') === 'dropdown')
                         @php
                             $allowedChildren = array_filter($item['items'] ?? [], function ($child) use (
@@ -70,12 +87,14 @@
                                 continue;
                             }
                             $parentActive = false;
+
                             foreach ($allowedChildren as $child) {
-                                if (!empty($child['route']) && $isRouteActive($child['route'])) {
+                                if (!empty($child['route']) && $isRouteGroupActive($child['route'])) {
                                     $parentActive = true;
                                     break;
                                 }
                             }
+                            $childActive = !empty($child['route']) && $isRouteActive($child['route']);
                             $collapseId = $item['id'] ?? 'collapse-' . \Illuminate\Support\Str::slug($item['text']);
                         @endphp
 

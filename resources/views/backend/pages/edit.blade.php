@@ -48,6 +48,17 @@
                                     {{ old('status', $page->status) === 'inactive' ? 'selected' : '' }}>Inactive</option>
                             </select>
                         </div>
+                        <div class="col-md-4 mb-3 d-none">
+                            <label class="small mb-1" for="is_editable">is_editable <span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" id="is_editable" name="is_editable" required>
+                                <option value="yes"
+                                    {{ old('is_editable', $page->is_editable) === 'yes' ? 'selected' : '' }}>
+                                    yes</option>
+                                <option value="no"
+                                    {{ old('is_editable', $page->is_editable) === 'no' ? 'selected' : '' }}>no</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="small mb-1" for="editor">Page Content</label>

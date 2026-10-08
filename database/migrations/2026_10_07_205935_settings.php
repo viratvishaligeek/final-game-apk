@@ -11,15 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pages', function (Blueprint $table) {
+        Schema::create('settings', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->string('slug');
-            $table->mediumText('content');
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->string('option')->unique();
+            $table->longText('value')->nullable();
             $table->timestamps();
-            $table->enum('is_editable', ['yes', 'no'])->default('yes');
-            $table->softDeletes();
         });
     }
 
@@ -28,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pages');
+        Schema::dropIfExists('settings');
     }
 };

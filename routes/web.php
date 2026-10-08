@@ -13,10 +13,5 @@ Route::get('/clear', function () {
 });
 
 Route::controller(MainController::class)->group(function () {
-    // Route::get('/', 'index')->name('index');
-
-    // Route::get('/page-data/{slug}', 'pageContent')->name('pageData');
-    // Route::get('/game-data/{slug}', 'gameContent')->name('gameData');
-    // Route::get('/game-date-2024/{slug}', 'oldGameContent')->name('old_game_date');
-    // Route::get('/game-function', 'gameFunctionImp')->name('game_function');
+    Route::get('/', 'index')->name('index');
 });
