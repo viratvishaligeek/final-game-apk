@@ -12,10 +12,10 @@ use App\Http\Middleware\EnsureUserIsActive;
 
 Route::prefix('v1')->group(function () {
     Route::controller(AuthController::class)->group(function () {
-        Route::post('login', 'tryLogin');
-        Route::post('register', 'register');
-        Route::post('forgot/send-otp', 'sendPasswordResetOtp');
-        Route::post('forgot/reset', 'resetPasswordWithOtp');
+        Route::post('login', 'tryLogin')->middleware('throttle:10,1');
+        Route::post('register', 'register')->middleware('throttle:5,1');
+        Route::post('forgot/send-otp', 'sendPasswordResetOtp')->middleware('throttle:3,10');
+        Route::post('forgot/reset', 'resetPasswordWithOtp')->middleware('throttle:5,10');
     });
 
     // Payment-provider callbacks must be reachable without a user session.
