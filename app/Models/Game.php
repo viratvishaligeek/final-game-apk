@@ -86,7 +86,7 @@ class Game extends Model
                 $resultTime,
                 config('app.timezone')
             );
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             return $now->toDateString();
         }
 
