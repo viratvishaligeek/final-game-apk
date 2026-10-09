@@ -26,6 +26,6 @@ jobs:
       - run: composer validate --no-check-publish
       - run: composer install --no-interaction --prefer-dist
       - run: php artisan test --filter=PushNotificationSubscriptionTest
-      - name: Run legacy regression suite (non-blocking until baseline failures are resolved)
+      - name: Run full regression suite (non-blocking; settlement failures tracked separately)
         run: php artisan test
         continue-on-error: true
