@@ -280,7 +280,7 @@ class WalletController extends Controller
                     'remark' => 'Manual UPI wallet top-up',
                 ]);
             });
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             Storage::disk('public')->delete($path);
             throw $exception;
         }
@@ -619,7 +619,7 @@ class WalletController extends Controller
                     'remark' => 'Wallet withdrawal request',
                 ]);
             });
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             if ($qrPath) {
                 Storage::disk('public')->delete($qrPath);
             }
