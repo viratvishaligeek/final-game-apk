@@ -333,9 +333,18 @@ class BidController extends Controller
             ],
         ]);
 
+        $hasExplicitDate = isset($validated['date']);
         $date = $validated['date'] ?? now()->toDateString();
         $perPage = $validated['per_page'] ?? 50;
         $page = $validated['page'] ?? 1;
+
+        $businessDates = [];
+        if (!$hasExplicitDate) {
+            $businessDates = Game::withTrashed()
+                ->get(['id', 'name', 'slug', 'result_time'])
+                ->mapWithKeys(fn (Game $game) => [$game->id => $game->businessDate()])
+                ->all();
+        }
 
         /*
     |--------------------------------------------------------------------------
@@ -343,9 +352,11 @@ class BidController extends Controller
     |--------------------------------------------------------------------------
     */
 
-        $orderQuery = Bid::query()
-            ->where('user_id', $user->id)
-            ->whereDate('game_date', $date)
+        $orderQuery = $this->applyHistoryDateFilter(
+            Bid::query()->where('user_id', $user->id),
+            $hasExplicitDate ? $date : null,
+            $businessDates
+        )
             ->select('order_no')
             ->groupBy('order_no')
             ->orderByDesc(DB::raw('MAX(id)'));
@@ -367,12 +378,13 @@ class BidController extends Controller
     |--------------------------------------------------------------------------
     */
 
-        $bids = Bid::query()
-            ->with([
-                'game:id,name,status',
-            ])
-            ->where('user_id', $user->id)
-            ->whereDate('game_date', $date)
+        $bids = $this->applyHistoryDateFilter(
+            Bid::query()
+                ->with(['game:id,name,status'])
+                ->where('user_id', $user->id),
+            $hasExplicitDate ? $date : null,
+            $businessDates
+        )
             ->whereIn('order_no', $orderNos)
             ->orderByDesc('id')
             ->get();
@@ -404,6 +416,7 @@ class BidController extends Controller
 
             'data' => [
                 'date' => $date,
+                'date_mode' => $hasExplicitDate ? 'calendar_date' : 'current_business_dates',
 
                 'stats' => [
                     'total_slips' => $orderPaginator->total(),
@@ -424,6 +437,32 @@ class BidController extends Controller
             ],
         ]);
     }
+    /**
+     * An explicit date filters by that exact stored game_date. Without one,
+     * include each game's current business date so Disawar's early-morning
+     * history is not lost behind the calendar-date boundary.
+     */
+    private function applyHistoryDateFilter($query, ?string $date, array $businessDates)
+    {
+        if ($date !== null) {
+            return $query->where('game_date', $date);
+        }
+
+        return $query->where(function ($outer) use ($businessDates) {
+            if ($businessDates === []) {
+                $outer->whereRaw('1 = 0');
+                return;
+            }
+
+            foreach ($businessDates as $gameId => $gameDate) {
+                $outer->orWhere(function ($perGame) use ($gameId, $gameDate) {
+                    $perGame->where('game_id', $gameId)
+                        ->where('game_date', $gameDate);
+                });
+            }
+        });
+    }
+
     private function formatSlip($bids): array
     {
         $firstBid = $bids->first();
