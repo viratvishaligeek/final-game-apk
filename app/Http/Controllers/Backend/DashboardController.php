@@ -11,7 +11,6 @@ use App\Models\WalletRequest;
 use App\Models\Winner;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -21,11 +20,6 @@ class DashboardController extends Controller
     public function dashboard(Request $request)
     {
         $today = today();
-        $gameDates = Game::query()
-            ->get(['id', 'name', 'slug', 'result_time'])
-            ->mapWithKeys(fn (Game $game) => [$game->id => $game->businessDate()])
-            ->all();
-
         $period = $request->input('period', '7days');
         $allowedPeriods = ['7days', '30days', 'month', '12months'];
 
@@ -40,15 +34,13 @@ class DashboardController extends Controller
             ->where('status', 'active')
             ->count();
 
-        $todayTotalBids = $this->whereGameBusinessDates(
-            Bid::query(),
-            $gameDates
-        )->count();
+        $todayTotalBids = Bid::query()
+            ->whereDate('game_date', $today)
+            ->count();
 
-        $todayBidAmount = $this->whereGameBusinessDates(
-            Bid::query(),
-            $gameDates
-        )->sum('amount');
+        $todayBidAmount = Bid::query()
+            ->whereDate('game_date', $today)
+            ->sum('amount');
 
         $totalPages = Page::query()
             ->where('status', 'active')
@@ -66,27 +58,24 @@ class DashboardController extends Controller
 
         $pendingAddMoney = WalletRequest::query()
             ->where('request_type', 'credit')
-            ->whereIn('status', ['pending', 'processing'])
+            ->where('status', 'pending')
             ->sum('amount');
 
-        $todayWinnerCount = $this->whereGameBusinessDates(
-            Winner::query(),
-            $gameDates
-        )->count();
+        $todayWinnerCount = Winner::query()
+            ->whereDate('game_date', $today)
+            ->count();
 
-        $todayWinningAmount = $this->whereGameBusinessDates(
-            Winner::query(),
-            $gameDates
-        )->sum('winning_amount');
+        $todayWinningAmount = Winner::query()
+            ->whereDate('game_date', $today)
+            ->sum('winning_amount');
 
-        $todayWinners = $this->whereGameBusinessDates(
-            Winner::query()->with([
+        $todayWinners = Winner::query()
+            ->with([
                 'user:id,name,phone',
                 'game:id,name',
                 'bid:id,amount,type,number',
-            ]),
-            $gameDates
-        )
+            ])
+            ->whereDate('game_date', $today)
             ->latest('id')
             ->limit(50)
             ->get();
@@ -301,26 +290,6 @@ class DashboardController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
         return back()->with('success', 'Password updated successfully.');
-    }
-
-    /**
-     * Apply each game's own business date to dashboard totals.
-     */
-    private function whereGameBusinessDates(Builder $query, array $gameDates): Builder
-    {
-        return $query->where(function (Builder $outer) use ($gameDates) {
-            if ($gameDates === []) {
-                $outer->whereRaw('1 = 0');
-                return;
-            }
-
-            foreach ($gameDates as $gameId => $date) {
-                $outer->orWhere(function (Builder $perGame) use ($gameId, $date) {
-                    $perGame->where('game_id', $gameId)
-                        ->where('game_date', $date);
-                });
-            }
-        });
     }
 
     public function logout(Request $request)
