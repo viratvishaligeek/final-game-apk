@@ -221,7 +221,7 @@ class AuthController extends Controller
                     'message' => 'Unable to send a password reset code right now. Please try again later.',
                 ], 503);
             }
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             DB::table('password_reset_otps')
                 ->where('phone', $phone)
                 ->delete();
