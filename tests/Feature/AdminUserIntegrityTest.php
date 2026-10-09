@@ -38,14 +38,6 @@ class AdminUserIntegrityTest extends TestCase
             'status' => 'active',
         ]);
 
-        $user = User::create([
-            'name' => 'Member',
-            'phone' => '9876543210',
-            'password' => 'Password123',
-            'balance' => 0,
-            'status' => 'active',
-        ]);
-
         $this->actingAs($admin, 'admin')
             ->post(route('admin.users.store'), [
                 'name' => 'New Member',
