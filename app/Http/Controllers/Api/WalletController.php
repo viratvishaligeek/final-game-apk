@@ -13,7 +13,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -225,7 +224,7 @@ class WalletController extends Controller
     public function addMoneyRequest(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:1000000'],
             'utr' => ['required', 'string', 'max:100', 'unique:wallet_requests,utr'],
             'screenshot' => [
                 'required',
