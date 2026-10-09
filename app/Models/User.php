@@ -32,8 +32,34 @@ class User extends Authenticatable
         'gpay',
         'paytm',
         'status',
+        'referral_code',
+        'referrer_user_id',
+        'first_deposit_at',
     ];
 
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user): void {
+            if (blank($user->referral_code)) {
+                do {
+                    $code = strtoupper(\Illuminate\Support\Str::random(8));
+                } while (static::query()->where('referral_code', $code)->exists());
+
+                $user->referral_code = $code;
+            }
+        });
+    }
+
+    public function referrer()
+    {
+        return $this->belongsTo(User::class, 'referrer_user_id');
+    }
+
+    public function referrals()
+    {
+        return $this->hasMany(User::class, 'referrer_user_id');
+    }
 
     public function transactions()
     {

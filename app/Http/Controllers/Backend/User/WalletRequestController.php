@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\WalletRequest;
 use App\Services\WalletService;
+use App\Services\ReferralService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +14,8 @@ use Illuminate\Validation\ValidationException;
 class WalletRequestController extends Controller
 {
     public function __construct(
-        protected WalletService $walletService
+        protected WalletService $walletService,
+        protected ReferralService $referralService
     ) {}
 
     public function addRequests(Request $request)
@@ -115,6 +117,7 @@ class WalletRequestController extends Controller
                         (float) $walletRequest->amount,
                         $walletRequest->remark ?: 'Wallet top-up approved'
                     );
+                    $this->referralService->recordSuccessfulDeposit($user, $walletRequest);
                 }
 
                 if ($walletRequest->request_type === 'debit') {

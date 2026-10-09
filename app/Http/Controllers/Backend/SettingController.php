@@ -27,6 +27,8 @@ class SettingController extends Controller
         $validated = $request->validate([
             'title' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
+            'referral_percentage' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100'],
+            'referral_min_amount' => ['sometimes', 'required', 'numeric', 'min:0', 'max:1000000'],
             'site_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'site_favicon' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
         ]);
@@ -36,7 +38,7 @@ class SettingController extends Controller
 
         try {
             DB::transaction(function () use ($request, $validated, &$newFiles, &$oldFiles) {
-                foreach (['title', 'email'] as $key) {
+                foreach (['title', 'email', 'referral_percentage', 'referral_min_amount'] as $key) {
                     if (array_key_exists($key, $validated)) {
                         Setting::updateOrCreate(
                             ['option' => $key],

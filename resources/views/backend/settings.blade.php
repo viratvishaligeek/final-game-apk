@@ -56,6 +56,34 @@
             </div>
         </form>
 
+        <form action="{{ route('admin.setting.store') }}" method="POST">
+            @csrf
+            <div class="card mb-4">
+                <div class="card-header">Referral Rewards</div>
+                <div class="card-body row">
+                    <div class="col-lg-6 mb-3">
+                        <label class="small mb-1" for="referral_percentage">Referral Commission (%)</label>
+                        <input class="form-control" id="referral_percentage" name="referral_percentage" type="number"
+                            min="0" max="100" step="0.01" required
+                            value="{{ old('referral_percentage', optional($setting->firstWhere('option', 'referral_percentage'))->value ?? 2) }}">
+                        <small class="text-muted">Percentage of the referred user's first successful deposit.</small>
+                    </div>
+                    <div class="col-lg-6 mb-3">
+                        <label class="small mb-1" for="referral_min_amount">Minimum Referral Reward (₹)</label>
+                        <input class="form-control" id="referral_min_amount" name="referral_min_amount" type="number"
+                            min="0" max="1000000" step="0.01" required
+                            value="{{ old('referral_min_amount', optional($setting->firstWhere('option', 'referral_min_amount'))->value ?? 10) }}">
+                        <small class="text-muted">The reward will not be lower than this amount.</small>
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="me-1" data-feather="save"></i> Save Referral Settings
+                    </button>
+                </div>
+            </div>
+        </form>
+
         <form action="{{ route('admin.update-password') }}" method="POST">
             @csrf
             <div class="card mb-4">

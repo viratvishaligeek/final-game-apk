@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\GameController;
 use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\ReferralController;
 use App\Http\Middleware\EnsureUserIsActive;
 
 Route::prefix('v1')->group(function () {
@@ -27,6 +28,8 @@ Route::prefix('v1')->group(function () {
 
     // after login routes
     Route::middleware(['auth:sanctum', EnsureUserIsActive::class])->group(function () {
+        Route::get('referrals', [ReferralController::class, 'index']);
+        Route::post('referrals/apply', [ReferralController::class, 'applyCode'])->middleware('throttle:10,1');
         Route::controller(DashboardController::class)->group(function () {
             Route::get('dashboard', 'getDashboard');
             Route::post('logout', 'logout');
