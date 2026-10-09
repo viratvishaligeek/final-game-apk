@@ -421,8 +421,20 @@ class BidController extends Controller
     |--------------------------------------------------------------------------
     */
 
-        $totalSpent = $slips->sum('total_amount');
-        $totalWon = $slips->sum('win_amount');
+        // Summary totals must cover the entire filtered date range, not just
+        // the current page of slips.
+        $stats = $this->applyHistoryDateFilter(
+            Bid::query()->where('user_id', $user->id),
+            $hasExplicitDate ? $date : null,
+            $businessDates
+        )
+            ->selectRaw(
+                'COALESCE(SUM(amount), 0) as total_spent, COALESCE(SUM(winning_amount), 0) as total_won'
+            )
+            ->first();
+
+        $totalSpent = round((float) ($stats->total_spent ?? 0), 2);
+        $totalWon = round((float) ($stats->total_won ?? 0), 2);
 
         return response()->json([
             'success' => true,
