@@ -37,6 +37,11 @@ class PushNotificationService
             'message' => $body,
         ]);
 
+        return $this->sendPublicPush($title, $body);
+    }
+
+    public function sendPublicPush(string $title, string $body): int
+    {
         return $this->sendToSubscriptions(
             PushSubscription::query()->get(),
             $title,
