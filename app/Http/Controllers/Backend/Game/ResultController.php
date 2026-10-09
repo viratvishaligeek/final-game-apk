@@ -1,20 +1,20 @@
 <?php
 
-namespace App\\Http\\Controllers\\Backend\\Game;
+namespace App\Http\Controllers\Backend\Game;
 
-use App\\Http\\Controllers\\Controller;
-use App\\Models\\Bid;
-use App\\Models\\Game;
-use App\\Models\\Notification;
-use App\\Models\\Result;
-use App\\Models\\Transaction;
-use App\\Models\\User;
-use App\\Models\\Winner;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Support\\Facades\\Http;
-use Illuminate\\Support\\Facades\\Log;
-use Illuminate\\Validation\\ValidationException;
+use App\Http\Controllers\Controller;
+use App\Models\Bid;
+use App\Models\Game;
+use App\Models\Notification;
+use App\Models\Result;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Models\Winner;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class ResultController extends Controller
 {
@@ -138,7 +138,7 @@ class ResultController extends Controller
                 'success',
                 "Result ({$jodi}) published for {$gameDate}. {$stats['winners']} winner(s) credited."
             );
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             Log::error('Result settlement failed', [
                 'game_id' => $gameId,
                 'game_date' => $gameDate,
@@ -191,7 +191,7 @@ class ResultController extends Controller
                 ->find($bid->user_id);
 
             if (!$user) {
-                throw new \\RuntimeException("Missing user for winning bid {$bid->id}.");
+                throw new \RuntimeException("Missing user for winning bid {$bid->id}.");
             }
 
             $bidAmount = (float) $bid->amount;
@@ -308,7 +308,7 @@ class ResultController extends Controller
             ->delete();
     }
 
-    private function resultErrorMessage(\\Throwable $exception): string
+    private function resultErrorMessage(\Throwable $exception): string
     {
         if ($exception instanceof ValidationException) {
             $errors = $exception->errors();
@@ -338,7 +338,7 @@ class ResultController extends Controller
                         'body' => "Result for {$game->name} is {$result}",
                     ],
                 ]);
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             Log::error('FCM notification failed', [
                 'game_id' => $game->id,
                 'game_date' => $gameDate,
@@ -387,7 +387,7 @@ class ResultController extends Controller
                 'success',
                 'Result reverted and winner credits reversed successfully.'
             );
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             Log::error('Result revert failed', [
                 'game_id' => $gameId,
                 'game_date' => $gameDate,
