@@ -25,14 +25,18 @@ class BidController extends Controller
     {
         $validated = $request->validate([
             'mode' => ['required', 'string', 'in:single,harup,crossing'],
-            'total_amount' => ['required', 'numeric', 'min:1'],
+            'total_amount' => ['required', 'numeric', 'decimal:0,2', 'min:1'],
             'total_bets' => ['required', 'integer', 'min:1'],
             'single_bets' => ['nullable', 'array'],
+            'single_bets.*' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'harup_bets' => ['nullable', 'array'],
             'harup_bets.ander' => ['nullable', 'array'],
+            'harup_bets.ander.*' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'harup_bets.bahar' => ['nullable', 'array'],
+            'harup_bets.bahar.*' => ['nullable', 'numeric', 'decimal:0,2', 'min:0'],
             'crossing_jodis' => ['nullable', 'array'],
-            'crossing_amount_per_jodi' => ['nullable', 'numeric', 'min:1'],
+            'crossing_jodis.*' => ['required', 'digits:2'],
+            'crossing_amount_per_jodi' => ['nullable', 'numeric', 'decimal:0,2', 'min:1'],
         ]);
         if ($game->status !== 'active') {
             throw ValidationException::withMessages([
@@ -56,7 +60,6 @@ class BidController extends Controller
                 ],
             ]);
         }
-        $gameDate = $game->businessDate();
         $type = match ($validated['mode']) {
             'single' => 'jodi',
             'harup' => 'haruf',
@@ -154,11 +157,22 @@ class BidController extends Controller
         $result = DB::transaction(function () use (
             $user,
             $game,
-            $gameDate,
             $type,
             $bets,
             $calculatedTotal
         ) {
+            // Serialize betting with result publication by locking the game first.
+            $lockedGame = Game::query()
+                ->lockForUpdate()
+                ->findOrFail($game->id);
+
+            if ($lockedGame->status !== 'active' || !$lockedGame->isPlayableAt()) {
+                throw ValidationException::withMessages([
+                    'game' => ['Betting time for this game is closed.'],
+                ]);
+            }
+
+            $gameDate = $lockedGame->businessDate();
 
             $lockedUser = User::query()
                 ->lockForUpdate()
@@ -188,15 +202,10 @@ class BidController extends Controller
                 . '-'
                 . strtoupper(Str::random(6));
 
-            $newBalance = round(
-                $balance - $calculatedTotal,
-                2
-            );
-            $lockedUser->save();
             $transaction = $this->walletService->debit(
                 $lockedUser,
                 $calculatedTotal,
-                "Bet placed - {$game->name}"
+                "Bet placed - {$lockedGame->name}"
             );
 
             $newBalance = round((float) $transaction->balance, 2);
@@ -205,7 +214,7 @@ class BidController extends Controller
                 $createdBids[] = Bid::create([
                     'order_no' => $orderNo,
                     'user_id' => $lockedUser->id,
-                    'game_id' => $game->id,
+                    'game_id' => $lockedGame->id,
                     'phone' => $lockedUser->phone,
                     'game_date' => $gameDate,
                     'type' => $type,
