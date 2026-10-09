@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Admin;
 use App\Models\Bid;
 use App\Models\Game;
+use App\Models\Result;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Winner;
@@ -75,6 +76,7 @@ class BettingWorkflowContractTest extends TestCase
         $jodi = $this->createBid($user, $game, 'JODI-1', 'jodi', '12', 10);
         $cross = $this->createBid($user, $game, 'CROSS-1', 'cross', '12', 10);
         $haruf = $this->createBid($user, $game, 'HARUF-1', 'haruf', 'ander-1', 10);
+        $loser = $this->createBid($user, $game, 'LOSER-1', 'jodi', '34', 10);
 
         $this->actingAs($admin, 'admin')
             ->post(route('admin.results.storeOrUpdate'), [
@@ -102,6 +104,82 @@ class BettingWorkflowContractTest extends TestCase
         $this->assertSame(100.0, (float) $jodi->fresh()->winning_amount);
         $this->assertSame(100.0, (float) $cross->fresh()->winning_amount);
         $this->assertSame(10.0, (float) $haruf->fresh()->winning_amount);
+        $this->assertDatabaseHas('bids', [
+            'id' => $loser->id,
+            'status' => 'loss',
+        ]);
+    }
+
+    public function test_correcting_a_result_reopens_previous_losers_before_resettlement(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-09 12:00:00', config('app.timezone')));
+
+        $admin = Admin::create([
+            'name' => 'Correction Admin',
+            'email' => 'correction-admin@example.com',
+            'password' => 'Password123',
+            'status' => 'active',
+        ]);
+        $user = $this->createUser('9876543212', 1000);
+        $game = $this->createGame('Correction Game', 'correction-game', 10);
+        $oldWinner = $this->createBid($user, $game, 'OLD-WINNER', 'jodi', '12', 10);
+        $newWinner = $this->createBid($user, $game, 'NEW-WINNER', 'jodi', '34', 10);
+
+        $this->actingAs($admin, 'admin')->post(route('admin.results.storeOrUpdate'), [
+            'game_id' => $game->id,
+            'game_date' => '2026-10-09',
+            'result' => '12',
+        ])->assertRedirect();
+
+        $this->assertSame(1100.0, (float) $user->fresh()->balance);
+        $this->assertDatabaseHas('bids', ['id' => $newWinner->id, 'status' => 'loss']);
+
+        $this->actingAs($admin, 'admin')->post(route('admin.results.storeOrUpdate'), [
+            'game_id' => $game->id,
+            'game_date' => '2026-10-09',
+            'result' => '34',
+        ])->assertRedirect();
+
+        $this->assertSame(1100.0, (float) $user->fresh()->balance);
+        $this->assertDatabaseHas('bids', ['id' => $oldWinner->id, 'status' => 'loss']);
+        $this->assertDatabaseHas('bids', ['id' => $newWinner->id, 'status' => 'win']);
+        $this->assertSame(1, Winner::query()->where('game_id', $game->id)->count());
+        $this->assertSame(1, Transaction::query()
+            ->where('game_id', $game->id)
+            ->where('type', 'debit')
+            ->where('subject', 'like', 'Result reversal%')
+            ->count());
+    }
+
+    public function test_api_rejects_bets_after_the_result_is_published(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-09 12:00:00', config('app.timezone')));
+
+        $user = $this->createUser('9876543213', 100);
+        $game = $this->createGame('Closed Result Game', 'closed-result-game', 10);
+
+        Result::create([
+            'game_id' => $game->id,
+            'game_date' => '2026-10-09',
+            'type' => 'jodi',
+            'number' => '12',
+        ]);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/games/{$game->id}/bids", [
+                'mode' => 'single',
+                'total_amount' => '10.00',
+                'total_bets' => 1,
+                'single_bets' => ['34' => '10.00'],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('game');
+
+        $this->assertSame(100.0, (float) $user->fresh()->balance);
+        $this->assertDatabaseMissing('bids', [
+            'user_id' => $user->id,
+            'game_id' => $game->id,
+        ]);
     }
 
     private function createUser(string $phone, float $balance): User
