@@ -180,22 +180,22 @@ class ResultController extends Controller
     ): array {
         $reward = (float) ($game->reward ?? 1);
 
-        $winningNumbers = [
-            'jodi' => [$jodi],
-            'haruf' => ['ander-' . $ah, 'bahar-' . $bh],
-        ];
+        $winningHarufNumbers = ['ander-' . $ah, 'bahar-' . $bh];
 
         $bids = Bid::query()
             ->where('game_id', $gameId)
             ->where('game_date', $gameDate)
             ->where('status', 'pending')
-            ->where(function ($query) use ($winningNumbers) {
-                foreach ($winningNumbers as $type => $numbers) {
-                    $query->orWhere(function ($query) use ($type, $numbers) {
-                        $query->where('type', $type)
-                            ->whereIn('number', $numbers);
-                    });
-                }
+            ->where(function ($query) use ($jodi, $winningHarufNumbers) {
+                // Crossing selections are Jodi combinations too; a matching
+                // crossing number receives the same reward as a single Jodi.
+                $query->where(function ($jodiQuery) use ($jodi) {
+                    $jodiQuery->whereIn('type', ['jodi', 'cross'])
+                        ->where('number', $jodi);
+                })->orWhere(function ($harufQuery) use ($winningHarufNumbers) {
+                    $harufQuery->where('type', 'haruf')
+                        ->whereIn('number', $winningHarufNumbers);
+                });
             })
             ->orderBy('user_id')
             ->orderBy('id')
@@ -215,9 +215,9 @@ class ResultController extends Controller
             }
 
             $bidAmount = (float) $bid->amount;
-            $winningAmount = $bid->type === 'jodi'
-                ? $bidAmount * $reward
-                : $bidAmount * ($reward / 10);
+            $winningAmount = $bid->type === 'haruf'
+                ? $bidAmount * ($reward / 10)
+                : $bidAmount * $reward;
 
             $winningAmount = round($winningAmount, 2);
             $newBalance = round((float) $user->balance + $winningAmount, 2);
