@@ -269,7 +269,7 @@ class ResultController extends Controller
             if ($currentBalance < $winningAmount) {
                 throw ValidationException::withMessages([
                     'result' => [
-                        "Cannot reverse this result safely: user {$user->id} has already spent part of the winning credit. Reconcile the wallet before retrying.",
+                        "Cannot reverse this result safely: user {$user->id} has a balance below the reversal amount. Reconcile the wallet before retrying.",
                     ],
                 ]);
             }
