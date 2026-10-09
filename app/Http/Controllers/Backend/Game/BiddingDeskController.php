@@ -35,9 +35,10 @@ class BiddingDeskController extends Controller
         ]);
 
         $gameId = $validated['game_id'];
+        $game = Game::query()->findOrFail($gameId);
 
         $date = $validated['date']
-            ?? now()->toDateString();
+            ?? $game->businessDate();
 
         $jodiCrossing = Bid::query()
             ->where('game_id', $gameId)
