@@ -624,7 +624,7 @@ class BidController extends Controller
         if ($bids->contains(function ($bid) {
             return in_array(
                 $bid->status,
-                ['lost', 'failed', 'rejected'],
+                ['loss', 'lost', 'failed', 'rejected'],
                 true
             );
         })) {
