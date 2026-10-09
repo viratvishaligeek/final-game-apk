@@ -215,21 +215,46 @@ class WalletController extends Controller
     /**
      * Manual UPI information.
      */
-    public function paymentMethods()
+    public function paymentMethods(): JsonResponse
     {
+        $barcode = $this->settings->value('payment_bar_code');
+        $manualQrUrl = $barcode
+            ? asset('uploads/payment/' . ltrim((string) $barcode, '/'))
+            : config('services.manual_upi.qr_url');
+
+        $gatewayEnabled = $this->gatewayIsConfigured();
+
         return response()->json([
             'success' => true,
             'data' => [
                 'manual_upi' => [
                     'upi_id' => config('services.manual_upi.upi_id'),
                     'name' => config('services.manual_upi.name'),
-                    'qr_url' => config('services.manual_upi.qr_url'),
+                    'qr_url' => $manualQrUrl,
                 ],
                 'gateway' => [
-                    'enabled' => filled($this->gatewayValue('api_key', 'services.upi_gateway.key')),
+                    'enabled' => $gatewayEnabled,
+                ],
+                'limits' => [
+                    'min_deposit' => $this->settings->get('min_deposit'),
+                    'max_deposit' => $this->settings->get('max_deposit'),
+                    'min_withdraw' => $this->settings->get('min_withdraw'),
+                    'max_withdraw' => $this->settings->get('max_withdraw'),
+                ],
+                'notices' => [
+                    'add_money' => $this->settings->value('add_money_notice'),
+                    'withdraw' => $this->settings->value('withdraw_money_notice'),
                 ],
             ],
         ]);
+    }
+
+    private function gatewayIsConfigured(): bool
+    {
+        return $this->gatewayValue('api_key', 'services.upi_gateway.key') !== null
+            && $this->gatewayValue('create_order_url', 'services.upi_gateway.create_order_url') !== null
+            && $this->gatewayValue('status_url', 'services.upi_gateway.status_url') !== null
+            && $this->gatewayValue('return_url', 'services.upi_gateway.return_url') !== null;
     }
 
     /**
@@ -324,13 +349,17 @@ class WalletController extends Controller
         );
 
         $gatewayKey = $this->gatewayValue('api_key', 'services.upi_gateway.key');
-        if (!$gatewayKey) {
+        $createOrderUrl = $this->gatewayValue('create_order_url', 'services.upi_gateway.create_order_url');
+        $statusUrl = $this->gatewayValue('status_url', 'services.upi_gateway.status_url');
+        $returnUrl = $this->gatewayValue('return_url', 'services.upi_gateway.return_url');
+        $webhookUrl = $this->gatewayValue('webhook_url', 'services.upi_gateway.webhook_url');
+
+        if (!$gatewayKey || !$createOrderUrl || !$statusUrl || !$returnUrl) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payment gateway is not configured. Please contact support.',
+                'message' => 'Payment gateway is not fully configured. Please contact support.',
             ], 503);
         }
-        $webhookUrl = $this->gatewayValue('webhook_url', 'services.upi_gateway.webhook_url');
 
         $walletRequest = DB::transaction(function () use ($user, $clientTxnId, $validated) {
             User::query()->lockForUpdate()->findOrFail($user->id);
@@ -363,7 +392,7 @@ class WalletController extends Controller
             $response = Http::timeout(30)
                 ->acceptJson()
                 ->post(
-                    config('services.upi_gateway.create_order_url'),
+                    $createOrderUrl,
                     [
                         'key' => $gatewayKey,
                         'client_txn_id' => $clientTxnId,
@@ -372,9 +401,7 @@ class WalletController extends Controller
                         'customer_name' => $user->name,
                         'customer_email' => $user->email ?? 'noemail@gmail.com',
                         'customer_mobile' => $user->phone,
-                        'redirect_url' => config(
-                            'services.upi_gateway.return_url'
-                        ),
+                        'redirect_url' => $returnUrl,
                         'webhook_url' => $webhookUrl,
                         'udf1' => (string) $user->id,
                         'udf2' => 'wallet',
@@ -404,13 +431,31 @@ class WalletController extends Controller
                     'message' => $result['msg'] ?? 'Payment gateway rejected the request.',
                 ], 422);
             }
+            $paymentUrl = $result['data']['payment_url'] ?? null;
+            if (!is_string($paymentUrl) || !filter_var($paymentUrl, FILTER_VALIDATE_URL)) {
+                $walletRequest->update([
+                    'status' => 'failed',
+                    'gateway_status' => 'invalid_payment_url',
+                    'remark' => 'Gateway returned an invalid payment URL.',
+                ]);
+
+                Log::warning('UPI gateway returned no valid payment URL.', [
+                    'wallet_request_id' => $walletRequest->id,
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment gateway returned an invalid payment link. Please try again.',
+                ], 502);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Payment order created.',
                 'data' => [
                     'request_id' => $walletRequest->id,
                     'client_txn_id' => $clientTxnId,
-                    'payment_url' => $result['data']['payment_url'] ?? null,
+                    'payment_url' => $paymentUrl,
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -444,7 +489,12 @@ class WalletController extends Controller
                 'message' => 'Transaction not found.',
             ], 404);
         }
-        $this->verifyGatewayTransaction($walletRequest);
+        try {
+            $this->verifyGatewayTransaction($walletRequest);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+
         $walletRequest->refresh();
         return response()->json([
             'success' => $walletRequest->status === 'approved',
@@ -522,10 +572,15 @@ class WalletController extends Controller
             return false;
         }
 
+        $statusUrl = $this->gatewayValue('status_url', 'services.upi_gateway.status_url');
+        if (!$statusUrl) {
+            return false;
+        }
+
         $response = Http::timeout(30)
             ->acceptJson()
             ->post(
-                config('services.upi_gateway.status_url'),
+                $statusUrl,
                 [
                     'key' => $gatewayKey,
                     'client_txn_id' => $walletRequest->client_txn_id,
