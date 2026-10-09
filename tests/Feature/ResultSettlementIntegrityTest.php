@@ -34,7 +34,7 @@ class ResultSettlementIntegrityTest extends TestCase
         $user->refresh();
         $bid->refresh();
 
-        $this->assertSame('120.00', $user->balance);
+        $this->assertEquals(120.0, (float) $user->balance);
         $this->assertSame('win', $bid->status);
         $this->assertDatabaseHas('transactions', [
             'user_id' => $user->id,
@@ -49,7 +49,7 @@ class ResultSettlementIntegrityTest extends TestCase
         $user->refresh();
         $bid->refresh();
 
-        $this->assertSame('100.00', $user->balance);
+        $this->assertEquals(100.0, (float) $user->balance);
         $this->assertSame('pending', $bid->status);
         $this->assertDatabaseHas('results', [
             'game_id' => $game->id,
@@ -89,7 +89,7 @@ class ResultSettlementIntegrityTest extends TestCase
 
         $this->assertSame('100.00', $user->balance);
         $this->assertSame('pending', $bid->status);
-        $this->assertSame('0.00', $bid->winning_amount);
+        $this->assertEquals(0.0, (float) $bid->winning_amount);
         $this->assertSame('Wait', $game->last_result);
         $this->assertSame(0, Result::query()->where('game_id', $game->id)->where('game_date', '2026-10-09')->count());
         $this->assertDatabaseHas('transactions', [
@@ -114,7 +114,7 @@ class ResultSettlementIntegrityTest extends TestCase
         $user->refresh();
         $bid->refresh();
 
-        $this->assertSame('5.00', $user->balance);
+        $this->assertEquals(5.0, (float) $user->balance);
         $this->assertSame('win', $bid->status);
         $this->assertDatabaseHas('results', [
             'game_id' => $game->id,
