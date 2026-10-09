@@ -5,15 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\Game;
-use App\Models\Notification;
 use App\Models\Result;
-use App\Models\Setting;
+use App\Services\AppSettingsService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class GameController extends Controller
 {
+    public function __construct(
+        protected AppSettingsService $appSettings
+    ) {}
+
     public function index(Request $request)
     {
         $timezone = config('app.timezone');
@@ -293,15 +296,16 @@ class GameController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $noticeStatus = setting('notice_status', 'inactive');
+        $settings = $this->appSettings->all();
+        $noticeStatus = $settings['notice_status'] ?? 'inactive';
 
         $notice = [
             'status' => $noticeStatus === 'active',
-            'content' => setting('admin_notice'),
+            'content' => $settings['admin_notice'] ?? null,
         ];
 
         $marquee = [
-            'content' => setting('marquee'),
+            'content' => $settings['marquee'] ?? null,
         ];
 
         /*

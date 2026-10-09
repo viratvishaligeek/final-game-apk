@@ -73,12 +73,32 @@ class DashboardController extends Controller
         ], 200);
     }
 
-    public function user(Request $request)
+    public function user(Request $request): JsonResponse
     {
         $user = $request->user();
+
         return response()->json([
             'success' => true,
-            'user'    => $user->name,
+            // Preserve the legacy string field while providing a structured profile.
+            'user' => $user->name,
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'balance' => round((float) $user->balance, 2),
+                    'address' => $user->address,
+                    'city' => $user->city,
+                    'gender' => $user->gender,
+                    'bank_name' => $user->bank_name,
+                    'account_number' => $user->account_number,
+                    'ifsc_code' => $user->ifsc_code,
+                    'account_holder_name' => $user->account_holder_name,
+                    'phonepe' => $user->phonepe,
+                    'gpay' => $user->gpay,
+                    'paytm' => $user->paytm,
+                ],
+            ],
         ]);
     }
 
@@ -180,7 +200,10 @@ class DashboardController extends Controller
         );
 
         $notifications = Notification::query()
-            ->where('user_id', $user->id)
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhereNull('user_id');
+            })
             ->latest('created_at')
             ->paginate($perPage);
 
@@ -204,6 +227,27 @@ class DashboardController extends Controller
                 'total' => $notifications->total(),
                 'has_more' => $notifications->hasMorePages(),
             ],
+        ]);
+    }
+
+    /**
+     * Compatibility endpoint for clients that display a notification badge.
+     * There is no read-state column, so this is the count of visible notifications.
+     */
+    public function unreadCount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $count = Notification::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhereNull('user_id');
+            })
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'count' => $count,
         ]);
     }
 
