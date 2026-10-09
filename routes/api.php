@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Middleware\EnsureUserIsActive;
 
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->group(function () {\n    Route::post('push/subscribe', [PushSubscriptionController::class, 'subscribePublic'])->middleware('throttle:20,1');\n    Route::delete('push/subscribe', [PushSubscriptionController::class, 'unsubscribe'])->middleware('throttle:20,1');
     Route::controller(AuthController::class)->group(function () {
         Route::post('login', 'tryLogin')->middleware('throttle:10,1');
         Route::post('register', 'register')->middleware('throttle:5,1');
@@ -27,7 +27,7 @@ Route::prefix('v1')->group(function () {
         ->middleware('throttle:60,1');
 
     // after login routes
-    Route::middleware(['auth:sanctum', EnsureUserIsActive::class])->group(function () {
+    Route::middleware(['auth:sanctum', EnsureUserIsActive::class])->group(function () {\n        Route::post('push/register-user', [PushSubscriptionController::class, 'subscribeUser'])->middleware('throttle:20,1');
         Route::get('referrals', [ReferralController::class, 'index']);
         Route::post('referrals/apply', [ReferralController::class, 'applyCode'])->middleware('throttle:10,1');
         Route::controller(DashboardController::class)->group(function () {
