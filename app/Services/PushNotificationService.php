@@ -100,7 +100,7 @@ class PushNotificationService
                             'badge' => '/favicon.ico',
                             'requireInteraction' => false,
                         ],
-                        'fcm_options' => ['link' => '/notifications'],
+                        'fcm_options' => ['link' => 'https://galidisawar.com/notifications'],
                     ],
                 ],
             ]);
