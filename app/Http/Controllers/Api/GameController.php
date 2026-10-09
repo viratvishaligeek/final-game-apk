@@ -84,6 +84,7 @@ class GameController extends Controller
         if ($gameIds->isNotEmpty()) {
             $results = Result::query()
                 ->whereIn('game_id', $gameIds)
+                ->where('type', 'jodi')
                 ->whereIn('game_date', $resultDates)
                 ->orderByDesc('id')
                 ->get([
