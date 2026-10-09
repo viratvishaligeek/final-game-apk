@@ -841,15 +841,22 @@ class WalletController extends Controller
     {
         $validated = $request->validate([
             'status' => ['sometimes', 'nullable', 'string', 'in:pending,processing,approved,rejected,failed'],
+            'statuses' => ['sometimes', 'array'],
+            'statuses.*' => ['string', 'in:pending,processing,approved,rejected,failed'],
             'type' => ['sometimes', 'nullable', 'string', 'in:credit,debit'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
         ]);
 
+        $statuses = $validated['statuses'] ?? [];
+
         $requests = WalletRequest::query()
             ->where('user_id', $request->user()->id)
             ->when(
-                $request->filled('status'),
-                fn ($query) => $query->where('status', $validated['status'])
+                $statuses !== [],
+                fn ($query) => $query->whereIn('status', $statuses),
+                fn ($query) => $request->filled('status')
+                    ? $query->where('status', $validated['status'])
+                    : $query
             )
             ->when(
                 $request->filled('type'),
