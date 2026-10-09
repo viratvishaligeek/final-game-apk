@@ -255,6 +255,14 @@ class ResultController extends Controller
             $totalWinningAmount += $winningAmount;
         }
 
+        // Mark every non-winning bid as settled so reports do not leave
+        // losing bets in the pending state after a result is published.
+        Bid::query()
+            ->where('game_id', $gameId)
+            ->where('game_date', $gameDate)
+            ->where('status', 'pending')
+            ->update(['status' => 'loss']);
+
         return [
             'winners' => $winnerCount,
             'total_amount' => round($totalWinningAmount, 2),
@@ -321,6 +329,14 @@ class ResultController extends Controller
                     'winning_amount' => 0,
                 ]);
         }
+
+        // A corrected or reverted result must reopen previous losers too,
+        // because a different winning number may make them winners.
+        Bid::query()
+            ->where('game_id', $game->id)
+            ->where('game_date', $gameDate)
+            ->where('status', 'loss')
+            ->update(['status' => 'pending']);
 
         Winner::query()
             ->where('game_id', $game->id)
