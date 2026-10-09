@@ -35,9 +35,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
         Route::post('/update-profile', 'update')->name('update-profile');
         Route::post('/update-password', 'updatePassword')->name('update-password');
         Route::get('/logout', 'logout')->name('logout');
-    // });
+    });
 
-    // Route::resource('games', GameController::class);
+    Route::resource('games', GameController::class);
     Route::resource('pages', PagesController::class);
     Route::resource('home-page', HomePageController::class);
 
