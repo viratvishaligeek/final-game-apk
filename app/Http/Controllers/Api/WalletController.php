@@ -42,6 +42,17 @@ class WalletController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        $reservedWithdrawals = WalletRequest::query()
+            ->where('user_id', $user->id)
+            ->where('request_type', 'debit')
+            ->whereIn('status', ['pending', 'processing'])
+            ->sum('amount');
+
+        $availableBalance = round(
+            max(0, (float) $user->balance - (float) $reservedWithdrawals),
+            2
+        );
         $perPage = min(
             max((int) $request->input('per_page', 15), 5),
             50
@@ -157,6 +168,7 @@ class WalletController extends Controller
                     (float) $user->balance,
                     2
                 ),
+                'available_balance' => $availableBalance,
                 'summary' => [
                     'cash_added' => round(
                         (float) $totalCredited,
