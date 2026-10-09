@@ -73,6 +73,12 @@ class User extends Authenticatable
     {
         return $this->wallet_credit - $this->wallet_debit;
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
     protected $hidden = [
         'password',
     ];

@@ -15,3 +15,22 @@ Route::get('/clear', function () {
 Route::controller(MainController::class)->group(function () {
     Route::get('/', 'index')->name('index');
 });
+
+
+Route::get('/optimize-clear', function () {
+    Artisan::call('optimize:clear');
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Application cache cleared successfully.',
+    ]);
+});
+
+Route::get('/storage-link', function () {
+    Artisan::call('storage:link');
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Storage link created successfully.',
+    ]);
+});

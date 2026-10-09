@@ -16,6 +16,8 @@ class Transaction extends Model
         'subject',
         'type',
         'status',
+        'game_id',
+        'bid_id',
     ];
 
     protected $casts = [
