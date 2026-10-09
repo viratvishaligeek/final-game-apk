@@ -38,7 +38,7 @@ class PushSubscriptionController extends Controller
     public function unsubscribe(Request $request): JsonResponse
     {
         $data = $request->validate(['token' => ['required', 'string', 'max:4096']]);
-        \App\Models\PushSubscription::query()->where('token', $data['token'])->delete();
+        \App\Models\PushSubscription::query()->where('token_hash', hash('sha256', $data['token']))->delete();
 
         return response()->json(['success' => true, 'message' => 'Notifications disabled.']);
     }
