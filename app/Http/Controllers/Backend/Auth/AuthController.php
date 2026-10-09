@@ -25,8 +25,23 @@ class AuthController extends Controller
         ]);
         $remember = $request->boolean('remember');
         if (Auth::guard('admin')->attempt($credentials, $remember)) {
+            $admin = Auth::guard('admin')->user();
+
+            if (($admin->status ?? 'active') !== 'active') {
+                Auth::guard('admin')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()
+                    ->with('error', 'Your admin account is inactive. Contact another administrator.')
+                    ->withInput($request->only('email'));
+            }
+
             $request->session()->regenerate();
-            return redirect()->intended(route('admin.dashboard'))->with('success', 'Login successful!');
+
+            return redirect()
+                ->intended(route('admin.dashboard'))
+                ->with('success', 'Login successful!');
         }
         return back()->with('error', 'Invalid email or password.')->withInput($request->only('email'));
     }

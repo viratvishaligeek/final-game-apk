@@ -89,19 +89,19 @@
                     <div class="row gx-3 mb-3">
                         <div class="col-md-3 mb-3">
                             <label class="small mb-1" for="bank">Bank Name</label>
-                            <input class="form-control" id="bank" name="bank" type="text" value="{{ old('bank', $user->bank) }}" />
+                            <input class="form-control" id="bank" name="bank" type="text" value="{{ old('bank', $user->bank_name) }}" />
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="small mb-1" for="acc">Account Number</label>
-                            <input class="form-control" id="acc" name="acc" type="text" value="{{ old('acc', $user->acc) }}" />
+                            <input class="form-control" id="acc" name="acc" type="text" value="{{ old('acc', $user->account_number) }}" />
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="small mb-1" for="ifsc">IFSC Code</label>
-                            <input class="form-control" id="ifsc" name="ifsc" type="text" value="{{ old('ifsc', $user->ifsc) }}" />
+                            <input class="form-control" id="ifsc" name="ifsc" type="text" value="{{ old('ifsc', $user->ifsc_code) }}" />
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="small mb-1" for="holdername">Account Holder Name</label>
-                            <input class="form-control" id="holdername" name="holdername" type="text" value="{{ old('holdername', $user->holdername) }}" />
+                            <input class="form-control" id="holdername" name="holdername" type="text" value="{{ old('holdername', $user->account_holder_name) }}" />
                         </div>
                     </div>
 
