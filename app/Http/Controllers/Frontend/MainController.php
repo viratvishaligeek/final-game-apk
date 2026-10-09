@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Game;
 use App\Models\Result;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class MainController extends Controller
 {
@@ -25,12 +26,12 @@ class MainController extends Controller
 
     private function getFrontendResults(): array
     {
-        $today = Carbon::today();
-        $yesterday = $today->copy()->subDay();
+        $now = now()->timezone(config('app.timezone'));
 
         $games = Game::query()
             ->where('status', 'active')
             ->orderBy('serial')
+            ->orderBy('id')
             ->get([
                 'id',
                 'name',
@@ -38,15 +39,17 @@ class MainController extends Controller
                 'result_time',
                 'last_result',
             ]);
-        $dates = [
-            'today' => $today->toDateString(),
-            'yesterday' => $yesterday->toDateString(),
-        ];
+
+        $businessDates = $this->businessDatesFor($games, $now);
+        $resultDates = collect($businessDates)
+            ->flatMap(fn (array $dates) => array_values($dates))
+            ->unique()
+            ->values();
 
         $results = Result::query()
             ->whereIn('game_id', $games->pluck('id'))
             ->where('type', 'jodi')
-            ->whereIn('game_date', $dates)
+            ->whereIn('game_date', $resultDates)
             ->get([
                 'game_id',
                 'game_date',
@@ -54,8 +57,9 @@ class MainController extends Controller
             ])
             ->groupBy('game_id');
 
-        return $games->map(function ($game) use ($results, $dates) {
+        return $games->map(function ($game) use ($results, $businessDates) {
             $gameResults = $results->get($game->id, collect());
+            $dates = $businessDates[$game->id];
 
             $todayResult = optional(
                 $gameResults->firstWhere('game_date', $dates['today'])
@@ -76,10 +80,10 @@ class MainController extends Controller
             ];
         })->values()->toArray();
     }
+
     private function getMarketResults(): array
     {
-        $today = Carbon::today();
-        $yesterday = $today->copy()->subDay();
+        $now = now()->timezone(config('app.timezone'));
 
         $games = Game::query()
             ->where('status', 'active')
@@ -92,13 +96,16 @@ class MainController extends Controller
                 'result_time',
             ]);
 
+        $businessDates = $this->businessDatesFor($games, $now);
+        $resultDates = collect($businessDates)
+            ->flatMap(fn (array $dates) => array_values($dates))
+            ->unique()
+            ->values();
+
         $results = Result::query()
             ->whereIn('game_id', $games->pluck('id'))
             ->where('type', 'jodi')
-            ->whereIn('game_date', [
-                $today->toDateString(),
-                $yesterday->toDateString(),
-            ])
+            ->whereIn('game_date', $resultDates)
             ->get([
                 'game_id',
                 'game_date',
@@ -106,21 +113,16 @@ class MainController extends Controller
             ])
             ->groupBy('game_id');
 
-        return $games->map(function ($game) use ($results, $today, $yesterday) {
+        return $games->map(function ($game) use ($results, $businessDates) {
             $gameResults = $results->get($game->id, collect());
+            $dates = $businessDates[$game->id];
 
             $todayResult = optional(
-                $gameResults->firstWhere(
-                    'game_date',
-                    $today->toDateString()
-                )
+                $gameResults->firstWhere('game_date', $dates['today'])
             )->number;
 
             $yesterdayResult = optional(
-                $gameResults->firstWhere(
-                    'game_date',
-                    $yesterday->toDateString()
-                )
+                $gameResults->firstWhere('game_date', $dates['yesterday'])
             )->number;
 
             return [
@@ -133,16 +135,40 @@ class MainController extends Controller
             ];
         })->values()->toArray();
     }
+
+    /**
+     * Return current and previous business dates per game.
+     */
+    private function businessDatesFor($games, Carbon $now): array
+    {
+        return $games->mapWithKeys(function (Game $game) use ($now) {
+            $current = $game->businessDate($now);
+
+            return [
+                $game->id => [
+                    'today' => $current,
+                    'yesterday' => Carbon::parse($current, config('app.timezone'))
+                        ->subDay()
+                        ->toDateString(),
+                ],
+            ];
+        })->all();
+    }
+
     private function getRecordYears(): array
     {
+        $yearExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? "CAST(strftime('%Y', game_date) AS INTEGER)"
+            : 'YEAR(game_date)';
+
         return Result::query()
             ->where('type', 'jodi')
             ->whereNotNull('game_date')
-            ->selectRaw('YEAR(game_date) as year')
+            ->selectRaw("{$yearExpression} as year")
             ->distinct()
             ->orderByDesc('year')
             ->pluck('year')
-            ->map(fn($year) => (int) $year)
+            ->map(fn ($year) => (int) $year)
             ->values()
             ->toArray();
     }
