@@ -44,6 +44,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/gateway/create-order', 'createGatewayOrder');
             Route::post('/withdraw', 'withdraw');
             Route::get('/get-money-request', 'getMoneyRequest');
+            // Backward-compatible alias used by earlier mobile app builds.
+            Route::get('/requests', 'getMoneyRequest');
         });
 
         Route::controller(GameController::class)->prefix('games')->group(function () {
