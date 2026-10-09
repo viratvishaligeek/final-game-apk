@@ -296,7 +296,7 @@ class WalletController extends Controller
     public function createGatewayOrder(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:1000000'],
         ]);
         $user = $request->user();
         $clientTxnId = 'WLT-' .
