@@ -131,6 +131,11 @@ class MobileAppController extends Controller
             ->except('payment_bar_code')
             ->toArray();
 
+        // Blank password input means "keep the existing gateway key".
+        if (!$request->filled('api_key')) {
+            unset($settings['api_key']);
+        }
+
         DB::transaction(function () use ($settings, $request) {
             $this->saveSettings($settings);
 
