@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletRequest;
 use App\Services\AppSettingsService;
+use App\Services\ReferralService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,8 @@ class WalletController extends Controller
 {
     public function __construct(
         protected WalletService $walletService,
-        protected AppSettingsService $settings
+        protected AppSettingsService $settings,
+        protected ReferralService $referralService
     ) {}
 
     private function gatewayValue(string $option, string $configKey): ?string
@@ -745,6 +747,7 @@ class WalletController extends Controller
                     (float) $requestRow->amount,
                     'Wallet top-up via UPI Gateway'
                 );
+                $this->referralService->recordSuccessfulDeposit($user, $requestRow);
 
                 $requestRow->update([
                     'status' => 'approved',

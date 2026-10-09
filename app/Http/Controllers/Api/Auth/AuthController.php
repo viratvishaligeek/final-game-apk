@@ -35,12 +35,14 @@ class AuthController extends Controller
     {
         $request->merge([
             'phone' => $this->normalizePhone((string) $request->input('phone', '')),
+            'referral_code' => $request->filled('referral_code') ? strtoupper(trim((string) $request->input('referral_code'))) : null,
         ]);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:200'],
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/', 'unique:users,phone'],
             'password' => ['required', 'string', 'min:8'],
+            'referral_code' => ['nullable', 'string', 'max:32', 'exists:users,referral_code'],
         ]);
 
         $duplicate = User::query()
@@ -53,10 +55,19 @@ class AuthController extends Controller
             ]);
         }
 
+        $referrer = !empty($validated['referral_code'])
+            ? User::query()->where('referral_code', $validated['referral_code'])->first()
+            : null;
+
+        if ($referrer && $referrer->phone === $validated['phone']) {
+            throw ValidationException::withMessages(['referral_code' => ['You cannot use your own referral code.']]);
+        }
+
         $user = User::create([
             'name' => $validated['name'],
             'phone' => $validated['phone'],
             'password' => $validated['password'],
+            'referrer_user_id' => $referrer?->id,
         ]);
 
         $token = $user->createToken(
@@ -74,6 +85,7 @@ class AuthController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'phone' => $user->phone,
+                    'referral_code' => $user->referral_code,
                 ],
             ],
         ], 201);
