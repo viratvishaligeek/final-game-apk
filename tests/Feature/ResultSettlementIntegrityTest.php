@@ -1,18 +1,18 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Http\\Controllers\\Backend\\Game\\ResultController;
-use App\\Models\\Bid;
-use App\\Models\\Game;
-use App\\Models\\Result;
-use App\\Models\\Transaction;
-use App\\Models\\User;
-use App\\Models\\Winner;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\Http;
-use Tests\\TestCase;
+use App\Http\Controllers\Backend\Game\ResultController;
+use App\Models\Bid;
+use App\Models\Game;
+use App\Models\Result;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Models\Winner;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Tests\TestCase;
 
 class ResultSettlementIntegrityTest extends TestCase
 {
