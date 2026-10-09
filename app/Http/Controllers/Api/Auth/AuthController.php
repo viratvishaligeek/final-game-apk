@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
@@ -138,16 +140,107 @@ class AuthController extends Controller
             'phone' => $this->normalizePhone((string) $request->input('phone', '')),
         ]);
 
-        $request->validate([
+        $validated = $request->validate([
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
         ]);
 
-        // No SMS provider is configured in config/services.php. Do not store an
-        // OTP and claim it was sent when there is no delivery mechanism.
+        $url = config('services.sms_gateway.url');
+        $token = config('services.sms_gateway.token');
+        $sender = config('services.sms_gateway.sender');
+
+        if (!is_string($url) || trim($url) === '' || !is_string($token) || trim($token) === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password reset SMS delivery is not configured. Please contact support.',
+            ], 503);
+        }
+
+        $phone = $validated['phone'];
+        $rateLimitKey = 'password-reset-send:' . hash('sha256', $phone);
+
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 3)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Too many OTP requests. Please try again later.',
+            ], 429);
+        }
+
+        RateLimiter::hit($rateLimitKey, 600);
+
+        $user = $this->findUserByPhone($phone);
+
+        // Keep the response the same for unknown/inactive accounts to avoid
+        // revealing whether a phone number is registered.
+        if (!$user || $this->isUserInactive($user)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'If the phone number is registered, a password reset code will be sent shortly.',
+            ]);
+        }
+
+        $otp = (string) random_int(100000, 999999);
+
+        DB::table('password_reset_otps')
+            ->where('phone', $phone)
+            ->delete();
+
+        DB::table('password_reset_otps')->insert([
+            'phone' => $phone,
+            'otp' => Hash::make($otp),
+            'expires_at' => now()->addMinutes(10),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        try {
+            $response = Http::timeout(10)
+                ->acceptJson()
+                ->withToken($token)
+                ->post($url, [
+                    'to' => $phone,
+                    'message' => "Your password reset code is {$otp}. It expires in 10 minutes.",
+                    'sender' => is_string($sender) ? $sender : null,
+                ]);
+
+            $body = $response->json();
+            $providerRejected = is_array($body)
+                && (($body['success'] ?? true) === false || ($body['status'] ?? true) === false);
+
+            if (!$response->successful() || $providerRejected) {
+                DB::table('password_reset_otps')
+                    ->where('phone', $phone)
+                    ->delete();
+
+                Log::warning('Password reset SMS provider rejected delivery.', [
+                    'phone_hash' => hash('sha256', $phone),
+                    'http_status' => $response->status(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to send a password reset code right now. Please try again later.',
+                ], 503);
+            }
+        } catch (\Throwable $exception) {
+            DB::table('password_reset_otps')
+                ->where('phone', $phone)
+                ->delete();
+
+            Log::warning('Password reset SMS delivery failed.', [
+                'phone_hash' => hash('sha256', $phone),
+                'error' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to send a password reset code right now. Please try again later.',
+            ], 503);
+        }
+
         return response()->json([
-            'success' => false,
-            'message' => 'Password reset OTP delivery is not configured. Please contact support.',
-        ], 503);
+            'success' => true,
+            'message' => 'If the phone number is registered, a password reset code will be sent shortly.',
+        ]);
     }
 
     public function resetPasswordWithOtp(Request $request)

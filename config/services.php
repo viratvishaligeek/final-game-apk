@@ -54,4 +54,14 @@ return [
         'qr_url' => env('MANUAL_UPI_QR_URL'),
     ],
 
+    /*
+     * Generic JSON SMS endpoint used for password-reset OTP delivery.
+     * The endpoint must accept a bearer token and JSON fields: to, message, sender.
+     */
+    'sms_gateway' => [
+        'url' => env('SMS_GATEWAY_URL'),
+        'token' => env('SMS_GATEWAY_TOKEN'),
+        'sender' => env('SMS_GATEWAY_SENDER_ID'),
+    ],
+
 ];
