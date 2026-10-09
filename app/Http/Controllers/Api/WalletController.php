@@ -238,15 +238,12 @@ class WalletController extends Controller
         $user = $request->user();
         $amount = (float) $validated['amount'];
 
-        $minimumDeposit = $this->settings->get('min_deposit');
-
-        if ($amount < $minimumDeposit) {
-            throw ValidationException::withMessages([
-                'amount' => [
-                    "Minimum deposit amount is {$minimumDeposit}.",
-                ],
-            ]);
-        }
+        $this->settings->validateRange(
+            $amount,
+            'min_deposit',
+            'max_deposit',
+            'amount'
+        );
         $path = $request->file('screenshot')->store(
             'wallet/manual-payments',
             'public'
@@ -306,15 +303,12 @@ class WalletController extends Controller
             strtoupper(Str::random(8));
         $amount = (float) $validated['amount'];
 
-        $minimumDeposit = $this->settings->get('min_deposit');
-
-        if ($amount < $minimumDeposit) {
-            throw ValidationException::withMessages([
-                'amount' => [
-                    "Minimum deposit amount is {$minimumDeposit}.",
-                ],
-            ]);
-        }
+        $this->settings->validateRange(
+            $amount,
+            'min_deposit',
+            'max_deposit',
+            'amount'
+        );
         $walletRequest = DB::transaction(function () use ($user, $clientTxnId, $validated) {
             User::query()->lockForUpdate()->findOrFail($user->id);
 
