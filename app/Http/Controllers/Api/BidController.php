@@ -685,15 +685,21 @@ class BidController extends Controller
             switch ($item->type) {
 
                 case 'ah':
-                    $result['ander'] = (string) $number;
+                    if ($result['ander'] === null) {
+                        $result['ander'] = (string) $number;
+                    }
                     break;
 
                 case 'bh':
-                    $result['bahar'] = (string) $number;
+                    if ($result['bahar'] === null) {
+                        $result['bahar'] = (string) $number;
+                    }
                     break;
 
                 case 'jodi':
-                    $result['jodi'] = (string) $number;
+                    if ($result['jodi'] === null) {
+                        $result['jodi'] = (string) $number;
+                    }
                     break;
             }
         }
