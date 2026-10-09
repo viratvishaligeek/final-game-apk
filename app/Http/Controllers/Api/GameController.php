@@ -361,6 +361,7 @@ class GameController extends Controller
                 'slug' => $game->slug,
 
                 'result_time' => $game->result_time,
+                'business_date' => $game->businessDate($now),
 
                 'play_start' => $game->play_start,
                 'play_end' => $game->play_end,
