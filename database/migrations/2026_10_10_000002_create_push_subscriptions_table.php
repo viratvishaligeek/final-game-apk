@@ -11,7 +11,8 @@ return new class extends Migration
         Schema::create('push_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
-            $table->string('token', 4096)->unique();
+            $table->text('token');
+            $table->string('token_hash', 64)->unique();
             $table->string('platform', 20)->default('web');
             $table->timestamps();
             $table->index(['user_id', 'platform']);
