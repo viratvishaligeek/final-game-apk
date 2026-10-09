@@ -13,7 +13,14 @@ class EnsureUserIsActive
         $user = $request->user();
 
         if ($user && isset($user->status) && $user->status !== 'active') {
-            $request->user()->currentAccessToken()->delete();
+            $token = $user->currentAccessToken();
+
+            // Sanctum's first-party/session guard can return a transient token
+            // without delete(), so revoke only persisted personal-access tokens.
+            if ($token && method_exists($token, 'delete')) {
+                $token->delete();
+            }
+
             return response()->json([
                 'success' => false,
                 'message' => 'Your account is Inactive Or Blocked. Please contact support.',
