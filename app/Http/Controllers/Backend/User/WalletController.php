@@ -1,12 +1,12 @@
 <?php
 
-namespace App\\Http\\Controllers\\Backend\\User;
+namespace App\Http\Controllers\Backend\User;
 
-use App\\Http\\Controllers\\Controller;
-use App\\Models\\User;
-use App\\Services\\WalletService;
-use Illuminate\\Http\\Request;
-use Illuminate\\Validation\\ValidationException;
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Services\WalletService;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class WalletController extends Controller
 {
@@ -37,7 +37,7 @@ class WalletController extends Controller
             );
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             report($e);
 
             return back()->with(
@@ -70,7 +70,7 @@ class WalletController extends Controller
             );
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             report($e);
 
             return back()->with(
