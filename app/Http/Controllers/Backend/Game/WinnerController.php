@@ -12,10 +12,18 @@ class WinnerController extends Controller
 {
     public function index(Request $request)
     {
-        $selectedDate = $request->input(
-            'date',
-            Carbon::today()->toDateString()
-        );
+        $validated = $request->validate([
+            'date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'game_id' => ['nullable', 'integer', 'exists:games,id'],
+            'type' => ['nullable', 'string', 'in:jodi,haruf'],
+            'user' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $selectedDate = $validated['date']
+            ?? now()->timezone(config('app.timezone'))->toDateString();
+        $gameId = isset($validated['game_id']) ? (int) $validated['game_id'] : null;
+        $type = $validated['type'] ?? null;
+        $userSearch = trim($validated['user'] ?? '');
 
         $query = Winner::query()
             ->with([
@@ -26,23 +34,21 @@ class WinnerController extends Controller
             ->latest('id');
 
         // Optional game filter
-        if ($request->filled('game_id')) {
-            $query->where('game_id', $request->integer('game_id'));
+        if ($gameId !== null) {
+            $query->where('game_id', $gameId);
         }
 
         // Optional winner type filter
-        if ($request->filled('type')) {
-            $query->where('type', $request->input('type'));
+        if ($type !== null) {
+            $query->where('type', $type);
         }
 
         // Optional user search
-        if ($request->filled('user')) {
-            $search = trim($request->input('user'));
-
-            $query->whereHas('user', function ($userQuery) use ($search) {
+        if ($userSearch !== '') {
+            $query->whereHas('user', function ($userQuery) use ($userSearch) {
                 $userQuery
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
+                    ->where('name', 'like', "%{$userSearch}%")
+                    ->orWhere('phone', 'like', "%{$userSearch}%");
             });
         }
 
@@ -55,28 +61,24 @@ class WinnerController extends Controller
         $totalWinners = Winner::query()
             ->whereDate('game_date', $selectedDate)
             ->when(
-                $request->filled('game_id'),
-                fn($query) =>
-                $query->where('game_id', $request->integer('game_id'))
+                $gameId !== null,
+                fn ($query) => $query->where('game_id', $gameId)
             )
             ->when(
-                $request->filled('type'),
-                fn($query) =>
-                $query->where('type', $request->input('type'))
+                $type !== null,
+                fn ($query) => $query->where('type', $type)
             )
             ->count();
 
         $totalWinningAmount = Winner::query()
             ->whereDate('game_date', $selectedDate)
             ->when(
-                $request->filled('game_id'),
-                fn($query) =>
-                $query->where('game_id', $request->integer('game_id'))
+                $gameId !== null,
+                fn ($query) => $query->where('game_id', $gameId)
             )
             ->when(
-                $request->filled('type'),
-                fn($query) =>
-                $query->where('type', $request->input('type'))
+                $type !== null,
+                fn ($query) => $query->where('type', $type)
             )
             ->sum('winning_amount');
 

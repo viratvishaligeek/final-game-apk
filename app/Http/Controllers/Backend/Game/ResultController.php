@@ -20,7 +20,11 @@ class ResultController extends Controller
 {
     public function index(Request $request)
     {
-        $selectedDate = $request->input('date', now()->toDateString());
+        $validated = $request->validate([
+            'date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+        ]);
+
+        $selectedDate = $validated['date'] ?? now()->toDateString();
 
         $allGames = Game::query()
             ->where('status', 'active')
@@ -44,7 +48,7 @@ class ResultController extends Controller
     {
         $validated = $request->validate([
             'game_id' => ['required', 'integer', 'exists:games,id'],
-            'game_date' => ['required', 'date_format:Y-m-d'],
+            'game_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'result' => ['required', 'digits:2'],
         ]);
 
@@ -72,6 +76,14 @@ class ResultController extends Controller
                     ->where('type', 'jodi')
                     ->lockForUpdate()
                     ->value('number');
+
+                if ($previousJodi !== null && (string) $previousJodi === $jodi) {
+                    return [
+                        'game' => $game,
+                        'stats' => ['winners' => 0, 'total_amount' => 0.0],
+                        'unchanged' => true,
+                    ];
+                }
 
                 // A corrected result must first reverse its prior settlement.
                 // All changes stay inside the same transaction.
@@ -124,6 +136,14 @@ class ResultController extends Controller
 
             $game = $settlement['game'];
             $stats = $settlement['stats'];
+
+            if ($settlement['unchanged'] ?? false) {
+                return redirect()->back()->with(
+                    'info',
+                    "Result ({$jodi}) is already published for {$gameDate}. No wallet changes were made."
+                );
+            }
+
             $message = sprintf('Result for %s is %s', $game->name, $jodi);
 
             Notification::create([
@@ -352,7 +372,7 @@ class ResultController extends Controller
     {
         $validated = $request->validate([
             'game_id' => ['required', 'integer', 'exists:games,id'],
-            'game_date' => ['required', 'date_format:Y-m-d'],
+            'game_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
         ]);
 
         $gameId = (int) $validated['game_id'];

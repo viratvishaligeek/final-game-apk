@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Http\Controllers\Backend\Game\ResultController;
 use App\Models\Bid;
 use App\Models\Game;
+use App\Models\Notification;
 use App\Models\Result;
 use App\Models\Transaction;
 use App\Models\User;
@@ -66,6 +67,24 @@ class ResultSettlementIntegrityTest extends TestCase
         ]);
         $this->assertSame(0, Winner::query()->where('bid_id', $bid->id)->count());
         $this->assertSame(2, Transaction::query()->where('user_id', $user->id)->count());
+    }
+
+    public function test_publishing_the_same_result_twice_does_not_duplicate_credits_or_notifications(): void
+    {
+        [$game, $user, $bid] = $this->createWinningScenario();
+
+        $this->publishResult($game, '2026-10-09', '12');
+
+        $transactionCount = Transaction::query()->where('user_id', $user->id)->count();
+        $notificationCount = Notification::query()->count();
+        $balanceAfterFirstPublish = (float) $user->fresh()->balance;
+
+        $this->publishResult($game, '2026-10-09', '12');
+
+        $this->assertEquals($balanceAfterFirstPublish, (float) $user->fresh()->balance);
+        $this->assertSame($transactionCount, Transaction::query()->where('user_id', $user->id)->count());
+        $this->assertSame($notificationCount, Notification::query()->count());
+        $this->assertSame(1, Winner::query()->where('bid_id', $bid->id)->count());
     }
 
     public function test_reverting_a_result_records_a_debit_reversal_and_restores_bid_state(): void
