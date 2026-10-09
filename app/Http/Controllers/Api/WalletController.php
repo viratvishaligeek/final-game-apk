@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -339,6 +340,7 @@ class WalletController extends Controller
                         'redirect_url' => config(
                             'services.upi_gateway.return_url'
                         ),
+                        'webhook_url' => config('services.upi_gateway.webhook_url'),
                         'udf1' => (string) $user->id,
                         'udf2' => 'wallet',
                         'udf3' => (string) $walletRequest->id,
@@ -428,8 +430,9 @@ class WalletController extends Controller
      */
     public function gatewayWebhook(Request $request): JsonResponse
     {
-        $clientTxnId = $request->input('client_txn_id');
-        if (!$clientTxnId) {
+        $clientTxnId = trim((string) $request->input('client_txn_id', ''));
+
+        if ($clientTxnId === '') {
             return response()->json([
                 'success' => false,
                 'message' => 'Missing transaction ID.',
@@ -444,31 +447,41 @@ class WalletController extends Controller
                 'message' => 'Transaction not found.',
             ], 404);
         }
-        $gatewayStatus = $request->input('status');
-        $walletRequest->update([
-            'gateway_txn_id' => $request->input('id'),
-            'customer_vpa' => $request->input('customer_vpa'),
-            'gateway_status' => $gatewayStatus,
-            'utr' => $request->input('upi_txn_id') ?: $walletRequest->utr,
-        ]);
-        if ($gatewayStatus === 'success') {
-            $this->approveGatewayRequest($walletRequest);
-        } elseif ($gatewayStatus === 'failure') {
-            $walletRequest->update([
-                'status' => 'failed',
-            ]);
+
+        // Never trust the status or amount supplied by the callback sender.
+        try {
+            $verified = $this->verifyGatewayTransaction($walletRequest);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to verify payment status. Please retry.',
+            ], 503);
         }
+
+        if (!$verified) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment could not be verified yet. Please retry.',
+            ], 503);
+        }
+
+        $walletRequest->refresh();
+
         return response()->json([
             'success' => true,
+            'status' => $walletRequest->status,
         ]);
     }
 
     /**
-     * Verify payment directly from gateway.
+     * Verify payment directly with the provider. Returns false when the
+     * provider response is unavailable or does not match our stored order.
      */
     protected function verifyGatewayTransaction(
         WalletRequest $walletRequest
-    ): void {
+    ): bool {
         $response = Http::timeout(30)
             ->acceptJson()
             ->post(
@@ -476,60 +489,119 @@ class WalletController extends Controller
                 [
                     'key' => config('services.upi_gateway.key'),
                     'client_txn_id' => $walletRequest->client_txn_id,
-                    'txn_date' => now()->format('d-m-Y'),
+                    'txn_date' => ($walletRequest->created_at ?: now())->format('d-m-Y'),
                 ]
             );
         if (!$response->successful()) {
-            return;
+            return false;
         }
         $result = $response->json();
         if (($result['status'] ?? false) !== true) {
-            return;
+            return false;
         }
-        $data = $result['data'] ?? [];
-        $walletRequest->update([
-            'gateway_txn_id' => $data['id'] ?? $walletRequest->gateway_txn_id,
-            'customer_vpa' => $data['customer_vpa'] ?? $walletRequest->customer_vpa,
-            'gateway_status' => $data['status'] ?? null,
-            'utr' => $data['upi_txn_id'] ?? $walletRequest->utr,
-        ]);
-        if (($data['status'] ?? null) === 'success') {
-            $this->approveGatewayRequest($walletRequest);
+
+        $data = $result['data'] ?? null;
+
+        if (!is_array($data)) {
+            return false;
         }
-        if (($data['status'] ?? null) === 'failure') {
-            $walletRequest->update([
-                'status' => 'failed',
+
+        $verifiedClientTxnId = (string) ($data['client_txn_id'] ?? '');
+        if (
+            $verifiedClientTxnId === ''
+            || !hash_equals((string) $walletRequest->client_txn_id, $verifiedClientTxnId)
+        ) {
+            Log::warning('UPI gateway verification returned a mismatched client transaction ID.', [
+                'wallet_request_id' => $walletRequest->id,
             ]);
+
+            return false;
         }
+
+        if (
+            !isset($data['amount'])
+            || !is_numeric($data['amount'])
+            || round((float) $data['amount'], 2) !== round((float) $walletRequest->amount, 2)
+        ) {
+            Log::warning('UPI gateway verification returned an amount mismatch.', [
+                'wallet_request_id' => $walletRequest->id,
+                'expected_amount' => (float) $walletRequest->amount,
+                'verified_amount' => $data['amount'] ?? null,
+            ]);
+
+            return false;
+        }
+
+        $status = strtolower(trim((string) ($data['status'] ?? '')));
+
+        if (!in_array($status, ['success', 'failure', 'pending', 'processing'], true)) {
+            return false;
+        }
+
+        $this->applyVerifiedGatewayStatus($walletRequest, $data, $status);
+
+        return true;
     }
 
     /**
-     * Credit wallet exactly once.
+     * Apply a provider-verified status once, under a row lock. The original
+     * wallet request status prevents duplicate callbacks from double-crediting.
      */
-    protected function approveGatewayRequest(
-        WalletRequest $walletRequest
+    private function applyVerifiedGatewayStatus(
+        WalletRequest $walletRequest,
+        array $data,
+        string $status
     ): void {
-        DB::transaction(function () use ($walletRequest) {
+        DB::transaction(function () use ($walletRequest, $data, $status) {
             $requestRow = WalletRequest::query()
                 ->lockForUpdate()
                 ->findOrFail($walletRequest->id);
+
+            // Approved is terminal: a delayed failure callback must not undo it.
             if ($requestRow->status === 'approved') {
                 return;
             }
-            if ($requestRow->request_type !== 'credit') {
+
+            $requestRow->update([
+                'gateway_txn_id' => $data['id'] ?? $requestRow->gateway_txn_id,
+                'customer_vpa' => $data['customer_vpa'] ?? $requestRow->customer_vpa,
+                'gateway_status' => $status,
+                'utr' => $data['upi_txn_id'] ?? $requestRow->utr,
+            ]);
+
+            if ($status === 'success') {
+                if ($requestRow->request_type !== 'credit') {
+                    Log::warning('UPI gateway reported success for a non-credit wallet request.', [
+                        'wallet_request_id' => $requestRow->id,
+                    ]);
+
+                    return;
+                }
+
+                $user = User::query()
+                    ->lockForUpdate()
+                    ->findOrFail($requestRow->user_id);
+
+                $this->walletService->credit(
+                    $user,
+                    (float) $requestRow->amount,
+                    'Wallet top-up via UPI Gateway'
+                );
+
+                $requestRow->update([
+                    'status' => 'approved',
+                    'processed_at' => now(),
+                    'admin_remark' => 'Automatically approved after server-side gateway verification.',
+                ]);
+
                 return;
             }
-            $user = User::findOrFail($requestRow->user_id);
-            $this->walletService->credit(
-                $user,
-                (float) $requestRow->amount,
-                'Wallet top-up via UPI Gateway'
-            );
-            $requestRow->update([
-                'status' => 'approved',
-                'processed_at' => now(),
-                'admin_remark' => 'Automatically approved by payment gateway.',
-            ]);
+
+            if ($status === 'failure') {
+                $requestRow->update([
+                    'status' => 'failed',
+                ]);
+            }
         });
     }
 

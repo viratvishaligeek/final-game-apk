@@ -18,6 +18,13 @@ Route::prefix('v1')->group(function () {
         Route::post('forgot/reset', 'resetPasswordWithOtp');
     });
 
+    // Payment-provider callbacks must be reachable without a user session.
+    // The controller verifies the transaction server-to-server before crediting.
+    Route::get('wallet/gateway/return', [WalletController::class, 'gatewayReturn'])
+        ->middleware('throttle:60,1');
+    Route::post('wallet/gateway/webhook', [WalletController::class, 'gatewayWebhook'])
+        ->middleware('throttle:60,1');
+
     // after login routes
     Route::middleware(['auth:sanctum', EnsureUserIsActive::class])->group(function () {
         Route::controller(DashboardController::class)->group(function () {
@@ -36,10 +43,6 @@ Route::prefix('v1')->group(function () {
             Route::post('/add-money-request', 'addMoneyRequest');
             Route::post('/gateway/create-order', 'createGatewayOrder');
             Route::post('/withdraw', 'withdraw');
-            Route::prefix('gateway')->group(function () {
-                Route::get('/return', 'gatewayReturn');
-                Route::post('/webhook', 'gatewayWebhook');
-            });
             Route::get('/get-money-request', 'getMoneyRequest');
         });
 
