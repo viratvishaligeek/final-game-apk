@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Models\Winner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
@@ -362,18 +361,10 @@ class ResultController extends Controller
     private function sendResultNotification(Game $game, string $gameDate, string $result): void
     {
         try {
-            Http::timeout(10)
-                ->withHeaders([
-                    'Authorization' => 'key=' . config('services.fcm.server_key'),
-                    'Content-Type' => 'application/json',
-                ])
-                ->post(config('services.fcm.url'), [
-                    'to' => '/topics/weather',
-                    'notification' => [
-                        'title' => $game->name . ' Result Published',
-                        'body' => "Result for {$game->name} is {$result}",
-                    ],
-                ]);
+            app(\App\Services\PushNotificationService::class)->sendPublicPush(
+                $game->name . ' Result Published',
+                "Result for {$game->name} is {$result}"
+            );
         } catch (\Throwable $e) {
             Log::error('FCM notification failed', [
                 'game_id' => $game->id,
