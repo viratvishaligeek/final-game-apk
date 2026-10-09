@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class WalletController extends Controller
 {
@@ -328,7 +329,7 @@ class WalletController extends Controller
                     'remark' => 'Manual UPI wallet top-up',
                 ]);
             });
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             Storage::disk('public')->delete($path);
             throw $exception;
         }
@@ -471,7 +472,7 @@ class WalletController extends Controller
                     'payment_url' => $paymentUrl,
                 ],
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
             $walletRequest->update([
                 'status' => 'failed',
@@ -514,7 +515,7 @@ class WalletController extends Controller
 
         try {
             $this->verifyGatewayTransaction($walletRequest);
-        } catch (\\Throwable $exception) {
+        } catch (Throwable $exception) {
             report($exception);
         }
 
@@ -598,7 +599,7 @@ class WalletController extends Controller
         // Never trust the status or amount supplied by the callback sender.
         try {
             $verified = $this->verifyGatewayTransaction($walletRequest);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
 
             return response()->json([
@@ -829,7 +830,7 @@ class WalletController extends Controller
                     'remark' => 'Wallet withdrawal request',
                 ]);
             });
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             if ($qrPath) {
                 Storage::disk('public')->delete($qrPath);
             }

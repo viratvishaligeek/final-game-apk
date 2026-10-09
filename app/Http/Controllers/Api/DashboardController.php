@@ -122,12 +122,14 @@ class DashboardController extends Controller
             $validated['gender'] = ucfirst(strtolower($validated['gender']));
         }
 
-        foreach ([
-            'bank' => 'bank_name',
-            'acc' => 'account_number',
-            'ifsc' => 'ifsc_code',
-            'holdername' => 'account_holder_name',
-        ] as $input => $column) {
+        foreach (
+            [
+                'bank' => 'bank_name',
+                'acc' => 'account_number',
+                'ifsc' => 'ifsc_code',
+                'holdername' => 'account_holder_name',
+            ] as $input => $column
+        ) {
             if (array_key_exists($input, $validated)) {
                 $validated[$column] = $validated[$input];
                 unset($validated[$input]);
@@ -190,6 +192,7 @@ class DashboardController extends Controller
             'message' => 'Password changed successfully. Other sessions have been signed out.',
         ]);
     }
+
     public function notificationList(Request $request)
     {
         $user = $request->user();
@@ -284,7 +287,7 @@ class DashboardController extends Controller
         }
 
         $keys = collect($keysInput)
-            ->map(fn ($key) => trim((string) $key))
+            ->map(fn($key) => trim((string) $key))
             ->filter()
             ->unique()
             ->values()
@@ -297,7 +300,7 @@ class DashboardController extends Controller
         $keys = array_values(array_intersect($keys, $allowedKeys));
         $allSettings = $this->appSettings->all();
         $data = collect($keys)
-            ->mapWithKeys(fn ($key) => [$key => $allSettings[$key] ?? null])
+            ->mapWithKeys(fn($key) => [$key => $allSettings[$key] ?? null])
             ->all();
 
         return response()->json([
@@ -305,5 +308,4 @@ class DashboardController extends Controller
             'data' => $data,
         ]);
     }
-}
 }

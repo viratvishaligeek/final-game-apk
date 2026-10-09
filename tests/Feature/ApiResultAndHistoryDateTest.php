@@ -130,6 +130,41 @@ class ApiResultAndHistoryDateTest extends TestCase
             ->assertJsonPath('data.stats.total_won', 7);
     }
 
+    public function test_pending_slip_status_matches_its_business_date_and_play_window(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-09 12:00:00', config('app.timezone')));
+
+        $user = $this->createUser();
+        $game = $this->createGame('Disawar', 'disawar', '07:00:00');
+
+        foreach ([
+            ['order_no' => 'OLD-BUSINESS-DATE', 'game_date' => '2026-10-08', 'number' => '12'],
+            ['order_no' => 'CURRENT-BUSINESS-DATE', 'game_date' => '2026-10-09', 'number' => '34'],
+        ] as $entry) {
+            Bid::create([
+                'order_no' => $entry['order_no'],
+                'user_id' => $user->id,
+                'game_id' => $game->id,
+                'game_date' => $entry['game_date'],
+                'type' => 'jodi',
+                'number' => $entry['number'],
+                'amount' => 10,
+                'status' => 'pending',
+                'winning_amount' => 0,
+            ]);
+        }
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/play-history?date=2026-10-08')
+            ->assertOk()
+            ->assertJsonPath('data.slips.0.status', 'closed');
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/play-history')
+            ->assertOk()
+            ->assertJsonPath('data.slips.0.status', 'running');
+    }
+
     private function createUser(): User
     {
         return User::create([
