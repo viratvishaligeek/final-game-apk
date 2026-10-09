@@ -21,6 +21,11 @@ class AppSettingsService
         );
     }
 
+    public function value(string $key, mixed $default = null): mixed
+    {
+        return $this->all()[$key] ?? $default;
+    }
+
     public function get(string $key, float $default = 0): float
     {
         return (float) ($this->all()[$key] ?? $default);

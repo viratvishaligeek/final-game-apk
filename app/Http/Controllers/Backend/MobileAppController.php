@@ -7,6 +7,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\ValidationException;
 
 class MobileAppController extends Controller
 {
@@ -69,8 +70,10 @@ class MobileAppController extends Controller
                 'max_deposit',
                 'min_withdraw',
                 'max_withdraw',
-                'min_bid_amount',
-                'max_bid_amount',
+                'min_bid_amount_jodi',
+                'max_bid_amount_jodi',
+                'min_bid_amount_haruf',
+                'max_bid_amount_haruf',
                 'add_money_notice',
                 'withdraw_money_notice',
                 'api_key',
@@ -83,14 +86,16 @@ class MobileAppController extends Controller
     public function updateLimits(Request $request)
     {
         $validated = $request->validate([
-            'min_deposit' => ['nullable', 'numeric', 'min:0'],
-            'max_deposit' => ['nullable', 'numeric', 'min:0'],
+            'min_deposit' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
+            'max_deposit' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
 
-            'min_withdraw' => ['nullable', 'numeric', 'min:0'],
-            'max_withdraw' => ['nullable', 'numeric', 'min:0'],
+            'min_withdraw' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
+            'max_withdraw' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
 
-            'min_bid_amount' => ['nullable', 'numeric', 'min:0'],
-            'max_bid_amount' => ['nullable', 'numeric', 'min:0'],
+            'min_bid_amount_jodi' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
+            'max_bid_amount_jodi' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
+            'min_bid_amount_haruf' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
+            'max_bid_amount_haruf' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
 
             'add_money_notice' => ['nullable', 'string', 'max:5000'],
             'withdraw_money_notice' => ['nullable', 'string', 'max:5000'],
@@ -106,9 +111,30 @@ class MobileAppController extends Controller
             ],
         ]);
 
+        foreach ([
+            ['min_deposit', 'max_deposit'],
+            ['min_withdraw', 'max_withdraw'],
+            ['min_bid_amount_jodi', 'max_bid_amount_jodi'],
+            ['min_bid_amount_haruf', 'max_bid_amount_haruf'],
+        ] as [$minimumKey, $maximumKey]) {
+            $minimum = (float) ($validated[$minimumKey] ?? 0);
+            $maximum = (float) ($validated[$maximumKey] ?? 0);
+
+            if ($maximum > 0 && $minimum > $maximum) {
+                throw ValidationException::withMessages([
+                    $maximumKey => ["{$maximumKey} must be greater than or equal to {$minimumKey}."],
+                ]);
+            }
+        }
+
         $settings = collect($validated)
             ->except('payment_bar_code')
             ->toArray();
+
+        // Blank password input means "keep the existing gateway key".
+        if (!$request->filled('api_key')) {
+            unset($settings['api_key']);
+        }
 
         DB::transaction(function () use ($settings, $request) {
             $this->saveSettings($settings);

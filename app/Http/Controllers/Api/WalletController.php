@@ -25,6 +25,19 @@ class WalletController extends Controller
         protected AppSettingsService $settings
     ) {}
 
+    private function gatewayValue(string $option, string $configKey): ?string
+    {
+        $value = $this->settings->value($option);
+
+        if (!is_string($value) || trim($value) === '') {
+            $value = config($configKey);
+        }
+
+        return is_string($value) && trim($value) !== ''
+            ? trim($value)
+            : null;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -213,7 +226,7 @@ class WalletController extends Controller
                     'qr_url' => config('services.manual_upi.qr_url'),
                 ],
                 'gateway' => [
-                    'enabled' => filled(config('services.upi_gateway.key')),
+                    'enabled' => filled($this->gatewayValue('api_key', 'services.upi_gateway.key')),
                 ],
             ],
         ]);
@@ -238,15 +251,12 @@ class WalletController extends Controller
         $user = $request->user();
         $amount = (float) $validated['amount'];
 
-        $minimumDeposit = $this->settings->get('min_deposit');
-
-        if ($amount < $minimumDeposit) {
-            throw ValidationException::withMessages([
-                'amount' => [
-                    "Minimum deposit amount is {$minimumDeposit}.",
-                ],
-            ]);
-        }
+        $this->settings->validateRange(
+            $amount,
+            'min_deposit',
+            'max_deposit',
+            'amount'
+        );
         $path = $request->file('screenshot')->store(
             'wallet/manual-payments',
             'public'
@@ -306,15 +316,22 @@ class WalletController extends Controller
             strtoupper(Str::random(8));
         $amount = (float) $validated['amount'];
 
-        $minimumDeposit = $this->settings->get('min_deposit');
+        $this->settings->validateRange(
+            $amount,
+            'min_deposit',
+            'max_deposit',
+            'amount'
+        );
 
-        if ($amount < $minimumDeposit) {
-            throw ValidationException::withMessages([
-                'amount' => [
-                    "Minimum deposit amount is {$minimumDeposit}.",
-                ],
-            ]);
+        $gatewayKey = $this->gatewayValue('api_key', 'services.upi_gateway.key');
+        if (!$gatewayKey) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment gateway is not configured. Please contact support.',
+            ], 503);
         }
+        $webhookUrl = $this->gatewayValue('webhook_url', 'services.upi_gateway.webhook_url');
+
         $walletRequest = DB::transaction(function () use ($user, $clientTxnId, $validated) {
             User::query()->lockForUpdate()->findOrFail($user->id);
 
@@ -348,7 +365,7 @@ class WalletController extends Controller
                 ->post(
                     config('services.upi_gateway.create_order_url'),
                     [
-                        'key' => config('services.upi_gateway.key'),
+                        'key' => $gatewayKey,
                         'client_txn_id' => $clientTxnId,
                         'amount' => $validated['amount'],
                         'p_info' => 'Wallet Top-up',
@@ -358,7 +375,7 @@ class WalletController extends Controller
                         'redirect_url' => config(
                             'services.upi_gateway.return_url'
                         ),
-                        'webhook_url' => config('services.upi_gateway.webhook_url'),
+                        'webhook_url' => $webhookUrl,
                         'udf1' => (string) $user->id,
                         'udf2' => 'wallet',
                         'udf3' => (string) $walletRequest->id,
@@ -500,12 +517,17 @@ class WalletController extends Controller
     protected function verifyGatewayTransaction(
         WalletRequest $walletRequest
     ): bool {
+        $gatewayKey = $this->gatewayValue('api_key', 'services.upi_gateway.key');
+        if (!$gatewayKey) {
+            return false;
+        }
+
         $response = Http::timeout(30)
             ->acceptJson()
             ->post(
                 config('services.upi_gateway.status_url'),
                 [
-                    'key' => config('services.upi_gateway.key'),
+                    'key' => $gatewayKey,
                     'client_txn_id' => $walletRequest->client_txn_id,
                     'txn_date' => ($walletRequest->created_at ?: now())->format('d-m-Y'),
                 ]

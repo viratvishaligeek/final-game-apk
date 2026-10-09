@@ -40,6 +40,15 @@
                         </div>
 
                         <div class="col-md-3 mb-4">
+                            <label for="max_deposit" class="small mb-1">
+                                Maximum Deposit
+                            </label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="max_deposit"
+                                name="max_deposit" value="{{ old('max_deposit', $settings['max_deposit'] ?? 0) }}">
+                            <div class="form-text">Use 0 for no maximum.</div>
+                        </div>
+
+                        <div class="col-md-3 mb-4">
                             <label for="min_withdraw" class="small mb-1">
                                 Minimum Withdrawal
                             </label>
@@ -133,9 +142,9 @@
                             <label for="api_key" class="small mb-1">
                                 API Key
                             </label>
-                            <input type="text" class="form-control" id="api_key" name="api_key"
-                                value="{{ old('api_key', $settings['api_key'] ?? '') }}"
-                                placeholder="Enter payment API key" autocomplete="off">
+                            <input type="password" class="form-control" id="api_key" name="api_key"
+                                value="{{ old('api_key') }}"
+                                placeholder="Leave blank to keep the current API key" autocomplete="new-password">
                         </div>
 
                         <div class="col-md-6 mb-4">
