@@ -230,6 +230,27 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * Compatibility endpoint for clients that display a notification badge.
+     * There is no read-state column, so this is the count of visible notifications.
+     */
+    public function unreadCount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $count = Notification::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhereNull('user_id');
+            })
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'count' => $count,
+        ]);
+    }
+
     public function getSetting(Request $request): JsonResponse
     {
         $allowedKeys = [
