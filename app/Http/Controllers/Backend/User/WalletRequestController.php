@@ -18,12 +18,16 @@ class WalletRequestController extends Controller
 
     public function addRequests(Request $request)
     {
+        $validated = $request->validate([
+            'status' => ['sometimes', 'nullable', 'string', 'in:pending,processing,approved,rejected,failed'],
+        ]);
+
         $requests = WalletRequest::query()
             ->with('user:id,name,phone,balance')
             ->where('request_type', 'credit')
             ->when(
                 $request->filled('status'),
-                fn($query) => $query->where('status', $request->status)
+                fn ($query) => $query->where('status', $validated['status'])
             )
             ->latest('id')
             ->paginate(20)
@@ -37,12 +41,16 @@ class WalletRequestController extends Controller
 
     public function withdrawRequests(Request $request)
     {
+        $validated = $request->validate([
+            'status' => ['sometimes', 'nullable', 'string', 'in:pending,processing,approved,rejected,failed'],
+        ]);
+
         $requests = WalletRequest::query()
             ->with('user:id,name,phone,balance')
             ->where('request_type', 'debit')
             ->when(
                 $request->filled('status'),
-                fn($query) => $query->where('status', $request->status)
+                fn ($query) => $query->where('status', $validated['status'])
             )
             ->latest('id')
             ->paginate(20)
@@ -96,6 +104,12 @@ class WalletRequestController extends Controller
                     ->findOrFail($walletRequest->user_id);
 
                 if ($walletRequest->request_type === 'credit') {
+                    if ($walletRequest->payment_method !== 'manual_upi') {
+                        throw ValidationException::withMessages([
+                            'request' => 'Gateway payments can only be approved after server-side payment verification.',
+                        ]);
+                    }
+
                     $this->walletService->credit(
                         $user,
                         (float) $walletRequest->amount,
