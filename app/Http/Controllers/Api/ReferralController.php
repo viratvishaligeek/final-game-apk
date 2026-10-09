@@ -33,7 +33,9 @@ class ReferralController extends Controller
                 return [
                     'id' => $referred->id,
                     'name' => $referred->name,
-                    'phone' => $referred->phone,
+                    'phone' => is_string($referred->phone) && strlen($referred->phone) > 4
+                        ? str_repeat('*', max(0, strlen($referred->phone) - 4)) . substr($referred->phone, -4)
+                        : $referred->phone,
                     'joined_at' => $referred->created_at,
                     'first_deposit_at' => $referred->first_deposit_at,
                     'first_deposit_amount' => $reward?->first_deposit_amount,
@@ -57,7 +59,7 @@ class ReferralController extends Controller
             'success' => true,
             'data' => [
                 'referral_code' => $user->referral_code,
-                'share_url' => rtrim(config('app.url'), '/') . '/?ref=' . rawurlencode((string) $user->referral_code),
+                'share_url' => rtrim(config('app.url'), '/') . '/sign-up?ref=' . rawurlencode((string) $user->referral_code),
                 'referral_percentage' => $this->settings->get('referral_percentage', 2),
                 'referral_min_amount' => $this->settings->get('referral_min_amount', 10),
                 'total_referrals' => $referrals->count(),
