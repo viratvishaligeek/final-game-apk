@@ -35,12 +35,14 @@ class BusinessDateDisplayTest extends TestCase
         $this->createResult($other, '2026-10-09', '78');
         $this->createResult($other, '2026-10-08', '90');
 
-        $this->get('/')
-            ->assertOk()
-            ->assertSee('<td class="qr-val">12</td>', false)
-            ->assertSee('<td class="qr-val">34</td>', false)
-            ->assertSee('<td class="qr-val">78</td>', false)
-            ->assertSee('<td class="qr-val">90</td>', false);
+        $response = $this->get('/')->assertOk();
+
+        foreach (['12', '34', '78', '90'] as $number) {
+            $this->assertMatchesRegularExpression(
+                '/<td class="qr-val">\\s*' . preg_quote($number, '/') . '\\s*<\\/td>/',
+                $response->getContent()
+            );
+        }
     }
 
     public function test_admin_dashboard_totals_follow_each_games_business_date(): void
