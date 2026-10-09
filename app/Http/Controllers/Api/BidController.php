@@ -660,25 +660,33 @@ class BidController extends Controller
 
         /*
     |--------------------------------------------------------------------------
-    | Game still running
+    | A pending slip is running only for the game's current business date
+    | while its play window is actually open. Old or closed slips must not
+    | appear as running just because the market is open today.
     |--------------------------------------------------------------------------
     */
 
-        if ($isPending && $game?->is_playable) {
-            return 'running';
+        if ($isPending) {
+            $firstBid = $bids->first();
+            $bidDate = $firstBid?->game_date
+                ? Carbon::parse($firstBid->game_date)->toDateString()
+                : null;
+            $currentBusinessDate = $game
+                ? $game->businessDate()
+                : null;
+
+            if (
+                $game?->is_playable
+                && $bidDate !== null
+                && $bidDate === $currentBusinessDate
+            ) {
+                return 'running';
+            }
+
+            return 'closed';
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | No pending + no win
-    |--------------------------------------------------------------------------
-    */
-
-        if (!$isPending) {
-            return 'lost';
-        }
-
-        return 'running';
+        return 'lost';
     }
 
     private function getGameResult($game, $date): array
