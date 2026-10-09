@@ -57,7 +57,12 @@ class DashboardController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $token = $request->user()->currentAccessToken();
+
+        if ($token && method_exists($token, 'delete')) {
+            $token->delete();
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Successfully logged out.',
@@ -80,28 +85,62 @@ class DashboardController extends Controller
             'name'       => 'required|string|max:200',
             'address'    => 'nullable|string|max:255',
             'city'       => 'nullable|string|max:200',
-            'gender'     => 'nullable|in:male,female,other',
+            'gender'     => ['nullable', 'string', 'in:male,female,other,Male,Female,Other'],
             'bank'       => 'nullable|string|max:100',
             'acc'        => 'nullable|string|max:100',
-            'ifsc'       => 'nullable|string|max:100',
+            'ifsc'       => 'nullable|string|max:20',
             'holdername' => 'nullable|string|max:100',
             'phonepe'    => 'nullable|string|max:100',
             'gpay'       => 'nullable|string|max:20',
             'paytm'      => 'nullable|string|max:20',
         ]);
+        if (isset($validated['gender']) && $validated['gender'] !== null) {
+            $validated['gender'] = ucfirst(strtolower($validated['gender']));
+        }
+
+        foreach ([
+            'bank' => 'bank_name',
+            'acc' => 'account_number',
+            'ifsc' => 'ifsc_code',
+            'holdername' => 'account_holder_name',
+        ] as $input => $column) {
+            if (array_key_exists($input, $validated)) {
+                $validated[$column] = $validated[$input];
+                unset($validated[$input]);
+            }
+        }
+
         $user->update($validated);
+        $user = $user->fresh();
+
         return response()->json([
             'success' => true,
             'message' => 'Profile updated successfully!',
-            'data'    => ['user' => $user->fresh()]
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'address' => $user->address,
+                    'city' => $user->city,
+                    'gender' => $user->gender,
+                    'bank_name' => $user->bank_name,
+                    'account_number' => $user->account_number,
+                    'ifsc_code' => $user->ifsc_code,
+                    'account_holder_name' => $user->account_holder_name,
+                    'phonepe' => $user->phonepe,
+                    'gpay' => $user->gpay,
+                    'paytm' => $user->paytm,
+                ],
+            ],
         ]);
     }
 
     public function changePassword(Request $request)
     {
         $request->validate([
-            'current_password' => 'required',
-            'new_password'     => ['required', 'confirmed'],
+            'current_password' => ['required', 'string'],
+            'new_password'     => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         if (!Hash::check($request->current_password, $request->user()->password)) {
@@ -110,12 +149,21 @@ class DashboardController extends Controller
                 'message' => 'Current password matches not in our records.'
             ], 422);
         }
-        $request->user()->update([
-            'password' => Hash::make($request->new_password)
+        $user = $request->user();
+        $user->update([
+            'password' => Hash::make($request->new_password),
         ]);
+
+        $currentToken = $user->currentAccessToken();
+        if ($currentToken && isset($currentToken->id)) {
+            $user->tokens()->where('id', '!=', $currentToken->id)->delete();
+        } else {
+            $user->tokens()->delete();
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Password changed successfully!'
+            'message' => 'Password changed successfully. Other sessions have been signed out.',
         ]);
     }
     public function notificationList(Request $request)
