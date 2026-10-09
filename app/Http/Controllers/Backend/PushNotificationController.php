@@ -23,6 +23,6 @@ class PushNotificationController extends Controller
 
         $sent = $push->broadcast($data['subject'], $data['message']);
 
-        return back()->with('success', "Public notification queued. Push sent to {$sent} subscriber(s).");
+        return back()->with('success', "Public notification saved. Push delivered to {$sent} subscriber(s).");
     }
 }
