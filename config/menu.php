@@ -191,13 +191,6 @@ return [
                 'permission' => '',
             ],
             [
-                'text'  => 'Contact Details',
-                'icon'  => 'phone',
-                'route' => 'admin.mobile-app.contact_details',
-                'route_name' => 'admin.mobile-app.contact_details',
-                'permission' => '',
-            ],
-            [
                 'text'  => 'Set limits',
                 'icon'  => 'sliders',
                 'route' => 'admin.mobile-app.limits',

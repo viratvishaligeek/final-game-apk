@@ -270,11 +270,6 @@ class DashboardController extends Controller
             'admin_notice',
             'marquee',
             'notice_status',
-            'contact_phone',
-            'contact_whatsapp',
-            'contact_telegram',
-            'contact_email',
-            'contact_address',
         ];
 
         $keysInput = $request->input('keys', []);

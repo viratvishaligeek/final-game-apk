@@ -32,35 +32,6 @@ class MobileAppController extends Controller
         return back()->with('success', 'Marquee updated successfully.');
     }
 
-    public function contactDetails()
-    {
-        return view('backend.mobile-app.contact-details', [
-            'pageName' => 'Contact Details',
-            'settings' => $this->getSettings([
-                'contact_phone',
-                'contact_whatsapp',
-                'contact_telegram',
-                'contact_email',
-                'contact_address',
-            ]),
-        ]);
-    }
-
-    public function updateContactDetails(Request $request)
-    {
-        $validated = $request->validate([
-            'contact_phone' => ['nullable', 'string', 'max:30'],
-            'contact_whatsapp' => ['nullable', 'string', 'max:30'],
-            'contact_telegram' => ['nullable', 'string', 'max:100'],
-            'contact_email' => ['nullable', 'email', 'max:255'],
-            'contact_address' => ['nullable', 'string', 'max:500'],
-        ]);
-
-        $this->saveSettings($validated);
-
-        return back()->with('success', 'Contact details updated successfully.');
-    }
-
     public function limits()
     {
         return view('backend.mobile-app.limits', [

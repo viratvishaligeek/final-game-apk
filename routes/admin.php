@@ -82,9 +82,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
         Route::get('/marque', 'marque')->name('marque');
         Route::post('/marque', 'updateMarque')->name('update_marque');
 
-        Route::get('/contact-details', 'contactDetails')->name('contact_details');
-        Route::post('/contact-details', 'updateContactDetails')->name('update_contact_details');
-
         Route::get('/limits', 'limits')->name('limits');
         Route::post('/limits', 'updateLimits')->name('update_limits');
 
