@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -225,7 +226,7 @@ class WalletController extends Controller
     {
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
-            'utr' => ['required', 'string', 'max:100'],
+            'utr' => ['required', 'string', 'max:100', 'unique:wallet_requests,utr'],
             'screenshot' => [
                 'required',
                 'file',
@@ -235,17 +236,6 @@ class WalletController extends Controller
             ],
         ]);
         $user = $request->user();
-        $pendingExists = WalletRequest::query()
-            ->where('user_id', $user->id)
-            ->where('request_type', 'credit')
-            ->where('payment_method', 'manual_upi')
-            ->where('status', 'pending')
-            ->exists();
-        if ($pendingExists) {
-            throw ValidationException::withMessages([
-                'amount' => 'A similar payment request is already pending.',
-            ]);
-        }
         $amount = (float) $validated['amount'];
 
         $minimumDeposit = $this->settings->get('min_deposit');
@@ -261,16 +251,39 @@ class WalletController extends Controller
             'wallet/manual-payments',
             'public'
         );
-        $walletRequest = WalletRequest::create([
-            'user_id' => $user->id,
-            'request_type' => 'credit',
-            'payment_method' => 'manual_upi',
-            'amount' => $validated['amount'],
-            'utr' => $validated['utr'],
-            'screenshot' => $path,
-            'status' => 'pending',
-            'remark' => 'Manual UPI wallet top-up',
-        ]);
+        try {
+            $walletRequest = DB::transaction(function () use ($user, $validated, $path) {
+                User::query()->lockForUpdate()->findOrFail($user->id);
+
+                $pendingExists = WalletRequest::query()
+                    ->where('user_id', $user->id)
+                    ->where('request_type', 'credit')
+                    ->where('payment_method', 'manual_upi')
+                    ->where('status', 'pending')
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($pendingExists) {
+                    throw ValidationException::withMessages([
+                        'amount' => 'A similar payment request is already pending.',
+                    ]);
+                }
+
+                return WalletRequest::create([
+                    'user_id' => $user->id,
+                    'request_type' => 'credit',
+                    'payment_method' => 'manual_upi',
+                    'amount' => $validated['amount'],
+                    'utr' => $validated['utr'],
+                    'screenshot' => $path,
+                    'status' => 'pending',
+                    'remark' => 'Manual UPI wallet top-up',
+                ]);
+            });
+        } catch (\\Throwable $exception) {
+            Storage::disk('public')->delete($path);
+            throw $exception;
+        }
         return response()->json([
             'success' => true,
             'message' => 'Payment submitted successfully. Admin will verify your payment.',
@@ -302,27 +315,33 @@ class WalletController extends Controller
                 ],
             ]);
         }
-        $pendingExists = WalletRequest::query()
-            ->where('user_id', $user->id)
-            ->where('request_type', 'credit')
-            ->where('payment_method', 'gateway')
-            ->where('status', ['pending', 'processing'])
-            ->exists();
-        if ($pendingExists) {
-            throw ValidationException::withMessages([
-                'amount' => 'A similar payment request is already pending.',
-            ]);
-        }
+        $walletRequest = DB::transaction(function () use ($user, $clientTxnId, $validated) {
+            User::query()->lockForUpdate()->findOrFail($user->id);
 
-        $walletRequest = WalletRequest::create([
-            'user_id' => $user->id,
-            'request_type' => 'credit',
-            'payment_method' => 'gateway',
-            'amount' => $validated['amount'],
-            'status' => 'processing',
-            'client_txn_id' => $clientTxnId,
-            'remark' => 'Automated UPI gateway payment',
-        ]);
+            $pendingExists = WalletRequest::query()
+                ->where('user_id', $user->id)
+                ->where('request_type', 'credit')
+                ->where('payment_method', 'gateway')
+                ->whereIn('status', ['pending', 'processing'])
+                ->lockForUpdate()
+                ->exists();
+
+            if ($pendingExists) {
+                throw ValidationException::withMessages([
+                    'amount' => 'A similar payment request is already pending.',
+                ]);
+            }
+
+            return WalletRequest::create([
+                'user_id' => $user->id,
+                'request_type' => 'credit',
+                'payment_method' => 'gateway',
+                'amount' => $validated['amount'],
+                'status' => 'processing',
+                'client_txn_id' => $clientTxnId,
+                'remark' => 'Automated UPI gateway payment',
+            ]);
+        });
         try {
             $response = Http::timeout(30)
                 ->acceptJson()
@@ -539,7 +558,7 @@ class WalletController extends Controller
     public function withdraw(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:1'],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:1000000'],
             'mode' => ['required', 'in:bank,upi'],
             'account_name' => ['required_if:mode,bank', 'nullable', 'string', 'max:150'],
             'account_number' => ['required_if:mode,bank', 'nullable', 'string', 'max:100'],
@@ -554,22 +573,7 @@ class WalletController extends Controller
             ],
         ]);
         $user = $request->user();
-        $pendingExists = WalletRequest::query()
-            ->where('user_id', $user->id)
-            ->where('request_type', 'debit')
-            ->where('status', 'pending')
-            ->exists();
-        if ($pendingExists) {
-            throw ValidationException::withMessages([
-                'amount' => 'A similar withdraw request is already pending.',
-            ]);
-        }
-        $amount = (float) $validated['amount'];
-        if ($amount > (float) $user->balance) {
-            throw ValidationException::withMessages([
-                'amount' => 'Insufficient wallet balance.',
-            ]);
-        }
+        $amount = round((float) $validated['amount'], 2);
         $this->settings->validateRange(
             $amount,
             'min_withdraw',
@@ -582,19 +586,46 @@ class WalletController extends Controller
             $qrPath = $request->file('qr_code_image')
                 ->store('wallet/withdrawal-qr', 'public');
         }
-        $walletRequest = WalletRequest::create([
-            'user_id' => $user->id,
-            'request_type' => 'debit',
-            'payment_method' => $validated['mode'],
-            'amount' => $amount,
-            'status' => 'pending',
-            'account_name' => $validated['account_name'] ?? null,
-            'account_number' => $validated['account_number'] ?? null,
-            'ifsc' => strtoupper($validated['ifsc'] ?? '') ?: null,
-            'upi_id' => $validated['upi_id'] ?? null,
-            'qr_code_image' => $qrPath,
-            'remark' => 'Wallet withdrawal request',
-        ]);
+
+        try {
+            $walletRequest = DB::transaction(function () use ($user, $validated, $amount, $qrPath) {
+                $lockedUser = User::query()
+                    ->lockForUpdate()
+                    ->findOrFail($user->id);
+
+                $reservedWithdrawals = (float) WalletRequest::query()
+                    ->where('user_id', $lockedUser->id)
+                    ->where('request_type', 'debit')
+                    ->whereIn('status', ['pending', 'processing'])
+                    ->sum('amount');
+
+                if ($amount + $reservedWithdrawals > (float) $lockedUser->balance) {
+                    throw ValidationException::withMessages([
+                        'amount' => 'This withdrawal would exceed your available balance after pending withdrawals.',
+                    ]);
+                }
+
+                return WalletRequest::create([
+                    'user_id' => $lockedUser->id,
+                    'request_type' => 'debit',
+                    'payment_method' => $validated['mode'],
+                    'amount' => $amount,
+                    'status' => 'pending',
+                    'account_name' => $validated['account_name'] ?? null,
+                    'account_number' => $validated['account_number'] ?? null,
+                    'ifsc' => strtoupper($validated['ifsc'] ?? '') ?: null,
+                    'upi_id' => $validated['upi_id'] ?? null,
+                    'qr_code_image' => $qrPath,
+                    'remark' => 'Wallet withdrawal request',
+                ]);
+            });
+        } catch (\\Throwable $exception) {
+            if ($qrPath) {
+                Storage::disk('public')->delete($qrPath);
+            }
+
+            throw $exception;
+        }
         return response()->json([
             'success' => true,
             'message' => 'Withdrawal request submitted successfully.',
@@ -610,12 +641,24 @@ class WalletController extends Controller
      */
     public function getMoneyRequest(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'status' => ['sometimes', 'nullable', 'string', 'in:pending,processing,approved,rejected,failed'],
+            'type' => ['sometimes', 'nullable', 'string', 'in:credit,debit'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
+        ]);
+
         $requests = WalletRequest::query()
             ->where('user_id', $request->user()->id)
+            ->when(
+                $request->filled('status'),
+                fn ($query) => $query->where('status', $validated['status'])
+            )
+            ->when(
+                $request->filled('type'),
+                fn ($query) => $query->where('request_type', $validated['type'])
+            )
             ->latest('id')
-            ->where('status', $request->status)
-            ->where('request_type', $request->type)
-            ->paginate(15);
+            ->paginate($validated['per_page'] ?? 15);
         return response()->json([
             'success' => true,
             'data' => $requests,
