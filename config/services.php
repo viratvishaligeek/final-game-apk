@@ -59,6 +59,12 @@ return [
      * Generic JSON SMS endpoint used for password-reset OTP delivery.
      * The endpoint must accept a bearer token and JSON fields: to, message, sender.
      */
+    'fcm' => [
+        'project_id' => env('FCM_PROJECT_ID'),
+        // Store the complete Firebase service-account JSON in this environment value.
+        'service_account_json' => env('FCM_SERVICE_ACCOUNT_JSON'),
+    ],
+
     'sms_gateway' => [
         'url' => env('SMS_GATEWAY_URL'),
         'token' => env('SMS_GATEWAY_TOKEN'),
