@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use App\Models\Game;
 use App\Models\Notification;
-use App\Models\Setting;
+use App\Services\AppSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Password;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        protected AppSettingsService $appSettings
+    ) {}
+
     public function getDashboard(): JsonResponse
     {
         $banners = Banner::query()
@@ -34,10 +38,10 @@ class DashboardController extends Controller
             })
             ->values();
 
-        $noticeStatus = setting('notice_status', 'inactive');
-        $noticeContent = setting('admin_notice');
-
-        $marqueeContent = setting('marquee');
+        $settings = $this->appSettings->all();
+        $noticeStatus = $settings['notice_status'] ?? 'inactive';
+        $noticeContent = $settings['admin_notice'] ?? null;
+        $marqueeContent = $settings['marquee'] ?? null;
 
         return response()->json([
             'status' => true,
@@ -203,12 +207,19 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function getSetting(Request $request)
+    public function getSetting(Request $request): JsonResponse
     {
         $allowedKeys = [
             'min_deposit',
+            'max_deposit',
             'min_withdraw',
             'max_withdraw',
+            'min_bid_amount_jodi',
+            'max_bid_amount_jodi',
+            'min_bid_amount_haruf',
+            'max_bid_amount_haruf',
+            'add_money_notice',
+            'withdraw_money_notice',
             'admin_notice',
             'marquee',
             'notice_status',
@@ -218,36 +229,37 @@ class DashboardController extends Controller
             'contact_email',
             'contact_address',
         ];
-        $keys = $request->input('keys', []);
-        if ($request->filled('key')) {
-            $keys[] = $request->input('key');
-        }
-        if (!is_array($keys)) {
-            $keys = explode(',', $keys);
+
+        $keysInput = $request->input('keys', []);
+        if (!is_array($keysInput)) {
+            $keysInput = explode(',', (string) $keysInput);
         }
 
-        $keys = collect($keys)
-            ->map(fn($key) => trim((string) $key))
+        if ($request->filled('key')) {
+            $keysInput[] = $request->input('key');
+        }
+
+        $keys = collect($keysInput)
+            ->map(fn ($key) => trim((string) $key))
             ->filter()
             ->unique()
             ->values()
             ->all();
 
-        if (empty($keys)) {
+        if ($keys === []) {
             $keys = $allowedKeys;
         }
 
-        $keys = array_values(
-            array_intersect(
-                $keys,
-                $allowedKeys
-            )
-        );
+        $keys = array_values(array_intersect($keys, $allowedKeys));
+        $allSettings = $this->appSettings->all();
+        $data = collect($keys)
+            ->mapWithKeys(fn ($key) => [$key => $allSettings[$key] ?? null])
+            ->all();
 
-        $data = settings($keys);
         return response()->json([
             'success' => true,
             'data' => $data,
         ]);
     }
+}
 }
