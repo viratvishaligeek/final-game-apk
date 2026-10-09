@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 
 class WalletController extends Controller
 {
@@ -41,6 +42,17 @@ class WalletController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        $reservedWithdrawals = WalletRequest::query()
+            ->where('user_id', $user->id)
+            ->where('request_type', 'debit')
+            ->whereIn('status', ['pending', 'processing'])
+            ->sum('amount');
+
+        $availableBalance = round(
+            max(0, (float) $user->balance - (float) $reservedWithdrawals),
+            2
+        );
         $perPage = min(
             max((int) $request->input('per_page', 15), 5),
             50
@@ -156,6 +168,7 @@ class WalletController extends Controller
                     (float) $user->balance,
                     2
                 ),
+                'available_balance' => $availableBalance,
                 'summary' => [
                     'cash_added' => round(
                         (float) $totalCredited,
@@ -471,43 +484,92 @@ class WalletController extends Controller
         }
     }
 
-    public function gatewayReturn(Request $request): JsonResponse
+    public function gatewayReturn(Request $request): Response
     {
         $clientTxnId = $request->query('client_txn_id');
+
         if (!$clientTxnId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid transaction.',
-            ], 422);
+            return $this->gatewayReturnResponse(
+                $request,
+                false,
+                'Invalid transaction.',
+                ['status' => 'failed'],
+                422
+            );
         }
+
         $walletRequest = WalletRequest::query()
             ->where('client_txn_id', $clientTxnId)
             ->first();
+
         if (!$walletRequest) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaction not found.',
-            ], 404);
+            return $this->gatewayReturnResponse(
+                $request,
+                false,
+                'Transaction not found.',
+                ['status' => 'failed'],
+                404
+            );
         }
+
         try {
             $this->verifyGatewayTransaction($walletRequest);
-        } catch (\Throwable $exception) {
+        } catch (\\Throwable $exception) {
             report($exception);
         }
 
         $walletRequest->refresh();
-        return response()->json([
-            'success' => $walletRequest->status === 'approved',
-            'message' => match ($walletRequest->status) {
+
+        return $this->gatewayReturnResponse(
+            $request,
+            $walletRequest->status === 'approved',
+            match ($walletRequest->status) {
                 'approved' => 'Payment successful and wallet credited.',
                 'failed' => 'Payment failed.',
                 default => 'Payment is being verified.',
             },
-            'data' => [
+            [
                 'status' => $walletRequest->status,
                 'request_id' => $walletRequest->id,
-            ],
+            ]
+        );
+    }
+
+    /**
+     * API clients keep the JSON contract. Browser-based gateway returns go
+     * back to the wallet screen instead of leaving users on a raw JSON page.
+     */
+    private function gatewayReturnResponse(
+        Request $request,
+        bool $success,
+        string $message,
+        array $data = [],
+        int $httpStatus = 200
+    ): Response {
+        $payload = [
+            'success' => $success,
+            'message' => $message,
+            'data' => $data,
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json($payload, $httpStatus);
+        }
+
+        $frontendUrl = $this->gatewayValue(
+            'frontend_return_url',
+            'services.upi_gateway.frontend_return_url'
+        ) ?? rtrim((string) config('app.url'), '/') . '/wallet/add';
+
+        $query = http_build_query([
+            'gateway_return' => '1',
+            'status' => $data['status'] ?? 'failed',
+            'request_id' => $data['request_id'] ?? null,
         ]);
+
+        $separator = str_contains($frontendUrl, '?') ? '&' : '?';
+
+        return redirect()->away($frontendUrl . $separator . $query);
     }
 
     /**
@@ -791,15 +853,22 @@ class WalletController extends Controller
     {
         $validated = $request->validate([
             'status' => ['sometimes', 'nullable', 'string', 'in:pending,processing,approved,rejected,failed'],
+            'statuses' => ['sometimes', 'array'],
+            'statuses.*' => ['string', 'in:pending,processing,approved,rejected,failed'],
             'type' => ['sometimes', 'nullable', 'string', 'in:credit,debit'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
         ]);
 
+        $statuses = $validated['statuses'] ?? [];
+
         $requests = WalletRequest::query()
             ->where('user_id', $request->user()->id)
             ->when(
-                $request->filled('status'),
-                fn ($query) => $query->where('status', $validated['status'])
+                $statuses !== [],
+                fn ($query) => $query->whereIn('status', $statuses),
+                fn ($query) => $request->filled('status')
+                    ? $query->where('status', $validated['status'])
+                    : $query
             )
             ->when(
                 $request->filled('type'),
