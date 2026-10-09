@@ -85,7 +85,7 @@ class AuthController extends Controller
 
         $credentials = $request->validate([
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string'],
             'remember' => ['nullable', 'boolean'],
         ]);
 
