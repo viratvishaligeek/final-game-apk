@@ -4,16 +4,22 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Faq;
+use App\Services\FaqService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class FaqController extends Controller
 {
+    public function __construct(
+        private FaqService $faqService
+    ) {}
+
     public function index(): View
     {
-        $faqs = Faq::latest()->get();
+        $faqs = $this->faqService->getAll();
         $pageName = 'FAQs Management';
+
         return view('backend.faqs.index', compact('faqs', 'pageName'));
     }
 
@@ -27,10 +33,11 @@ class FaqController extends Controller
     {
         $validated = $request->validate([
             'question' => ['required', 'string', 'max:500'],
-            'answer'   => ['required', 'string'],
+            'answer' => ['required', 'string'],
         ]);
-        Faq::create($validated);
-        return redirect()->route('admin.faqs.index')->with('success', 'FAQ created successfully.');
+        $this->faqService->create($validated);
+        return redirect()->route('admin.faqs.index')
+            ->with('success', 'FAQ created successfully.');
     }
 
     public function edit(Faq $faq): View
@@ -43,15 +50,19 @@ class FaqController extends Controller
     {
         $validated = $request->validate([
             'question' => ['required', 'string', 'max:500'],
-            'answer'   => ['required', 'string'],
+            'answer' => ['required', 'string'],
         ]);
-        $faq->update($validated);
-        return redirect()->route('admin.faqs.index')->with('success', 'FAQ updated successfully.');
+
+        $this->faqService->update($faq, $validated);
+
+        return redirect()->route('admin.faqs.index')
+            ->with('success', 'FAQ updated successfully.');
     }
 
     public function destroy(Faq $faq): RedirectResponse
     {
-        $faq->delete();
-        return redirect()->route('admin.faqs.index')->with('success', 'FAQ deleted successfully.');
+        $this->faqService->delete($faq);
+        return redirect()->route('admin.faqs.index')
+            ->with('success', 'FAQ deleted successfully.');
     }
 }

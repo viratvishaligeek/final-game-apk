@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Backend\Game;
 use App\Http\Controllers\Controller;
 use App\Models\Bid;
 use App\Models\Game;
+use App\Models\WalletRequest;
+use App\Models\Winner;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class BiddingDeskController extends Controller
@@ -15,30 +18,18 @@ class BiddingDeskController extends Controller
         $games = Game::query()
             ->orderBy('name')
             ->get(['id', 'name']);
-
         return view('backend.bidding-desk', compact('games'));
     }
 
     public function data(Request $request)
     {
         $validated = $request->validate([
-            'game_id' => [
-                'required',
-                'integer',
-                'exists:games,id',
-            ],
-
-            'date' => [
-                'nullable',
-                'date',
-            ],
+            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'date' => ['nullable', 'date'],
         ]);
-
         $gameId = $validated['game_id'];
-
         $date = $validated['date']
             ?? now()->toDateString();
-
         $jodiCrossing = Bid::query()
             ->where('game_id', $gameId)
             ->where('game_date', $date)
@@ -52,37 +43,28 @@ class BiddingDeskController extends Controller
             ->groupBy('number')
             ->get()
             ->keyBy('number');
-
         $jodiCrossingNumbers = [];
-
         for ($i = 0; $i <= 99; $i++) {
-
             $number = str_pad(
                 (string) $i,
                 2,
                 '0',
                 STR_PAD_LEFT
             );
-
             $row = $jodiCrossing->get($number);
-
             $jodiCrossingNumbers[] = [
                 'number' => $number,
-
                 'total_bids' => $row
                     ? (int) $row->total_bids
                     : 0,
-
                 'total_users' => $row
                     ? (int) $row->total_users
                     : 0,
-
                 'total_amount' => $row
                     ? round((float) $row->total_amount, 2)
                     : 0,
             ];
         }
-
         $haruf = Bid::query()
             ->where('game_id', $gameId)
             ->where('game_date', $date)
@@ -96,84 +78,46 @@ class BiddingDeskController extends Controller
             ->groupBy('number')
             ->get()
             ->keyBy('number');
-
-        /*
-        |--------------------------------------------------------------------------
-        | ANDER
-        |--------------------------------------------------------------------------
-        */
-
         $ander = [];
-
         for ($i = 0; $i <= 9; $i++) {
-
             $number = 'ander-' . $i;
-
             $row = $haruf->get($number);
-
             $ander[] = [
                 'number' => (string) $i,
-
                 'total_bids' => $row
                     ? (int) $row->total_bids
                     : 0,
-
                 'total_users' => $row
                     ? (int) $row->total_users
                     : 0,
-
                 'total_amount' => $row
                     ? round((float) $row->total_amount, 2)
                     : 0,
             ];
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | BAHAR
-        |--------------------------------------------------------------------------
-        */
-
         $bahar = [];
-
         for ($i = 0; $i <= 9; $i++) {
-
             $number = 'bahar-' . $i;
-
             $row = $haruf->get($number);
-
             $bahar[] = [
                 'number' => (string) $i,
-
                 'total_bids' => $row
                     ? (int) $row->total_bids
                     : 0,
-
                 'total_users' => $row
                     ? (int) $row->total_users
                     : 0,
-
                 'total_amount' => $row
                     ? round((float) $row->total_amount, 2)
                     : 0,
             ];
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | RESPONSE
-        |--------------------------------------------------------------------------
-        */
-
         return response()->json([
             'success' => true,
-
             'data' => [
                 'game_id' => $gameId,
                 'date' => $date,
-
                 'jodi_crossing' => $jodiCrossingNumbers,
-
                 'haruf' => [
                     'ander' => $ander,
                     'bahar' => $bahar,
@@ -182,9 +126,6 @@ class BiddingDeskController extends Controller
         ]);
     }
 
-    /**
-     * AJAX: Number Details
-     */
     public function details(Request $request)
     {
         $validated = $request->validate([
@@ -192,7 +133,6 @@ class BiddingDeskController extends Controller
             'date' => ['required', 'date'],
             'number' => ['required', 'string', 'max:30'],
         ]);
-
         $bids = Bid::query()
             ->with([
                 'user:id,name,phone',
@@ -231,67 +171,43 @@ class BiddingDeskController extends Controller
                 'winning_amount',
                 'created_at',
             ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | SUMMARY
-        |--------------------------------------------------------------------------
-        */
-
         $summary = [
             'total_bids' => $bids->count(),
-
             'total_users' => $bids
                 ->pluck('user_id')
                 ->unique()
                 ->count(),
-
             'total_amount' => round(
                 (float) $bids->sum('amount'),
                 2
             ),
         ];
-
         return response()->json([
             'success' => true,
-
             'data' => [
                 'number' => $validated['number'],
-
                 'summary' => $summary,
-
                 'bids' => $bids->map(function ($bid) {
-
                     return [
                         'id' => $bid->id,
-
                         'order_no' => $bid->order_no,
-
                         'user_id' => $bid->user_id,
-
                         'user_name' =>
                         $bid->user?->name ?? 'Unknown',
-
                         'user_phone' =>
                         $bid->user?->phone
                             ?? $bid->phone
                             ?? '-',
-
                         'type' => $bid->type,
-
                         'number' => $bid->number,
-
                         'amount' =>
                         round((float) $bid->amount, 2),
-
                         'status' => $bid->status,
-
                         'winning_amount' =>
                         round(
                             (float) $bid->winning_amount,
                             2
                         ),
-
                         'created_at' =>
                         optional(
                             $bid->created_at
@@ -302,5 +218,86 @@ class BiddingDeskController extends Controller
                 }),
             ],
         ]);
+    }
+
+    // profitLoss
+    public function profitLoss(Request $request)
+    {
+        $from = $request->get('from', Carbon::today()->toDateString());
+        $to = $request->get('to', Carbon::today()->toDateString());
+        $startDate = Carbon::parse($from)->toDateString();
+        $endDate = Carbon::parse($to)->toDateString();
+        $startDateTime = $startDate . ' 00:00:00';
+        $endDateTime   = $endDate . ' 23:59:59';
+        $totalUser = WalletRequest::where('request_type', 'credit')
+            ->where('status', 'approved')
+            ->whereBetween('created_at', [
+                $startDateTime,
+                $endDateTime
+            ])
+            ->sum('amount');
+        $totalMatch = WalletRequest::where('request_type', 'debit')
+            ->whereBetween('created_at', [
+                $startDateTime,
+                $endDateTime
+            ])
+            ->sum('amount');
+
+        $totalTrans = WalletRequest::where('request_type', 'debit')
+            ->where('status', 'approved')
+            ->whereBetween('created_at', [
+                $startDateTime,
+                $endDateTime
+            ])
+            ->sum('amount');
+        $games = Game::where('status', 'active')
+            ->orderBy('serial', 'asc')
+            ->get();
+
+        $bidTotals = Bid::query()
+            ->select(
+                'game_id',
+                DB::raw('SUM(amount) as total_bid')
+            )
+            ->whereBetween('game_date', [$startDate, $endDate])
+            ->groupBy('game_id')
+            ->pluck('total_bid', 'game_id');
+        $winTotals = Winner::query()
+            ->select(
+                'game_id',
+                DB::raw('SUM(winning_amount) as total_win')
+            )
+            ->whereBetween('game_date', [$startDate, $endDate])
+            ->groupBy('game_id')
+            ->pluck('total_win', 'game_id');
+        $gameStats = $games->map(function ($game) use ($bidTotals, $winTotals) {
+            $totalBid = (float) ($bidTotals->get($game->id) ?? 0);
+            $totalWin = (float) ($winTotals->get($game->id) ?? 0);
+            $profitLoss = $totalBid - $totalWin;
+            return [
+                'id'          => $game->id,
+                'name'        => $game->name,
+                'total_bid'   => $totalBid,
+                'total_win'   => $totalWin,
+                'profit_loss' => $profitLoss,
+            ];
+        });
+
+        $grandTotalBid = $gameStats->sum('total_bid');
+        $grandTotalWin = $gameStats->sum('total_win');
+        $grandProfitLoss = $grandTotalBid - $grandTotalWin;
+        return view('backend.profit_loss_history', compact(
+            'gameStats',
+            'totalUser',
+            'totalMatch',
+            'totalTrans',
+            'grandTotalBid',
+            'grandTotalWin',
+            'grandProfitLoss',
+            'from',
+            'to',
+            'startDate',
+            'endDate'
+        ));
     }
 }

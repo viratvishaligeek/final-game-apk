@@ -7,6 +7,7 @@ use App\Models\Bid;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\WalletRequest;
+use App\Services\AppSettingsService;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,54 +20,39 @@ use Illuminate\Validation\ValidationException;
 class WalletController extends Controller
 {
     public function __construct(
-        protected WalletService $walletService
+        protected WalletService $walletService,
+        protected AppSettingsService $settings
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-
         $perPage = min(
             max((int) $request->input('per_page', 15), 5),
             50
         );
-
         $page = max(
             (int) $request->input('page', 1),
             1
         );
-
         $type = strtolower(
             trim((string) $request->input('type', 'all'))
         );
-
         if (!in_array($type, ['all', 'credit', 'debit'], true)) {
             $type = 'all';
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | Successful transaction statuses
-    |--------------------------------------------------------------------------
-    */
         $successfulStatuses = [
             'completed',
             'success',
             'successful',
         ];
 
-        /*
-    |--------------------------------------------------------------------------
-    | Transaction listing
-    |--------------------------------------------------------------------------
-    */
         $transactionQuery = Transaction::query()
             ->where('user_id', $user->id);
-
         if ($type !== 'all') {
             $transactionQuery->where('type', $type);
         }
-
         $transactions = $transactionQuery
             ->latest('id')
             ->paginate(
@@ -76,15 +62,6 @@ class WalletController extends Controller
                 $page
             );
 
-        /*
-    |--------------------------------------------------------------------------
-    | CASH ADDED
-    |--------------------------------------------------------------------------
-    |
-    | Only successful CREDIT transactions which represent money added
-    | by the user.
-    |
-    */
         $totalCredited = Transaction::query()
             ->where('user_id', $user->id)
             ->whereRaw('LOWER(type) = ?', ['credit'])
@@ -102,11 +79,6 @@ class WalletController extends Controller
             })
             ->sum('amount');
 
-        /*
-    |--------------------------------------------------------------------------
-    | WITHDRAWN
-    |--------------------------------------------------------------------------
-    */
         $totalDebited = Transaction::query()
             ->where('user_id', $user->id)
             ->whereRaw('LOWER(type) = ?', ['debit'])
@@ -121,132 +93,85 @@ class WalletController extends Controller
             })
             ->sum('amount');
 
-        /*
-    |--------------------------------------------------------------------------
-    | PLAYED BET
-    |--------------------------------------------------------------------------
-    |
-    | Only actual bet amount.
-    |
-    */
         $totalPlayedBet = Bid::query()
             ->where('user_id', $user->id)
             ->sum('amount');
 
-        /*
-    |--------------------------------------------------------------------------
-    | TOTAL WIN
-    |--------------------------------------------------------------------------
-    |
-    | Only positive winning amounts.
-    |
-    */
         $totalWin = Bid::query()
             ->where('user_id', $user->id)
             ->whereNotNull('winning_amount')
             ->where('winning_amount', '>', 0)
             ->sum('winning_amount');
 
-        /*
-    |--------------------------------------------------------------------------
-    | Normalize transaction response
-    |--------------------------------------------------------------------------
-    */
         $transactionData = collect($transactions->items())
             ->map(function ($transaction) {
                 return [
                     'id' => $transaction->id,
-
                     'txn_id' => 'TXN' . str_pad(
                         $transaction->id,
                         8,
                         '0',
                         STR_PAD_LEFT
                     ),
-
                     'description' => $transaction->subject
                         ?: 'Wallet Transaction',
-
                     'type' => strtolower(
                         (string) $transaction->type
                     ),
-
                     'amount' => round(
                         (float) $transaction->amount,
                         2
                     ),
-
                     'balance' => round(
                         (float) ($transaction->balance ?? 0),
                         2
                     ),
-
                     'status' => $this->normalizeTransactionStatus(
                         $transaction->status
                     ),
-
                     'created_at' => $transaction->created_at,
                 ];
             })
             ->values();
 
-        /*
-    |--------------------------------------------------------------------------
-    | Response
-    |--------------------------------------------------------------------------
-    */
         return response()->json([
             'success' => true,
-
             'message' => 'Wallet data fetched successfully.',
-
             'data' => [
                 'balance' => round(
                     (float) $user->balance,
                     2
                 ),
-
                 'summary' => [
                     'cash_added' => round(
                         (float) $totalCredited,
                         2
                     ),
-
                     'withdrawn' => round(
                         (float) $totalDebited,
                         2
                     ),
-
                     'played_bet' => round(
                         (float) $totalPlayedBet,
                         2
                     ),
-
                     'total_win' => round(
                         (float) $totalWin,
                         2
                     ),
                 ],
-
                 'transactions' => [
                     'data' => $transactionData,
-
                     'current_page' => $transactions->currentPage(),
-
                     'last_page' => $transactions->lastPage(),
-
                     'per_page' => $transactions->perPage(),
-
                     'total' => $transactions->total(),
-
                     'from' => $transactions->firstItem(),
-
                     'to' => $transactions->lastItem(),
                 ],
             ],
         ]);
     }
-
 
 
     /**
@@ -255,11 +180,9 @@ class WalletController extends Controller
     private function normalizeTransactionStatus(
         ?string $status
     ): string {
-
         $status = strtolower(
             (string) $status
         );
-
         return match ($status) {
             'completed',
             'success',
@@ -311,20 +234,27 @@ class WalletController extends Controller
                 'max:5120',
             ],
         ]);
-
         $user = $request->user();
-
         $pendingExists = WalletRequest::query()
             ->where('user_id', $user->id)
             ->where('request_type', 'credit')
             ->where('payment_method', 'manual_upi')
             ->where('status', 'pending')
-            ->where('amount', $validated['amount'])
             ->exists();
-
         if ($pendingExists) {
             throw ValidationException::withMessages([
                 'amount' => 'A similar payment request is already pending.',
+            ]);
+        }
+        $amount = (float) $validated['amount'];
+
+        $minimumDeposit = $this->settings->get('min_deposit');
+
+        if ($amount < $minimumDeposit) {
+            throw ValidationException::withMessages([
+                'amount' => [
+                    "Minimum deposit amount is {$minimumDeposit}.",
+                ],
             ]);
         }
         $path = $request->file('screenshot')->store(
@@ -356,13 +286,33 @@ class WalletController extends Controller
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:1000000'],
         ]);
-
         $user = $request->user();
-
         $clientTxnId = 'WLT-' .
             now()->format('YmdHis') .
             '-' .
             strtoupper(Str::random(8));
+        $amount = (float) $validated['amount'];
+
+        $minimumDeposit = $this->settings->get('min_deposit');
+
+        if ($amount < $minimumDeposit) {
+            throw ValidationException::withMessages([
+                'amount' => [
+                    "Minimum deposit amount is {$minimumDeposit}.",
+                ],
+            ]);
+        }
+        $pendingExists = WalletRequest::query()
+            ->where('user_id', $user->id)
+            ->where('request_type', 'credit')
+            ->where('payment_method', 'gateway')
+            ->where('status', ['pending', 'processing'])
+            ->exists();
+        if ($pendingExists) {
+            throw ValidationException::withMessages([
+                'amount' => 'A similar payment request is already pending.',
+            ]);
+        }
 
         $walletRequest = WalletRequest::create([
             'user_id' => $user->id,
@@ -373,7 +323,6 @@ class WalletController extends Controller
             'client_txn_id' => $clientTxnId,
             'remark' => 'Automated UPI gateway payment',
         ]);
-
         try {
             $response = Http::timeout(30)
                 ->acceptJson()
@@ -443,29 +392,23 @@ class WalletController extends Controller
     public function gatewayReturn(Request $request): JsonResponse
     {
         $clientTxnId = $request->query('client_txn_id');
-
         if (!$clientTxnId) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid transaction.',
             ], 422);
         }
-
         $walletRequest = WalletRequest::query()
             ->where('client_txn_id', $clientTxnId)
             ->first();
-
         if (!$walletRequest) {
             return response()->json([
                 'success' => false,
                 'message' => 'Transaction not found.',
             ], 404);
         }
-
         $this->verifyGatewayTransaction($walletRequest);
-
         $walletRequest->refresh();
-
         return response()->json([
             'success' => $walletRequest->status === 'approved',
             'message' => match ($walletRequest->status) {
@@ -486,34 +429,28 @@ class WalletController extends Controller
     public function gatewayWebhook(Request $request): JsonResponse
     {
         $clientTxnId = $request->input('client_txn_id');
-
         if (!$clientTxnId) {
             return response()->json([
                 'success' => false,
                 'message' => 'Missing transaction ID.',
             ], 422);
         }
-
         $walletRequest = WalletRequest::query()
             ->where('client_txn_id', $clientTxnId)
             ->first();
-
         if (!$walletRequest) {
             return response()->json([
                 'success' => false,
                 'message' => 'Transaction not found.',
             ], 404);
         }
-
         $gatewayStatus = $request->input('status');
-
         $walletRequest->update([
             'gateway_txn_id' => $request->input('id'),
             'customer_vpa' => $request->input('customer_vpa'),
             'gateway_status' => $gatewayStatus,
             'utr' => $request->input('upi_txn_id') ?: $walletRequest->utr,
         ]);
-
         if ($gatewayStatus === 'success') {
             $this->approveGatewayRequest($walletRequest);
         } elseif ($gatewayStatus === 'failure') {
@@ -521,7 +458,6 @@ class WalletController extends Controller
                 'status' => 'failed',
             ]);
         }
-
         return response()->json([
             'success' => true,
         ]);
@@ -543,30 +479,23 @@ class WalletController extends Controller
                     'txn_date' => now()->format('d-m-Y'),
                 ]
             );
-
         if (!$response->successful()) {
             return;
         }
-
         $result = $response->json();
-
         if (($result['status'] ?? false) !== true) {
             return;
         }
-
         $data = $result['data'] ?? [];
-
         $walletRequest->update([
             'gateway_txn_id' => $data['id'] ?? $walletRequest->gateway_txn_id,
             'customer_vpa' => $data['customer_vpa'] ?? $walletRequest->customer_vpa,
             'gateway_status' => $data['status'] ?? null,
             'utr' => $data['upi_txn_id'] ?? $walletRequest->utr,
         ]);
-
         if (($data['status'] ?? null) === 'success') {
             $this->approveGatewayRequest($walletRequest);
         }
-
         if (($data['status'] ?? null) === 'failure') {
             $walletRequest->update([
                 'status' => 'failed',
@@ -624,24 +553,35 @@ class WalletController extends Controller
                 'max:2048',
             ],
         ]);
-
         $user = $request->user();
-
+        $pendingExists = WalletRequest::query()
+            ->where('user_id', $user->id)
+            ->where('request_type', 'debit')
+            ->where('status', 'pending')
+            ->exists();
+        if ($pendingExists) {
+            throw ValidationException::withMessages([
+                'amount' => 'A similar withdraw request is already pending.',
+            ]);
+        }
         $amount = (float) $validated['amount'];
-
         if ($amount > (float) $user->balance) {
             throw ValidationException::withMessages([
                 'amount' => 'Insufficient wallet balance.',
             ]);
         }
+        $this->settings->validateRange(
+            $amount,
+            'min_withdraw',
+            'max_withdraw',
+            'amount'
+        );
 
         $qrPath = null;
-
         if ($request->hasFile('qr_code_image')) {
             $qrPath = $request->file('qr_code_image')
                 ->store('wallet/withdrawal-qr', 'public');
         }
-
         $walletRequest = WalletRequest::create([
             'user_id' => $user->id,
             'request_type' => 'debit',
@@ -655,7 +595,6 @@ class WalletController extends Controller
             'qr_code_image' => $qrPath,
             'remark' => 'Wallet withdrawal request',
         ]);
-
         return response()->json([
             'success' => true,
             'message' => 'Withdrawal request submitted successfully.',
@@ -677,7 +616,6 @@ class WalletController extends Controller
             ->where('status', $request->status)
             ->where('request_type', $request->type)
             ->paginate(15);
-
         return response()->json([
             'success' => true,
             'data' => $requests,
