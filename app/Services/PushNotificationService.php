@@ -87,7 +87,7 @@ class PushNotificationService
                         'priority' => 'HIGH',
                         'notification' => [
                             'channel_id' => 'default',
-                            'sound' => 'default',
+                            'sound' => 'notification_tune',
                             'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                         ],
                     ],
