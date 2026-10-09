@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Bid;
 use App\Models\Game;
+use App\Models\Result;
 use App\Models\User;
 use App\Services\AppSettingsService;
 use App\Services\WalletService;
@@ -173,6 +174,18 @@ class BidController extends Controller
             }
 
             $gameDate = $lockedGame->businessDate();
+
+            $resultAlreadyPublished = Result::query()
+                ->where('game_id', $lockedGame->id)
+                ->where('game_date', $gameDate)
+                ->where('type', 'jodi')
+                ->exists();
+
+            if ($resultAlreadyPublished) {
+                throw ValidationException::withMessages([
+                    'game' => ['The result has already been published for this game date. Betting is closed.'],
+                ]);
+            }
 
             $lockedUser = User::query()
                 ->lockForUpdate()
