@@ -15,8 +15,8 @@ class PushNotificationService
     public function register(string $token, string $platform, ?User $user = null): PushSubscription
     {
         return PushSubscription::query()->updateOrCreate(
-            ['token' => $token],
-            ['user_id' => $user?->id, 'platform' => $platform]
+            ['token_hash' => hash('sha256', $token)],
+            ['token' => $token, 'user_id' => $user?->id, 'platform' => $platform]
         );
     }
 
@@ -110,8 +110,8 @@ class PushNotificationService
         }
 
         $errorCode = $response->json('error.details.0.errorCode');
-        if (in_array($errorCode, ['UNREGISTERED', 'INVALID_ARGUMENT'], true)) {
-            PushSubscription::query()->where('token', $token)->delete();
+        if ($errorCode === 'UNREGISTERED') {
+            PushSubscription::query()->where('token_hash', hash('sha256', $token))->delete();
         }
 
         Log::warning('FCM rejected a push message.', [
