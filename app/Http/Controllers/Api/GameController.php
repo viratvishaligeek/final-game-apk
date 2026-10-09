@@ -61,12 +61,30 @@ class GameController extends Controller
 
         $gameIds = $games->pluck('id');
 
+        $gameDates = $games->mapWithKeys(function (Game $game) use ($now) {
+            $businessDate = $game->businessDate($now);
+
+            return [
+                $game->id => [
+                    'current' => $businessDate,
+                    'previous' => Carbon::parse($businessDate, config('app.timezone'))
+                        ->subDay()
+                        ->toDateString(),
+                ],
+            ];
+        });
+
+        $resultDates = $gameDates
+            ->flatMap(fn (array $dates) => array_values($dates))
+            ->unique()
+            ->values();
+
         $results = collect();
 
         if ($gameIds->isNotEmpty()) {
             $results = Result::query()
                 ->whereIn('game_id', $gameIds)
-                ->whereIn('game_date', [$today, $yesterday])
+                ->whereIn('game_date', $resultDates)
                 ->orderByDesc('id')
                 ->get([
                     'id',
@@ -94,19 +112,21 @@ class GameController extends Controller
 
         $games = $games->map(function (Game $game) use (
             $resultsByGame,
-            $today,
-            $yesterday,
+            $gameDates,
             $now
         ) {
             $gameResults = $resultsByGame->get($game->id, collect());
+            $businessDates = $gameDates->get($game->id);
+            $businessDate = $businessDates['current'];
+            $previousBusinessDate = $businessDates['previous'];
 
             $todayResult = $gameResults
-                ->where('game_date', $today)
+                ->where('game_date', $businessDate)
                 ->sortByDesc('id')
                 ->first();
 
             $yesterdayResult = $gameResults
-                ->where('game_date', $yesterday)
+                ->where('game_date', $previousBusinessDate)
                 ->sortByDesc('id')
                 ->first();
 
@@ -130,6 +150,7 @@ class GameController extends Controller
                 'play_start' => $game->play_start,
                 'play_end' => $game->play_end,
                 'result_time' => $game->result_time,
+                'business_date' => $businessDate,
 
                 'status' => $game->status,
                 'serial' => $game->serial,
