@@ -32,12 +32,12 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->merge([
-            'phone' => preg_replace('/[\\s-]/', '', trim((string) $request->input('phone', ''))) ?? '',
+            'phone' => preg_replace('/[\s-]/', '', trim((string) $request->input('phone', ''))) ?? '',
         ]);
 
         $validated = $request->validate([
             'name'       => 'required|string|max:200',
-            'phone'      => ['required', 'string', 'regex:/^\\+?[0-9]{7,15}$/', 'unique:users,phone'],
+            'phone'      => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/', 'unique:users,phone'],
             'password'   => 'required|string|min:6',
             'gender'     => 'nullable|string|in:Male,Female,Other',
             'city'       => 'nullable|string|max:200',
@@ -124,12 +124,12 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         $request->merge([
-            'phone' => preg_replace('/[\\s-]/', '', trim((string) $request->input('phone', ''))) ?? '',
+            'phone' => preg_replace('/[\s-]/', '', trim((string) $request->input('phone', ''))) ?? '',
         ]);
 
         $validated = $request->validate([
             'name'       => 'required|string|max:200',
-            'phone'      => ['required', 'string', 'regex:/^\\+?[0-9]{7,15}$/', 'unique:users,phone,' . $user->id],
+            'phone'      => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/', 'unique:users,phone,' . $user->id],
             'password'   => 'nullable|string|min:6',
             'gender'     => 'nullable|string|in:Male,Female,Other',
             'city'       => 'nullable|string|max:200',
