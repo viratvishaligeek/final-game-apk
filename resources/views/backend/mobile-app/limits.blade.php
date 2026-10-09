@@ -31,7 +31,7 @@
                 <div class="card-body">
                     <div class="row gx-3">
 
-                        <div class="col-md-6 mb-4">
+                        <div class="col-md-3 mb-4">
                             <label for="min_deposit" class="small mb-1">
                                 Minimum Deposit
                             </label>
@@ -39,15 +39,7 @@
                                 name="min_deposit" value="{{ old('min_deposit', $settings['min_deposit'] ?? 0) }}">
                         </div>
 
-                        <div class="col-md-6 mb-4">
-                            <label for="max_deposit" class="small mb-1">
-                                Maximum Deposit
-                            </label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="max_deposit"
-                                name="max_deposit" value="{{ old('max_deposit', $settings['max_deposit'] ?? 0) }}">
-                        </div>
-
-                        <div class="col-md-6 mb-4">
+                        <div class="col-md-3 mb-4">
                             <label for="min_withdraw" class="small mb-1">
                                 Minimum Withdrawal
                             </label>
@@ -55,7 +47,7 @@
                                 name="min_withdraw" value="{{ old('min_withdraw', $settings['min_withdraw'] ?? 0) }}">
                         </div>
 
-                        <div class="col-md-6 mb-4">
+                        <div class="col-md-3 mb-4">
                             <label for="max_withdraw" class="small mb-1">
                                 Maximum Withdrawal
                             </label>
@@ -64,21 +56,33 @@
                         </div>
 
                         <div class="col-md-6 mb-4">
-                            <label for="min_bid_amount" class="small mb-1">
-                                Minimum Bid Amount
+                            <label for="min_bid_amount_jodi" class="small mb-1">
+                                Minimum Bid Amount Jodi
                             </label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="min_bid_amount"
-                                name="min_bid_amount" value="{{ old('min_bid_amount', $settings['min_bid_amount'] ?? 0) }}">
+                            <input type="number" step="0.01" min="0" class="form-control" id="min_bid_amount_jodi"
+                                name="min_bid_amount_jodi" value="{{ old('min_bid_amount_jodi', $settings['min_bid_amount_jodi'] ?? 0) }}">
                         </div>
-
+                         <div class="col-md-6 mb-4">
+                            <label for="min_bid_amount_haruf" class="small mb-1">
+                                Minimum Bid Amount Haruf
+                            </label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="min_bid_amount_haruf"
+                                name="min_bid_amount_haruf" value="{{ old('min_bid_amount_haruf', $settings['min_bid_amount_haruf'] ?? 0) }}">
+                        </div>
                         <div class="col-md-6 mb-4">
-                            <label for="max_bid_amount" class="small mb-1">
-                                Maximum Bid Amount (Per Day)
+                            <label for="max_bid_amount_jodi" class="small mb-1">
+                                Maximum Bid Amount Jodi
                             </label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="max_bid_amount"
-                                name="max_bid_amount" value="{{ old('max_bid_amount', $settings['max_bid_amount'] ?? 0) }}">
+                            <input type="number" step="0.01" min="0" class="form-control" id="max_bid_amount_jodi"
+                                name="max_bid_amount_jodi" value="{{ old('max_bid_amount_jodi', $settings['max_bid_amount_jodi'] ?? 0) }}">
                         </div>
-
+                         <div class="col-md-6 mb-4">
+                            <label for="max_bid_amount_haruf" class="small mb-1">
+                                Maximum Bid Amount Haruf
+                            </label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="max_bid_amount_haruf"
+                                name="max_bid_amount_haruf" value="{{ old('max_bid_amount_haruf', $settings['max_bid_amount_haruf'] ?? 0) }}">
+                        </div>
                     </div>
                 </div>
             </div>

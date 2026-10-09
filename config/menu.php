@@ -73,7 +73,7 @@ return [
                 'text'  => 'View Bids',
                 'icon'  => 'eye',
                 'route' => 'admin.bidding-desk.index',
-                'route_name' => 'admin.bidding-desk.*',
+                'route_name' => 'admin.bidding-desk.index',
                 'permission' => '',
             ],
             [
@@ -86,8 +86,8 @@ return [
             [
                 'text'  => 'Profit / Loss',
                 'icon'  => 'trending-up',
-                'route' => 'admin.games.create',
-                'route_name' => 'admin.users.*',
+                'route' => 'admin.bidding-desk.profit_loss',
+                'route_name' => 'admin.bidding-desk.profit_loss',
                 'permission' => '',
             ],
         ],

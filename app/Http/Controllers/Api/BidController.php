@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Bid;
 use App\Models\Game;
 use App\Models\User;
+use App\Services\AppSettingsService;
+use App\Services\WalletService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +16,11 @@ use Illuminate\Validation\ValidationException;
 
 class BidController extends Controller
 {
+    public function __construct(
+        protected AppSettingsService $settings,
+        protected WalletService $walletService
+    ) {}
+
     public function store(Request $request, Game $game)
     {
         $validated = $request->validate([
@@ -69,11 +76,31 @@ class BidController extends Controller
         };
         if (empty($bets)) {
             throw ValidationException::withMessages([
-                'bets' => [
-                    'Please select at least one valid bet.'
-                ],
+                'bets' => ['Please select at least one valid bet.'],
             ]);
         }
+        $limits = match ($validated['mode']) {
+            'single', 'crossing' => [
+                'min_bid_amount_jodi',
+                'max_bid_amount_jodi',
+            ],
+            'harup' => [
+                'min_bid_amount_haruf',
+                'max_bid_amount_haruf',
+            ],
+        };
+
+        [$minimumKey, $maximumKey] = $limits;
+
+        foreach ($bets as $bet) {
+            $this->settings->validateRange(
+                (float) $bet['amount'],
+                $minimumKey,
+                $maximumKey,
+                'bets'
+            );
+        }
+
 
         $bets = collect($bets)
             ->unique(function ($bet) {
@@ -165,18 +192,14 @@ class BidController extends Controller
                 $balance - $calculatedTotal,
                 2
             );
-            $lockedUser->balance = $newBalance;
             $lockedUser->save();
-            $transaction = $lockedUser
-                ->transactions()
-                ->create([
-                    'phone' => $lockedUser->phone,
-                    'amount' => $calculatedTotal,
-                    'subject' => "Bet placed - {$game->name}",
-                    'balance' => $newBalance,
-                    'status' => 'completed',
-                    'type' => 'debit',
-                ]);
+            $transaction = $this->walletService->debit(
+                $lockedUser,
+                $calculatedTotal,
+                "Bet placed - {$game->name}"
+            );
+
+            $newBalance = round((float) $transaction->balance, 2);
             $createdBids = [];
             foreach ($bets as $bet) {
                 $createdBids[] = Bid::create([
@@ -226,8 +249,6 @@ class BidController extends Controller
         }
         return $bets;
     }
-
-
 
     private function buildHarupBets(array $harupBets): array
     {
@@ -521,7 +542,6 @@ class BidController extends Controller
             ),
         ];
     }
-
 
     private function getSlipStatus(
         $game,

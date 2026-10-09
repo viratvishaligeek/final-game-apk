@@ -168,6 +168,7 @@ class MobileAppController extends Controller
                 ['value' => $value]
             );
         }
+        app(\App\Services\AppSettingsService::class)->forgetCache();
     }
 
     private function savePaymentBarcode($file): void
