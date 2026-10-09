@@ -297,6 +297,107 @@ For questions or assistance, please contact our support team.
 HTML,
                 'status' => 1,
             ],
+            [
+                'name' => 'Offers',
+                'slug' => 'offers',
+                'content' => <<<'HTML'
+<h2>Current Offers</h2>
+
+<p>
+Check out our latest offers and promotions available on the platform.
+Offers may vary depending on the game, promotional period, and applicable
+terms and conditions.
+</p>
+
+<h3>Available Offers</h3>
+
+<p>
+Current offers and promotions will be published here. Please check this
+page regularly for updates.
+</p>
+
+<div class="table-responsive">
+<table class="table table-bordered table-striped align-middle">
+<thead>
+<tr>
+<th>Offer</th>
+<th>Description</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Current Game Offers</td>
+<td>Check the platform for available game-specific promotions.</td>
+<td>Check Availability</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>Terms & Conditions</h3>
+
+<ul>
+<li>Offers are subject to applicable terms and conditions.</li>
+<li>Offers may be changed, suspended, or withdrawn at any time.</li>
+<li>Please check the offer details before participating.</li>
+</ul>
+HTML,
+                'status' => 1,
+            ],
+
+            [
+                'name' => 'WhatsApp & Contact',
+                'slug' => 'whatsapp',
+                'content' => <<<'HTML'
+<h2>Contact Us</h2>
+
+<p>
+Have questions or need assistance? Contact our support team using the
+details provided below.
+</p>
+
+<h3>WhatsApp Support</h3>
+
+<p>
+For quick assistance, you can contact us through WhatsApp.
+</p>
+
+<p>
+<strong>WhatsApp Number:</strong> Add your WhatsApp number here
+</p>
+
+<p>
+<a href="https://wa.me/91XXXXXXXXXX" target="_blank" rel="noopener noreferrer">
+Chat with us on WhatsApp
+</a>
+</p>
+
+<h3>Phone Support</h3>
+
+<p>
+<strong>Phone Number:</strong> Add your contact number here
+</p>
+
+<h3>Email Support</h3>
+
+<p>
+<strong>Email Address:</strong> support@example.com
+</p>
+
+<p>
+For account-related questions, wallet transactions, or other issues,
+please contact our support team with the relevant details.
+</p>
+
+<h3>Support Hours</h3>
+
+<p>
+<strong>Availability:</strong> Add your support hours here
+</p>
+HTML,
+                'status' => 1,
+            ],
         ];
 
         foreach ($pages as $page) {
