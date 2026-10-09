@@ -178,13 +178,6 @@ class BidController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($user->id);
 
-            $numbers = collect($bets)
-                ->pluck('number')
-                ->map(fn($number) => (string) $number)
-                ->unique()
-                ->values()
-                ->all();
-
             $balance = round(
                 (float) $lockedUser->balance,
                 2
