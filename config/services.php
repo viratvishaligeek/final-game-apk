@@ -45,6 +45,7 @@ return [
             'https://api.ekqr.in/api/check_order_status'
         ),
         'return_url' => env('UPI_GATEWAY_RETURN_URL'),
+        'frontend_return_url' => env('UPI_GATEWAY_FRONTEND_RETURN_URL'),
         'webhook_url' => env('UPI_GATEWAY_WEBHOOK_URL'),
     ],
 
