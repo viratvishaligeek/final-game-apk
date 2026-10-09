@@ -88,7 +88,6 @@ class PushNotificationService
                         'notification' => [
                             'channel_id' => 'default',
                             'sound' => 'notification_tune',
-                            'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
                         ],
                     ],
                     'apns' => [
