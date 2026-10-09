@@ -56,7 +56,7 @@ class BidController extends Controller
                 ],
             ]);
         }
-        $gameDate = now()->toDateString();
+        $gameDate = $game->businessDate();
         $type = match ($validated['mode']) {
             'single' => 'jodi',
             'harup' => 'haruf',

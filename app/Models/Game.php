@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Game extends Model
 {
@@ -48,6 +49,60 @@ class Game extends Model
     {
         return $this->hasOne(Result::class)
             ->latestOfMany();
+    }
+
+    /**
+     * Determine whether this game uses the Disawar business-day boundary.
+     */
+    public function isDisawar(): bool
+    {
+        return Str::slug((string) $this->slug) === 'disawar'
+            || Str::slug((string) $this->name) === 'disawar';
+    }
+
+    /**
+     * Resolve the date used to group bets and results for this game.
+     *
+     * Disawar's business day starts at its configured result_time. All other
+     * games continue to use the application's ordinary calendar date.
+     */
+    public function businessDate(?Carbon $now = null): string
+    {
+        $now = ($now ?: now())->copy()->timezone(config('app.timezone'));
+
+        if (!$this->isDisawar() || !$this->result_time) {
+            return $now->toDateString();
+        }
+
+        $resultTime = (string) $this->result_time;
+
+        if (strlen($resultTime) === 5) {
+            $resultTime .= ':00';
+        }
+
+        try {
+            $boundary = Carbon::createFromFormat(
+                'H:i:s',
+                $resultTime,
+                config('app.timezone')
+            );
+        } catch (\Throwable $exception) {
+            return $now->toDateString();
+        }
+
+        if (!$boundary) {
+            return $now->toDateString();
+        }
+
+        $boundary = $now->copy()->setTime(
+            $boundary->hour,
+            $boundary->minute,
+            $boundary->second
+        );
+
+        return $now->lessThan($boundary)
+            ? $now->copy()->subDay()->toDateString()
+            : $now->toDateString();
     }
 
     public function getIsPlayableAttribute(): bool
