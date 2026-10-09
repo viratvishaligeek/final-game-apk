@@ -7,6 +7,7 @@ use App\Models\Game;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class GameController extends Controller
 {
@@ -27,17 +28,25 @@ class GameController extends Controller
     {
         $request->validate([
             'name'        => 'required|string|max:255|unique:games,name',
-            'result_time' => 'required',
-            'play_start'  => 'required',
-            'play_end'    => 'required',
+            'result_time' => ['required', 'date_format:H:i,H:i:s'],
+            'play_start'  => ['required', 'date_format:H:i,H:i:s'],
+            'play_end'    => ['required', 'date_format:H:i,H:i:s'],
             'status'      => 'required|in:active,inactive',
             'serial'      => 'required|integer|min:1',
             'reward' => 'required|numeric|min:1|decimal:0,2',
         ]);
 
+        $slug = Str::slug($request->name);
+
+        if ($slug === '' || Game::withTrashed()->where('slug', $slug)->exists()) {
+            throw ValidationException::withMessages([
+                'name' => ['This game name produces an empty or already-used slug. Choose a different name.'],
+            ]);
+        }
+
         Game::create([
             'name'        => $request->name,
-            'slug'        => Str::slug($request->name),
+            'slug'        => $slug,
             'result_time' => Carbon::parse($request->result_time)->format('H:i:s'),
             'play_start'  => Carbon::parse($request->play_start)->format('H:i:s'),
             'play_end'    => Carbon::parse($request->play_end)->format('H:i:s'),
@@ -63,17 +72,31 @@ class GameController extends Controller
 
         $request->validate([
             'name'        => 'required|string|max:255|unique:games,name,' . $game->id,
-            'result_time' => 'required',
-            'play_start'  => 'required',
-            'play_end'    => 'required',
+            'result_time' => ['required', 'date_format:H:i,H:i:s'],
+            'play_start'  => ['required', 'date_format:H:i,H:i:s'],
+            'play_end'    => ['required', 'date_format:H:i,H:i:s'],
             'status'      => 'required|in:active,inactive',
             'serial'      => 'required|integer|min:1',
             'reward' => 'required|numeric|min:1|decimal:0,2',
         ]);
 
+        $slug = Str::slug($request->name);
+
+        if (
+            $slug === ''
+            || Game::withTrashed()
+                ->where('slug', $slug)
+                ->where('id', '!=', $game->id)
+                ->exists()
+        ) {
+            throw ValidationException::withMessages([
+                'name' => ['This game name produces an empty or already-used slug. Choose a different name.'],
+            ]);
+        }
+
         $game->update([
             'name'        => $request->name,
-            'slug'        => Str::slug($request->name),
+            'slug'        => $slug,
             'result_time' => Carbon::parse($request->result_time)->format('H:i:s'),
             'play_start'  => Carbon::parse($request->play_start)->format('H:i:s'),
             'play_end'    => Carbon::parse($request->play_end)->format('H:i:s'),
@@ -89,6 +112,6 @@ class GameController extends Controller
     {
         $game = Game::findOrFail($id);
         $game->delete();
-        return redirect()->back()->with('success', 'Game deleted along with its results.');
+        return redirect()->back()->with('success', 'Game archived. Historical results and bids have been retained.');
     }
 }
