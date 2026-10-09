@@ -100,6 +100,36 @@ class ApiResultAndHistoryDateTest extends TestCase
         $this->assertSame(['2026-10-08', '2026-10-09'], $dates);
     }
 
+    public function test_play_history_stats_include_slips_beyond_the_current_page(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-09 12:00:00', config('app.timezone')));
+
+        $user = $this->createUser();
+        $game = $this->createGame('Test Market', 'test-market', '07:00:00');
+
+        for ($index = 1; $index <= 51; $index++) {
+            Bid::create([
+                'order_no' => 'PAGED-HISTORY-' . $index,
+                'user_id' => $user->id,
+                'game_id' => $game->id,
+                'game_date' => '2026-10-09',
+                'type' => 'jodi',
+                'number' => str_pad((string) ($index % 100), 2, '0', STR_PAD_LEFT),
+                'amount' => $index === 51 ? 100 : 10,
+                'status' => 'pending',
+                'winning_amount' => $index === 51 ? 7 : 0,
+            ]);
+        }
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/play-history?per_page=50')
+            ->assertOk()
+            ->assertJsonPath('data.pagination.total', 51)
+            ->assertJsonPath('data.stats.total_slips', 51)
+            ->assertJsonPath('data.stats.total_spent', 600)
+            ->assertJsonPath('data.stats.total_won', 7);
+    }
+
     private function createUser(): User
     {
         return User::create([
