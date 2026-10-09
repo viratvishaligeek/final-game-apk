@@ -42,6 +42,11 @@ return [
         'route' => 'admin.results.index'
     ],
     [
+        'text' => 'Push Notifications',
+        'icon' => 'bell',
+        'route' => 'admin.push-notifications.index',
+    ],
+    [
         'type'  => 'dropdown',
         'text'  => 'Users',
         'icon'  => 'users',

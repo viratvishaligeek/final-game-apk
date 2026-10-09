@@ -11,6 +11,7 @@ use App\Http\Controllers\Backend\Game\WinnerController;
 use App\Http\Controllers\Backend\HomePageController;
 use App\Http\Controllers\Backend\MobileAppController;
 use App\Http\Controllers\Backend\PagesController;
+use App\Http\Controllers\Backend\PushNotificationController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\User\MemberController;
 use App\Http\Controllers\Backend\User\RoleController;
@@ -29,6 +30,8 @@ Route::controller(AuthController::class)->group(function () {
 
 // After Login
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin'], function () {
+    Route::get('push-notifications', [PushNotificationController::class, 'index'])->name('push-notifications.index');
+    Route::post('push-notifications/broadcast', [PushNotificationController::class, 'broadcast'])->name('push-notifications.broadcast');
     Route::controller(DashboardController::class)->group(function () {
         Route::get('dashboard', 'dashboard')->name('dashboard');
         Route::get('/profile', 'profile')->name('profile');
