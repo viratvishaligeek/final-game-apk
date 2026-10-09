@@ -13,9 +13,21 @@ class NotificationService
         string $subject,
         string $message
     ): Notification {
-        return $user->notifications()->create([
+        $notification = $user->notifications()->create([
             'subject' => $subject,
             'message' => $message,
         ]);
+
+        try {
+            app(PushNotificationService::class)->sendToUser($user, $subject, $message);
+        } catch (Throwable $exception) {
+            // Push delivery must not interrupt wallet/game transactions.
+            Log::warning('Unable to dispatch user push notification.', [
+                'user_id' => $user->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+
+        return $notification;
     }
 }
