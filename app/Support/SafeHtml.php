@@ -27,6 +27,11 @@ final class SafeHtml
             return '';
         }
 
+        // Strip executable/embedded elements before DOM parsing so their text
+        // cannot survive if an HTML parser relocates malformed nodes.
+        $html = preg_replace('~<\s*(script|style|iframe|object|embed|svg|math|form|video|audio)\b[^>]*>.*?<\s*/\s*\1\s*>~is', '', $html) ?? '';
+        $html = preg_replace('~<\s*(input|button|textarea|select|option|source|link|meta)\b[^>]*?/?>~is', '', $html) ?? '';
+
         if (!class_exists(DOMDocument::class)) {
             return e(strip_tags($html));
         }
