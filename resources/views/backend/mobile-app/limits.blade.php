@@ -68,29 +68,33 @@
                             <label for="min_bid_amount_jodi" class="small mb-1">
                                 Minimum Bid Amount Jodi
                             </label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="min_bid_amount_jodi"
-                                name="min_bid_amount_jodi" value="{{ old('min_bid_amount_jodi', $settings['min_bid_amount_jodi'] ?? 0) }}">
+                            <input type="number" step="0.01" min="0" class="form-control"
+                                id="min_bid_amount_jodi" name="min_bid_amount_jodi"
+                                value="{{ old('min_bid_amount_jodi', $settings['min_bid_amount_jodi'] ?? 0) }}">
                         </div>
-                         <div class="col-md-6 mb-4">
+                        <div class="col-md-6 mb-4">
                             <label for="min_bid_amount_haruf" class="small mb-1">
                                 Minimum Bid Amount Haruf
                             </label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="min_bid_amount_haruf"
-                                name="min_bid_amount_haruf" value="{{ old('min_bid_amount_haruf', $settings['min_bid_amount_haruf'] ?? 0) }}">
+                            <input type="number" step="0.01" min="0" class="form-control"
+                                id="min_bid_amount_haruf" name="min_bid_amount_haruf"
+                                value="{{ old('min_bid_amount_haruf', $settings['min_bid_amount_haruf'] ?? 0) }}">
                         </div>
                         <div class="col-md-6 mb-4">
                             <label for="max_bid_amount_jodi" class="small mb-1">
                                 Maximum Bid Amount Jodi
                             </label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="max_bid_amount_jodi"
-                                name="max_bid_amount_jodi" value="{{ old('max_bid_amount_jodi', $settings['max_bid_amount_jodi'] ?? 0) }}">
+                            <input type="number" step="0.01" min="0" class="form-control"
+                                id="max_bid_amount_jodi" name="max_bid_amount_jodi"
+                                value="{{ old('max_bid_amount_jodi', $settings['max_bid_amount_jodi'] ?? 0) }}">
                         </div>
-                         <div class="col-md-6 mb-4">
+                        <div class="col-md-6 mb-4">
                             <label for="max_bid_amount_haruf" class="small mb-1">
                                 Maximum Bid Amount Haruf
                             </label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="max_bid_amount_haruf"
-                                name="max_bid_amount_haruf" value="{{ old('max_bid_amount_haruf', $settings['max_bid_amount_haruf'] ?? 0) }}">
+                            <input type="number" step="0.01" min="0" class="form-control"
+                                id="max_bid_amount_haruf" name="max_bid_amount_haruf"
+                                value="{{ old('max_bid_amount_haruf', $settings['max_bid_amount_haruf'] ?? 0) }}">
                         </div>
                     </div>
                 </div>
@@ -143,8 +147,8 @@
                                 API Key
                             </label>
                             <input type="password" class="form-control" id="api_key" name="api_key"
-                                value="{{ old('api_key') }}"
-                                placeholder="Leave blank to keep the current API key" autocomplete="new-password">
+                                value="{{ old('api_key') }}" placeholder="Leave blank to keep the current API key"
+                                autocomplete="new-password">
                         </div>
 
                         <div class="col-md-6 mb-4">
@@ -154,6 +158,23 @@
                             <input type="url" class="form-control" id="webhook_url" name="webhook_url"
                                 value="{{ old('webhook_url', $settings['webhook_url'] ?? '') }}"
                                 placeholder="https://example.com/payment/webhook">
+                        </div>
+                        <hr>
+                        <div class="col-md-6 mb-4">
+                            <label for="webhook_url" class="small mb-1">
+                                Manual Upi Id
+                            </label>
+                            <input type="text" class="form-control" id="manual_upi_id" name="manual_upi_id"
+                                value="{{ old('manual_upi_id', $settings['manual_upi_id'] ?? '') }}"
+                                placeholder="manual upi id">
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label for="webhook_url" class="small mb-1">
+                                Manual Upi Name
+                            </label>
+                            <input type="text" class="form-control" id="manual_upi_name" name="manual_upi_name"
+                                value="{{ old('manual_upi_name', $settings['manual_upi_name'] ?? '') }}"
+                                placeholder="manual upi name">
                         </div>
 
                         <div class="col-md-6 mb-4">

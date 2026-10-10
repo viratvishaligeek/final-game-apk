@@ -50,6 +50,8 @@ class MobileAppController extends Controller
                 'api_key',
                 'webhook_url',
                 'payment_bar_code',
+                'manual_upi_id',
+                'manual_upi_name',
             ]),
         ]);
     }
@@ -73,6 +75,8 @@ class MobileAppController extends Controller
 
             'api_key' => ['nullable', 'string', 'max:500'],
             'webhook_url' => ['nullable', 'url', 'max:1000'],
+            'manual_upi_id' => ['nullable', 'string', 'max:1000'],
+            'manual_upi_name' => ['nullable', 'string', 'max:1000'],
 
             'payment_bar_code' => [
                 'nullable',
@@ -82,12 +86,14 @@ class MobileAppController extends Controller
             ],
         ]);
 
-        foreach ([
-            ['min_deposit', 'max_deposit'],
-            ['min_withdraw', 'max_withdraw'],
-            ['min_bid_amount_jodi', 'max_bid_amount_jodi'],
-            ['min_bid_amount_haruf', 'max_bid_amount_haruf'],
-        ] as [$minimumKey, $maximumKey]) {
+        foreach (
+            [
+                ['min_deposit', 'max_deposit'],
+                ['min_withdraw', 'max_withdraw'],
+                ['min_bid_amount_jodi', 'max_bid_amount_jodi'],
+                ['min_bid_amount_haruf', 'max_bid_amount_haruf'],
+            ] as [$minimumKey, $maximumKey]
+        ) {
             $minimum = (float) ($validated[$minimumKey] ?? 0);
             $maximum = (float) ($validated[$maximumKey] ?? 0);
 

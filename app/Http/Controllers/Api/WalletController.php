@@ -234,9 +234,10 @@ class WalletController extends Controller
     public function paymentMethods(): JsonResponse
     {
         $barcode = $this->settings->value('payment_bar_code');
-        $manualQrUrl = $barcode
-            ? asset('uploads/payment/' . ltrim((string) $barcode, '/'))
-            : config('services.manual_upi.qr_url');
+        $manualUpiId = $this->settings->value('manual_upi_id');
+        $manualUpiName = $this->settings->value('manual_upi_name');
+
+        $manualQrUrl = $barcode ? asset('uploads/payment/' . ltrim((string) $barcode, '/')) : null;
 
         $gatewayEnabled = $this->gatewayIsConfigured();
 
@@ -244,8 +245,8 @@ class WalletController extends Controller
             'success' => true,
             'data' => [
                 'manual_upi' => [
-                    'upi_id' => config('services.manual_upi.upi_id'),
-                    'name' => config('services.manual_upi.name'),
+                    'upi_id' => $manualUpiId,
+                    'name' => $manualUpiName,
                     'qr_url' => $manualQrUrl,
                 ],
                 'gateway' => [
@@ -562,7 +563,7 @@ class WalletController extends Controller
         $frontendUrl = $this->gatewayValue(
             'frontend_return_url',
             'services.upi_gateway.frontend_return_url'
-        ) ?? 'https://playonlinekhaiwal.com/wallet/add';
+        ) ?? rtrim((string) config('app.url'), '/') . '/wallet/add';
 
         $query = http_build_query([
             'gateway_return' => '1',
@@ -869,14 +870,14 @@ class WalletController extends Controller
             ->where('user_id', $request->user()->id)
             ->when(
                 $statuses !== [],
-                fn ($query) => $query->whereIn('status', $statuses),
-                fn ($query) => $request->filled('status')
+                fn($query) => $query->whereIn('status', $statuses),
+                fn($query) => $request->filled('status')
                     ? $query->where('status', $validated['status'])
                     : $query
             )
             ->when(
                 $request->filled('type'),
-                fn ($query) => $query->where('request_type', $validated['type'])
+                fn($query) => $query->where('request_type', $validated['type'])
             )
             ->latest('id')
             ->paginate($validated['per_page'] ?? 15);

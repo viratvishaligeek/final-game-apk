@@ -49,12 +49,6 @@ return [
         'webhook_url' => env('UPI_GATEWAY_WEBHOOK_URL'),
     ],
 
-    'manual_upi' => [
-        'upi_id' => env('MANUAL_UPI_ID'),
-        'name' => env('MANUAL_UPI_NAME'),
-        'qr_url' => env('MANUAL_UPI_QR_URL'),
-    ],
-
     /*
      * Generic JSON SMS endpoint used for password-reset OTP delivery.
      * The endpoint must accept a bearer token and JSON fields: to, message, sender.
