@@ -103,6 +103,50 @@ HTML,
             );
         }
 
+        // Replace only known placeholder/default copy from the previous seeder;
+        // customized page content is left untouched.
+        $legacyDefaults = [
+            'whatsapp' => ['%91XXXXXXXXXX%', '%support@example.com%', '%Add your WhatsApp number here%'],
+            'about-us' => ['%Welcome to our platform.%'],
+            'terms-conditions' => ['%Wallet & Transactions%', '%Account Responsibility%'],
+            'privacy-policy' => ['%This privacy policy explains how%'],
+        ];
+
+        foreach ($legacyDefaults as $slug => $markers) {
+            $definition = collect($pages)->firstWhere('slug', $slug);
+            if (!$definition) {
+                continue;
+            }
+
+            Page::query()
+                ->where('slug', $slug)
+                ->where(function ($query) use ($markers) {
+                    foreach ($markers as $marker) {
+                        $query->orWhere('content', 'like', $marker);
+                    }
+                })
+                ->update([
+                    'name' => $definition['name'],
+                    'content' => $definition['content'],
+                    'is_editable' => 'yes',
+                ]);
+        }
+
+        // Keep obsolete seeded play/rates/offers records for data preservation,
+        // but hide their known generic boilerplate from public navigation/indexing.
+        $obsoleteDefaults = [
+            'how-to-play' => '%Follow the steps below to start playing%',
+            'game-rates' => '%Game rates may vary depending on the game type%',
+            'offers' => '%Check out our latest offers and promotions%',
+        ];
+
+        foreach ($obsoleteDefaults as $slug => $marker) {
+            Page::query()
+                ->where('slug', $slug)
+                ->where('content', 'like', $marker)
+                ->update(['menu_visible' => false, 'noindex' => true]);
+        }
+
         $this->command?->info(
             count($pages) . ' CMS pages seeded successfully.'
         );
