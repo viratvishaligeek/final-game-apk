@@ -6,7 +6,7 @@
             @else
                 <span class="brand-emblem">POK</span>
             @endif
-            <span class="brand-word">{{ setting('title', 'Play Online Khaiwal') }}<small>{{ setting('site_tagline', 'RESULTS • RECORDS • CHARTS') }}</small></span>
+            <span class="brand-word">{{ setting('title', 'Play Online Khaiwal') }}<small>{{ setting('site_tagline', 'SATTA KING RESULTS • MONTHLY CHARTS • HISTORICAL RECORDS') }}</small></span>
         </a>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" data-menu-toggle><span></span><span></span><span></span><b class="sr-only">Toggle navigation</b></button>
         <nav class="primary-nav" id="primary-nav" aria-label="Main navigation">
