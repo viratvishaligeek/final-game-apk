@@ -37,44 +37,46 @@ class PushNotificationService
         return $subscription;
     }
 
-    public function sendToUser(User $user, string $title, string $body): int
+    public function sendToUser(User $user, string $title, string $body, ?int $notificationId = null): int
     {
         return $this->sendToSubscriptions(
             PushSubscription::query()->where('user_id', $user->id)->get(),
             $title,
             $body,
-            'individual'
+            'individual',
+            $notificationId
         );
     }
 
     public function broadcast(string $title, string $body): int
     {
-        Notification::query()->create([
+        $notification = Notification::query()->create([
             'user_id' => null,
             'subject' => $title,
             'message' => $body,
         ]);
 
-        return $this->sendPublicPush($title, $body);
+        return $this->sendPublicPush($title, $body, $notification->id);
     }
 
-    public function sendPublicPush(string $title, string $body): int
+    public function sendPublicPush(string $title, string $body, ?int $notificationId = null): int
     {
         return $this->sendToSubscriptions(
             PushSubscription::query()->where('public_enabled', true)->get(),
             $title,
             $body,
-            'public'
+            'public',
+            $notificationId
         );
     }
 
-    private function sendToSubscriptions($subscriptions, string $title, string $body, string $notificationType): int
+    private function sendToSubscriptions($subscriptions, string $title, string $body, string $notificationType, ?int $notificationId): int
     {
         $sent = 0;
 
         foreach ($subscriptions as $subscription) {
             try {
-                if ($this->send($subscription->token, $title, $body, $subscription, $notificationType)) {
+                if ($this->send($subscription->token, $title, $body, $subscription, $notificationType, $notificationId)) {
                     $sent++;
                 }
             } catch (Throwable $exception) {
@@ -82,6 +84,7 @@ class PushNotificationService
                 Log::warning('Push notification delivery failed.', [
                     'subscription_id' => $subscription->id,
                     'notification_type' => $notificationType,
+                    'notification_id' => $notificationId,
                     'error_class' => get_class($exception),
                     'error' => $exception->getMessage(),
                 ]);
@@ -91,7 +94,7 @@ class PushNotificationService
         return $sent;
     }
 
-    private function send(string $token, string $title, string $body, PushSubscription $subscription, string $notificationType): bool
+    private function send(string $token, string $title, string $body, PushSubscription $subscription, string $notificationType, ?int $notificationId): bool
     {
         $projectId = config('services.fcm.project_id');
         $serviceAccountJson = config('services.fcm.service_account_json');
@@ -133,6 +136,7 @@ class PushNotificationService
         if ($response->successful()) {
             Log::info('FCM accepted push message.', [
                 'notification_type' => $notificationType,
+                'notification_id' => $notificationId,
                 'subscription_id' => $subscription->id,
                 'platform' => $subscription->platform,
                 'user_id' => $notificationType === 'individual' ? $subscription->user_id : null,
@@ -151,6 +155,7 @@ class PushNotificationService
 
         Log::warning('FCM rejected a push message.', [
             'notification_type' => $notificationType,
+            'notification_id' => $notificationId,
             'subscription_id' => $subscription->id,
             'platform' => $subscription->platform,
             'http_status' => $response->status(),
