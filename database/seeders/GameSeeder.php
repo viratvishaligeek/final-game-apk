@@ -22,13 +22,13 @@ class GameSeeder extends Seeder
         ];
 
         foreach ($games as $index => $name) {
-            Game::create([
+            Game::firstOrCreate(['slug' => Str::slug($name)], [
                 'name'        => $name,
                 'slug'        => Str::slug($name),
                 'result_time' => '23:00:00',
                 'play_start'  => '18:00:00',
                 'play_end'    => '20:00:00',
-                'last_result' => '00',
+                'last_result' => null,
                 'status'      => 'active',
                 'reward'      => 98,
                 'serial'      => $index + 1,
