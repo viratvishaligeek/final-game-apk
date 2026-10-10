@@ -2,7 +2,8 @@
     <section class="section-block section-light homepage-managed-section" id="homepage-section-{{ $section->id }}">
         <div class="wrap">
             @php($sectionBackground = preg_match('/^#[0-9a-fA-F]{3,8}$/', (string) $section->background) ? $section->background : null)
-            <article class="market-card" @if ($sectionBackground) style="background-color: {{ $sectionBackground }}" @endif>
+            @php($sectionBackgroundClass = preg_match('/^[A-Za-z0-9_-]+$/', (string) $section->background) ? $section->background : null)
+            <article class="market-card {{ $sectionBackgroundClass ? $sectionBackgroundClass : '' }}" @if ($sectionBackground) style="background-color: {{ $sectionBackground }}" @endif>
                 <p class="eyebrow">{{ str_replace('_', ' ', $section->location) }}</p>
                 <h2>{{ $section->title }}</h2>
                 @if (filled($section->short_desc))
