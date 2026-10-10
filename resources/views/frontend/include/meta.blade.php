@@ -12,7 +12,7 @@
     <meta name="keywords" content="@yield('meta_keywords', setting('meta_keywords', ''))">
 @endif
 <link rel="canonical" href="{{ url()->current() }}">
-@if (filled(setting('site_favicon')))
+@if (filled(setting('site_favicon')) && is_file(public_path('logos/' . basename(setting('site_favicon')))))
     <link rel="icon" href="{{ asset('logos/' . basename(setting('site_favicon'))) }}">
 @endif
 <meta name="theme-color" content="#071329">
@@ -21,7 +21,7 @@
 <meta property="og:title" content="@yield('title', $defaultTitle)">
 <meta property="og:description" content="@yield('meta_description', $defaultDescription)">
 <meta property="og:url" content="{{ url()->current() }}">
-@if ($metaImage)
+@if ($metaImage && is_file(public_path('logos/' . basename($metaImage))))
     <meta property="og:image" content="{{ asset('logos/' . basename($metaImage)) }}">
 @endif
 <meta name="robots" content="@yield('robots_content', 'index,follow')">
