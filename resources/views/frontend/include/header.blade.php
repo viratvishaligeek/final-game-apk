@@ -1,7 +1,7 @@
 <header class="site-header">
     <div class="header-main wrap">
         <a class="brand" href="{{ route('index') }}" aria-label="{{ setting('title', 'Satta 786') }} home">
-            @if (filled(setting('site_logo')))
+            @if (filled(setting('site_logo')) && is_file(public_path('logos/' . basename(setting('site_logo')))))
                 <img class="brand-emblem" src="{{ asset('logos/' . basename(setting('site_logo'))) }}" alt="{{ setting('title', 'Satta 786') }}" loading="eager">
             @else
                 <span class="brand-emblem">786</span>
