@@ -145,13 +145,13 @@ class ResultController extends Controller
 
             $message = sprintf('Result for %s is %s', $game->name, $jodi);
 
-            Notification::create([
+            $publicNotification = Notification::create([
                 'user_id' => null,
                 'subject' => 'Game Result Out',
                 'message' => $message,
             ]);
 
-            $this->sendResultNotification($game, $gameDate, $jodi);
+            $this->sendResultNotification($game, $gameDate, $jodi, $publicNotification->id);
             $this->sendWinnerNotifications($game, $gameDate);
 
             return redirect()->back()->with(
@@ -359,12 +359,13 @@ class ResultController extends Controller
     }
 
     /** Send FCM result notification. */
-    private function sendResultNotification(Game $game, string $gameDate, string $result): void
+    private function sendResultNotification(Game $game, string $gameDate, string $result, int $notificationId): void
     {
         try {
             app(\App\Services\PushNotificationService::class)->sendPublicPush(
                 $game->name . ' Result Published',
-                "Result for {$game->name} is {$result}"
+                "Result for {$game->name} is {$result}",
+                $notificationId
             );
         } catch (\Throwable $e) {
             Log::error('FCM notification failed', [
@@ -400,14 +401,14 @@ class ResultController extends Controller
                 $title = 'Game reward credited';
                 $body = sprintf('You won ₹%s in %s for %s.', $amount, $game->name, $gameDate);
 
-                Notification::query()->create([
+                $notification = Notification::query()->create([
                     'user_id' => $user->id,
                     'subject' => $title,
                     'message' => $body,
                 ]);
 
                 $accepted = app(\App\Services\PushNotificationService::class)
-                    ->sendToUser($user, $title, $body);
+                    ->sendToUser($user, $title, $body, $notification->id);
 
                 Log::info('Private game reward notification processed.', [
                     'game_id' => $game->id,
