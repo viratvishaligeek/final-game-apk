@@ -158,6 +158,15 @@ class PushNotificationService
     {
         return Cache::remember('fcm.oauth_access_token', now()->addMinutes(50), function () use ($serviceAccountJson) {
             $account = json_decode($serviceAccountJson, true, flags: JSON_THROW_ON_ERROR);
+
+            $configuredProjectId = (string) config('services.fcm.project_id');
+            if (!empty($account['project_id']) && $account['project_id'] !== $configuredProjectId) {
+                throw new \RuntimeException('FCM_PROJECT_ID does not match the service-account project_id.');
+            }
+            if (empty($account['client_email']) || empty($account['private_key'])) {
+                throw new \RuntimeException('FCM service-account JSON is missing client_email or private_key.');
+            }
+
             $now = time();
             $encode = static fn (string $value): string => rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
             $header = $encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT'], JSON_THROW_ON_ERROR));
