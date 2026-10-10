@@ -1,6 +1,6 @@
 @extends('frontend.include.app')
 @section('title', $title . ' | ' . setting('title', 'Play Online Khaiwal'))
-@section('meta_description', $copy)
+@section('meta_description', \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags((string) $copy))), 160))
 @if ($page === 'faq' && $faqs->isNotEmpty())
     @section('structured_data')
         @php
