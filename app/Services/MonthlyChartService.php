@@ -6,7 +6,6 @@ use App\Models\Game;
 use App\Models\Result;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Pagination\LengthAwarePaginator as Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -153,7 +152,7 @@ class MonthlyChartService
     public function paginate(Collection $rows, Request $request, ?int $perPage = null): LengthAwarePaginator
     {
         $perPage = $perPage ?? $this->chunkSize();
-        $page = max(1, Paginator::resolveCurrentPage('page'));
+        $page = max(1, LengthAwarePaginator::resolveCurrentPage('page'));
         $items = $rows->forPage($page, $perPage)->values();
 
         return new LengthAwarePaginator(
