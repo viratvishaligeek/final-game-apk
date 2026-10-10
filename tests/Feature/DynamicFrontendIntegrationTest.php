@@ -101,6 +101,28 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->assertDatabaseHas('settings', ['option' => 'chart_chunk_size', 'value' => '15']);
     }
 
+    public function test_admin_interfaces_expose_global_chart_and_page_menu_settings(): void
+    {
+        $admin = \App\Models\Admin::create([
+            'name' => 'Admin UI Test',
+            'email' => 'admin-ui-test@example.com',
+            'password' => 'Password123',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('admin.setting.create'))
+            ->assertOk()
+            ->assertSee('Monthly Chart Games Per Page')
+            ->assertSee('Brand Tagline')
+            ->assertSee('Default Open Graph Image');
+
+        $this->get(route('admin.pages.create'))
+            ->assertOk()
+            ->assertSee('Show in public menu')
+            ->assertSee('SEO description');
+    }
+
     public function test_published_cms_pages_render_with_page_specific_seo_and_inactive_pages_are_hidden(): void
     {
         Page::create([
