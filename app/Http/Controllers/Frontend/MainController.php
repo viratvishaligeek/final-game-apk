@@ -266,6 +266,8 @@ class MainController extends Controller
             'whatsapp' => 'contact',
             'terms-conditions' => 'terms-and-conditions',
             'privacy-policy' => 'privacy-policy',
+            'disclaimer' => 'disclaimer',
+            'faq' => 'faq',
         ];
 
         if (isset($informationAliases[$slug])) {
