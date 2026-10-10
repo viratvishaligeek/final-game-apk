@@ -91,7 +91,7 @@ class MainController extends Controller
     public function information(string $page)
     {
         $databasePage = Page::query()->where('slug', $page)->where('status', 'active')->first();
-        if ($databasePage) {
+        if ($databasePage && $page !== 'faq') {
             return view('frontend.page', ['page' => $databasePage]);
         }
 
@@ -105,7 +105,8 @@ class MainController extends Controller
         ];
         abort_unless(isset($pages[$page]), 404);
         [$title, $copy] = $pages[$page];
-        return view('frontend.information', compact('page', 'title', 'copy'));
+        $faqs = $page === 'faq' ? Faq::query()->latest('id')->get() : collect();
+        return view('frontend.information', compact('page', 'title', 'copy', 'faqs'));
     }
 
     public function showPage(string $slug)
