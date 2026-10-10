@@ -83,6 +83,9 @@ final class SafeHtml
         }
 
         if (!in_array($tag, self::ALLOWED_TAGS, true)) {
+            foreach (iterator_to_array($node->childNodes) as $child) {
+                self::sanitizeNode($child);
+            }
             $parent = $node->parentNode;
             if ($parent) {
                 while ($node->firstChild) {
