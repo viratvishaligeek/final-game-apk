@@ -381,3 +381,57 @@
                 href="#market-charts">Charts</a><a href="#faq">FAQs</a><a href="#disclaimer">Disclaimer</a></div>
     </div>
 @endsection
+
+
+@section('structured_data')
+    @php
+        $homeCanonicalBase = rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/');
+        $homeCanonical = $homeCanonicalBase . '/';
+        if (request()->filled('year') || request()->filled('month')) {
+            $homeCanonical .= '?' . http_build_query(['year' => $selectedYear, 'month' => $selectedMonth]);
+        }
+        $homeGraph = [[
+            '@type' => 'WebPage',
+            'name' => request()->filled('year') || request()->filled('month')
+                ? $monthLabel . ' Satta King Result Chart | Play Online Khaiwal'
+                : 'Play Online Khaiwal | Satta King Results & Monthly Charts',
+            'url' => $homeCanonical,
+            'description' => request()->filled('year') || request()->filled('month')
+                ? 'Monthly result chart for ' . $monthLabel . ', using saved market records.'
+                : setting('meta_description', 'Satta King result records and monthly charts on Play Online Khaiwal.'),
+        ]];
+        if ($faqs->isNotEmpty()) {
+            $homeGraph[] = [
+                '@type' => 'FAQPage',
+                'mainEntity' => $faqs->map(fn ($faq) => [
+                    '@type' => 'Question',
+                    'name' => strip_tags((string) $faq->question),
+                    'acceptedAnswer' => [
+                        '@type' => 'Answer',
+                        'text' => strip_tags((string) $faq->answer),
+                    ],
+                ])->values()->all(),
+            ];
+        }
+        $homeSchema = ['@context' => 'https://schema.org', '@graph' => $homeGraph];
+    @endphp
+    <script type="application/ld+json">@json($homeSchema, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT)</script>
+@endsection
+
+@section('script')
+<script>
+document.querySelectorAll('[data-month-filter]').forEach(function (form) {
+    const year = form.querySelector('[data-chart-year]');
+    const month = form.querySelector('[data-chart-month]');
+    if (year && month) {
+        year.addEventListener('change', function () {
+            month.value = '';
+            form.submit();
+        });
+        month.addEventListener('change', function () {
+            form.submit();
+        });
+    }
+});
+</script>
+@endsection
