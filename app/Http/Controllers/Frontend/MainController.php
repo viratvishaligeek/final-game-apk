@@ -27,8 +27,9 @@ class MainController extends Controller
     public function market(string $slug)
     {
         $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+        $yearExpression = DB::connection()->getDriverName() === 'sqlite' ? "CAST(strftime('%Y', game_date) AS INTEGER)" : 'YEAR(game_date)';
         $years = Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereNotNull('game_date')
-            ->selectRaw("YEAR(game_date) as year")->distinct()->orderByDesc('year')->pluck('year')->map(fn ($year) => (int) $year)->values();
+            ->selectRaw("{$yearExpression} as year")->distinct()->orderByDesc('year')->pluck('year')->map(fn ($year) => (int) $year)->values();
         $results = Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereNotNull('game_date')
             ->orderByDesc('game_date')->paginate(60);
         return view('frontend.market', compact('game', 'years', 'results'));
@@ -40,8 +41,9 @@ class MainController extends Controller
         $year = $year ?: (int) now()->format('Y');
         $query = Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereYear('game_date', $year)->orderByDesc('game_date');
         $results = $query->paginate(100)->withQueryString();
+        $yearExpression = DB::connection()->getDriverName() === 'sqlite' ? "CAST(strftime('%Y', game_date) AS INTEGER)" : 'YEAR(game_date)';
         $years = Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereNotNull('game_date')
-            ->selectRaw("YEAR(game_date) as year")->distinct()->orderByDesc('year')->pluck('year')->map(fn ($item) => (int) $item)->values();
+            ->selectRaw("{$yearExpression} as year")->distinct()->orderByDesc('year')->pluck('year')->map(fn ($item) => (int) $item)->values();
         return view('frontend.chart', compact('game', 'year', 'years', 'results'));
     }
 
