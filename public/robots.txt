@@ -1,2 +1,6 @@
 User-agent: *
-Disallow:
+Disallow: /admin/
+Disallow: /login
+Disallow: /firebase-config.js
+Disallow: /firebase-config.json
+Sitemap: https://playonlinekhaiwal.com/sitemap.xml
