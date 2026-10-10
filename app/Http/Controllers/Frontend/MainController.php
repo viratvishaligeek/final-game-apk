@@ -23,7 +23,6 @@ class MainController extends Controller
         $availableMonths = $charts->availableMonths();
         $availableYears = array_map('intval', array_keys($availableMonths));
         $availableYears[] = (int) $now->format('Y');
-        $availableYears[] = $year;
         if ($request->filled('year') && filter_var($request->query('year'), FILTER_VALIDATE_INT)) {
             $requestedYear = (int) $request->query('year');
             if ($requestedYear >= 2000 && $requestedYear <= (int) $now->format('Y')) {
@@ -160,6 +159,7 @@ class MainController extends Controller
         }
 
         $availableYears = array_map('intval', array_keys($availableMonths));
+        $availableYears[] = $year;
         $availableYears[] = (int) $now->format('Y');
         $availableYears = array_values(array_unique($availableYears));
         rsort($availableYears);
