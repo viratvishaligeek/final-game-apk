@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Game;
 use App\Models\Result;
 use Carbon\Carbon;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\LengthAwarePaginator as Paginator;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
@@ -34,6 +34,7 @@ class MonthlyChartService
         $keys = Result::query()
             ->where('type', 'jodi')
             ->whereNotNull('game_date')
+            ->whereHas('game', fn ($query) => $query->where('status', 'active'))
             ->when($gameId !== null, fn ($query) => $query->where('game_id', $gameId))
             ->selectRaw("{$monthExpression} as month_key")
             ->distinct()
