@@ -112,9 +112,9 @@ class MainController extends Controller
                 'name' => $game->name,
                 'slug' => $game->slug,
                 'time' => Carbon::parse($game->result_time)->format('h:i A'),
-                'today' => $todayResult ?: '--',
-                'yesterday' => $yesterdayResult ?: '--',
-                'last_result' => $game->last_result ?: '--',
+                'today' => $todayResult !== null && $todayResult !== '' ? (string) $todayResult : '--',
+                'yesterday' => $yesterdayResult !== null && $yesterdayResult !== '' ? (string) $yesterdayResult : '--',
+                'last_result' => $game->last_result !== null && $game->last_result !== '' ? (string) $game->last_result : '--',
             ];
         })->values()->toArray();
     }
