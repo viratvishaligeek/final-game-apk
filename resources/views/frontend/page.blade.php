@@ -35,6 +35,9 @@
     <section class="section-block section-light">
         <div class="wrap">
             <article class="market-card">
+                @if (session('notice'))
+                    <div class="empty-state"><p>{{ session('notice') }}</p></div>
+                @endif
                 <div class="homepage-managed-content">{!! \App\Support\SafeHtml::sanitize((string) $page->content) !!}</div>
             </article>
         </div>
