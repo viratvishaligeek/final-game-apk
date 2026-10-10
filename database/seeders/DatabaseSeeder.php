@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             PlayOnlineKhaiwalSettingsSeeder::class,
             GameSeeder::class,
             PageSeeder::class,
+            PlayOnlineKhaiwalFaqSeeder::class,
         ]);
     }
 }
