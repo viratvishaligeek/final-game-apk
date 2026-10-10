@@ -14,7 +14,7 @@
             @if (filled(setting('contact_phone')))<p><a href="tel:{{ preg_replace('/[^0-9+]/', '', setting('contact_phone')) }}">{{ setting('contact_phone') }}</a></p>@endif
             @if (filled(setting('contact_address')))<p>{{ setting('contact_address') }}</p>@endif
             <div class="footer-socials">
-                @foreach (['facebook' => 'Facebook', 'instagram' => 'Instagram', 'youtube' => 'YouTube', 'telegram' => 'Telegram'] as $socialKey => $socialLabel)
+                @foreach (['facebook' => 'Facebook', 'instagram' => 'Instagram', 'youtube' => 'YouTube', 'telegram' => 'Telegram', 'whatsapp' => 'WhatsApp'] as $socialKey => $socialLabel)
                     @if (filled(setting('social_' . $socialKey)) && filter_var(setting('social_' . $socialKey), FILTER_VALIDATE_URL) && in_array(parse_url(setting('social_' . $socialKey), PHP_URL_SCHEME), ['http', 'https'], true))
                         <a href="{{ setting('social_' . $socialKey) }}" target="_blank" rel="noopener noreferrer">{{ $socialLabel }}</a>
                     @endif
