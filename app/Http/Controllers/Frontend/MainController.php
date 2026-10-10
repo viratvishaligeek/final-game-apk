@@ -70,7 +70,7 @@ class MainController extends Controller
         $marketResults = collect($frontendResults)->map(fn (array $game) => collect($game)->only([
             'id', 'name', 'slug', 'time', 'today', 'yesterday',
         ])->all())->all();
-        $recordYears = $availableYears;
+        $recordYears = array_map('intval', array_keys($availableMonths));
         $homepageSections = HomePage::query()->where('status', 'active')->orderBy('id')->get();
         $faqs = Faq::query()->latest('id')->get();
         $chunkSize = $charts->chunkSize();
