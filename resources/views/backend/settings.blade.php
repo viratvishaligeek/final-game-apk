@@ -107,11 +107,18 @@
                         'meta_title' => ['Default SEO Title', 'text'],
                         'meta_description' => ['Default Meta Description', 'textarea'],
                         'meta_keywords' => ['Default SEO Keywords', 'textarea'],
+                        'canonical_url' => ['Canonical Site URL', 'url'],
+                        'og_title' => ['Default Open Graph Title', 'text'],
+                        'og_description' => ['Default Open Graph Description', 'textarea'],
+                        'robots_default' => ['Default Robots Directive', 'select'],
+                        'twitter_card' => ['Twitter Card Type', 'select'],
+                        'app_download_url' => ['App Download URL (optional)', 'url'],
                         'copyright_text' => ['Copyright Text', 'text'],
                         'footer_description' => ['Footer Description', 'textarea'],
                         'contact_phone' => ['Public Contact Phone', 'text'],
                         'contact_address' => ['Public Contact Address', 'textarea'],
                         'social_facebook' => ['Facebook URL', 'url'],
+                        'social_whatsapp' => ['WhatsApp URL', 'url'],
                         'social_instagram' => ['Instagram URL', 'url'],
                         'social_youtube' => ['YouTube URL', 'url'],
                         'social_telegram' => ['Telegram URL', 'url'],
@@ -123,6 +130,18 @@
                             <label class="small mb-1" for="{{ $key }}">{{ $field[0] }}</label>
                             @if ($field[1] === 'textarea')
                                 <textarea class="form-control" id="{{ $key }}" name="{{ $key }}" rows="3">{{ old($key, optional($setting->firstWhere('option', $key))->value) }}</textarea>
+                            @elseif ($field[1] === 'select')
+                                <select class="form-select" id="{{ $key }}" name="{{ $key }}">
+                                    @if ($key === 'robots_default')
+                                        @foreach (['index,follow' => 'Index, follow links', 'noindex,follow' => 'No index, follow links', 'index,nofollow' => 'Index, no follow links', 'noindex,nofollow' => 'No index, no follow links'] as $value => $label)
+                                            <option value="{{ $value }}" {{ old($key, optional($setting->firstWhere('option', $key))->value ?? 'index,follow') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    @else
+                                        @foreach (['summary' => 'Summary', 'summary_large_image' => 'Large image summary'] as $value => $label)
+                                            <option value="{{ $value }}" {{ old($key, optional($setting->firstWhere('option', $key))->value ?? 'summary_large_image') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
                             @else
                                 <input class="form-control" id="{{ $key }}" name="{{ $key }}" type="{{ $field[1] }}"
                                     value="{{ old($key, optional($setting->firstWhere('option', $key))->value) }}">
@@ -131,10 +150,10 @@
                         </div>
                     @endforeach
                     <div class="col-lg-6 mb-3">
-                        <label class="small mb-1" for="chart_chunk_size">Monthly Chart Games Per Page</label>
+                        <label class="small mb-1" for="chart_chunk_size">Monthly Chart Entries Per Page</label>
                         <input class="form-control" id="chart_chunk_size" name="chart_chunk_size" type="number" min="1" max="50"
                             value="{{ old('chart_chunk_size', optional($setting->firstWhere('option', 'chart_chunk_size'))->value ?? 10) }}">
-                        <small class="text-muted">Choose 1–50 markets per page. Invalid or missing values use 10.</small>
+                        <small class="text-muted">Choose 1–50 chart rows per page. Invalid or missing values use 10.</small>
                         @error('chart_chunk_size')<small class="text-danger">{{ $message }}</small>@enderror
                     </div>
                 </div>

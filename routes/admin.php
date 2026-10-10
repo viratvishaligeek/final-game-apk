@@ -70,6 +70,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
     Route::resource('faqs', FaqController::class);
     Route::resource('banner', BannerController::class);
 
+    Route::patch('winner/{winner}/public-display', [WinnerController::class, 'updatePublicDisplay'])->name('winner.public-display');
     Route::resource('winner', WinnerController::class);
 
     Route::controller(BiddingDeskController::class)->prefix('bidding-desk')->name('bidding-desk.')->group(function () {

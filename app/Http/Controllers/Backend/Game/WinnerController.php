@@ -7,9 +7,30 @@ use App\Models\Game;
 use App\Models\Winner;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 
 class WinnerController extends Controller
 {
+    public function updatePublicDisplay(Request $request, Winner $winner): RedirectResponse
+    {
+        $validated = $request->validate([
+            'is_public' => ['required', 'boolean'],
+            'public_display_name' => ['nullable', 'string', 'max:60', 'required_if:is_public,1'],
+        ]);
+
+        $displayName = trim(strip_tags((string) ($validated['public_display_name'] ?? '')));
+        if ((bool) $validated['is_public'] && $displayName === '') {
+            return back()->withErrors(['public_display_name' => 'Enter an approved public display name before publishing this winner.']);
+        }
+
+        $winner->forceFill([
+            'is_public' => (bool) $validated['is_public'],
+            'public_display_name' => (bool) $validated['is_public'] ? $displayName : null,
+        ])->save();
+
+        return back()->with('success', 'Public winner display settings updated.');
+    }
+
     public function index(Request $request)
     {
         $validated = $request->validate([

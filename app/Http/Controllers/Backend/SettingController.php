@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Throwable;
 
 class SettingController extends Controller
@@ -37,11 +38,18 @@ class SettingController extends Controller
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:1000'],
             'meta_keywords' => ['nullable', 'string', 'max:1000'],
+            'canonical_url' => ['nullable', 'url', 'starts_with:https://', 'max:500'],
+            'og_title' => ['nullable', 'string', 'max:255'],
+            'og_description' => ['nullable', 'string', 'max:1000'],
+            'robots_default' => ['nullable', 'string', Rule::in(['index,follow', 'noindex,follow', 'index,nofollow', 'noindex,nofollow'])],
+            'twitter_card' => ['nullable', 'string', 'in:summary,summary_large_image'],
+            'app_download_url' => ['nullable', 'url', 'starts_with:https://', 'max:1000'],
             'copyright_text' => ['nullable', 'string', 'max:255'],
             'footer_description' => ['nullable', 'string', 'max:1000'],
             'contact_phone' => ['nullable', 'string', 'max:100'],
             'contact_address' => ['nullable', 'string', 'max:500'],
             'social_facebook' => ['nullable', 'url', 'max:500'],
+            'social_whatsapp' => ['nullable', 'url', 'max:500'],
             'social_instagram' => ['nullable', 'url', 'max:500'],
             'social_youtube' => ['nullable', 'url', 'max:500'],
             'social_telegram' => ['nullable', 'url', 'max:500'],
@@ -55,12 +63,23 @@ class SettingController extends Controller
             'og_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:4096'],
         ]);
 
+        foreach ([
+            'title' => 'Play Online Khaiwal',
+            'canonical_url' => 'https://playonlinekhaiwal.com',
+            'robots_default' => 'index,follow',
+            'twitter_card' => 'summary_large_image',
+        ] as $key => $default) {
+            if (!isset($validated[$key]) || trim((string) $validated[$key]) === '') {
+                $validated[$key] = $default;
+            }
+        }
+
         $newFiles = [];
         $oldFiles = [];
 
         try {
             DB::transaction(function () use ($request, $validated, &$newFiles, &$oldFiles) {
-                foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'announcement_text', 'meta_title', 'meta_description', 'meta_keywords', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'ticker_text', 'disclaimer_content', 'chart_chunk_size', 'referral_percentage', 'referral_min_amount'] as $key) {
+                foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'announcement_text', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'og_title', 'og_description', 'robots_default', 'twitter_card', 'app_download_url', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'social_whatsapp', 'ticker_text', 'disclaimer_content', 'chart_chunk_size', 'referral_percentage', 'referral_min_amount'] as $key) {
                     if (array_key_exists($key, $validated)) {
                         Setting::updateOrCreate(
                             ['option' => $key],

@@ -1,7 +1,27 @@
 @extends('frontend.include.app')
-@section('title', $game->name.' Results & Historical Records')
-@section('meta_description', 'Browse published records and historical results for '.$game->name.'.')
+@php
+    $currentYear = (int) now()->timezone(config('app.timezone'))->format('Y');
+    $currentMonth = (int) now()->timezone(config('app.timezone'))->format('n');
+    $currentMonthLabel = \Carbon\Carbon::createFromDate($currentYear, $currentMonth, 1, config('app.timezone'))->translatedFormat('F Y');
+@endphp
+@section('title', $game->name . ' ' . $currentMonthLabel . ' Satta King Result Chart | ' . setting('title', 'Play Online Khaiwal'))
+@section('meta_description', 'Open the ' . $currentMonthLabel . ' monthly result chart for ' . $game->name . ' on Play Online Khaiwal.')
 @section('content')
-<div class="page-banner"><div class="wrap"><div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><a href="{{ route('index') }}#markets">Markets</a><span>/</span><b>{{ $game->name }}</b></div><p class="eyebrow">MARKET RECORDS</p><h1>{{ $game->name }} <span>result chart</span></h1><p>Scheduled time: {{ \Carbon\Carbon::parse($game->result_time)->format('h:i A') }} · Records are displayed as stored.</p></div></div>
-<section class="section-block section-light"><div class="wrap"><div class="page-toolbar"><h2>Historical results</h2><div class="year-links">@forelse($years as $year)<a href="{{ route('frontend.chart',['slug'=>$game->slug,'year'=>$year]) }}">{{ $year }}</a>@empty<span>No archive years yet</span>@endforelse</div></div><div class="table-shell light-table"><div class="table-scroll"><table class="quick-record-table"><thead><tr><th>Date</th><th>Result</th><th>Record type</th><th>Last updated</th></tr></thead><tbody>@forelse($results as $result)<tr><td>{{ \Carbon\Carbon::parse($result->game_date)->format('d M Y') }}</td><td><span class="table-result">{{ $result->number ?? '--' }}</span></td><td>{{ strtoupper($result->type ?? 'jodi') }}</td><td>{{ $result->updated_at?->format('d M Y, h:i A') ?? '—' }}</td></tr>@empty<tr><td colspan="4" class="table-empty">No saved records found for this market.</td></tr>@endforelse</tbody></table></div></div>{{ $results->links() }}</div></section>
+<section class="page-banner">
+    <div class="wrap">
+        <div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><a href="{{ route('index') }}#markets">Markets</a><span>/</span><b>{{ $game->name }}</b></div>
+        <p class="eyebrow">MONTHLY RESULT CHART</p>
+        <h1>{{ $game->name }} <span>{{ $currentMonthLabel }}</span></h1>
+        <p>Game records are now browsed one calendar month at a time.</p>
+    </div>
+</section>
+<section class="section-block section-light">
+    <div class="wrap">
+        <div class="empty-state">
+            <b>Choose a month to view this market's chart.</b>
+            <p>Historical records remain available through the year and month selector.</p>
+            <a class="button button-dark" href="{{ route('frontend.chart', ['slug' => $game->slug, 'year' => $currentYear, 'month' => $currentMonth]) }}">Open {{ $currentMonthLabel }} chart ↗</a>
+        </div>
+    </div>
+</section>
 @endsection

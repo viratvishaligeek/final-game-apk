@@ -10,23 +10,29 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
+        // Never create a known default administrator password in a deployed
+        // database. Configure these values explicitly for a fresh installation.
+        $adminEmail = env('SEED_ADMIN_EMAIL');
+        $adminPassword = env('SEED_ADMIN_PASSWORD');
 
-        Admin::create([
-            'name' => 'SUper Admin',
-            'email' => 'admin@gmail.com',
-            'password' => 'qwerty',
-            'status' => 'active'
-        ]);
+        if (is_string($adminEmail) && $adminEmail !== '' && is_string($adminPassword) && $adminPassword !== '') {
+            Admin::firstOrCreate(
+                ['email' => $adminEmail],
+                [
+                    'name' => env('SEED_ADMIN_NAME', 'Site Administrator'),
+                    'password' => $adminPassword,
+                    'status' => 'active',
+                ]
+            );
+        }
 
-         $this->call([
+        $this->call([
+            PlayOnlineKhaiwalSettingsSeeder::class,
             GameSeeder::class,
-            UserSeeder::class,
             PageSeeder::class,
+            PlayOnlineKhaiwalFaqSeeder::class,
         ]);
     }
 }

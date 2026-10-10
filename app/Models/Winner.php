@@ -16,12 +16,15 @@ class Winner extends Model
         'game_date',
         'amount',
         'winning_amount',
+        'public_display_name',
+        'is_public',
     ];
 
     protected $casts = [
         'game_date' => 'date',
         'amount' => 'decimal:2',
         'winning_amount' => 'decimal:2',
+        'is_public' => 'boolean',
     ];
 
     public function user(): BelongsTo

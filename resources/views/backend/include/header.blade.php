@@ -4,7 +4,7 @@
          <i data-feather="menu">
          </i>
      </button>
-     <a class="navbar-brand pe-3 ps-4 ps-lg-2" href="{{ route('admin.dashboard') }}">SB Admin Pro</a>
+     <a class="navbar-brand pe-3 ps-4 ps-lg-2" href="{{ route('admin.dashboard') }}">{{ setting('title', 'Play Online Khaiwal') }} Admin</a>
 
      <ul class="navbar-nav align-items-center ms-auto">
          <li class="nav-item dropdown no-caret d-none d-sm-block me-3 dropdown-notifications">

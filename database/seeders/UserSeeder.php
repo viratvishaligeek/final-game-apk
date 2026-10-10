@@ -10,38 +10,43 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        if (!app()->environment(['local', 'testing'])) {
+            $this->command?->warn('UserSeeder is restricted to local/testing environments.');
+            return;
+        }
+
         $users = [
             [
-                'name'     => 'Rahul Kumar',
-                'phone'    => '9876543210',
+                'name'     => 'Demo Member 01',
+                'phone'    => '0000000001',
                 'password' => 'password',
                 'city'     => 'Agra',
                 'gender'   => 'Male',
             ],
             [
-                'name'     => 'Amit Sharma',
-                'phone'    => '9876543211',
+                'name'     => 'Demo Member 02',
+                'phone'    => '0000000002',
                 'password' => 'password',
                 'city'     => 'Delhi',
                 'gender'   => 'Male',
             ],
             [
-                'name'     => 'Vikas Singh',
-                'phone'    => '9876543212',
+                'name'     => 'Demo Member 03',
+                'phone'    => '0000000003',
                 'password' => 'password',
                 'city'     => 'Noida',
                 'gender'   => 'Male',
             ],
             [
-                'name'     => 'Priya Verma',
-                'phone'    => '9876543213',
+                'name'     => 'Demo Member 04',
+                'phone'    => '0000000004',
                 'password' => 'password',
                 'city'     => 'Lucknow',
                 'gender'   => 'Female',
             ],
             [
-                'name'     => 'Neha Gupta',
-                'phone'    => '9876543214',
+                'name'     => 'Demo Member 05',
+                'phone'    => '0000000005',
                 'password' => 'password',
                 'city'     => 'Kanpur',
                 'gender'   => 'Female',
@@ -49,9 +54,8 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($users as $user) {
-            User::create([
+            User::firstOrCreate(['phone' => $user['phone']], [
                 'name'     => $user['name'],
-                'phone'    => $user['phone'],
                 'password' => Hash::make($user['password']),
                 'city'     => $user['city'],
                 'gender'   => $user['gender'],
