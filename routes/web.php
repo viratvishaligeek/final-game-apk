@@ -55,7 +55,7 @@ Route::get('/sitemap.xml', function () {
         $urls[] = route('information', ['page' => $page]);
     }
     $games = Game::query()->where('status', 'active')->orderBy('serial')->get(['id', 'slug']);
-    $yearExpression = \\Illuminate\\Support\\Facades\\DB::connection()->getDriverName() === 'sqlite'
+    $yearExpression = DB::connection()->getDriverName() === 'sqlite'
         ? "CAST(strftime('%Y', game_date) AS INTEGER)" : 'YEAR(game_date)';
     foreach ($games as $game) {
         $urls[] = route('frontend.market', ['slug' => $game->slug]);
@@ -65,7 +65,7 @@ Route::get('/sitemap.xml', function () {
             $urls[] = route('frontend.chart', ['slug' => $game->slug, 'year' => (int) $year]);
         }
     }
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     foreach (array_unique($urls) as $loc) {
         $xml .= '<url><loc>' . htmlspecialchars($loc, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc></url>';
     }
