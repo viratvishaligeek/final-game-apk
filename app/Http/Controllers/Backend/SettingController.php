@@ -27,6 +27,21 @@ class SettingController extends Controller
         $validated = $request->validate([
             'title' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
+            'site_description' => ['nullable', 'string', 'max:1000'],
+            'meta_title' => ['nullable', 'string', 'max:255'],
+            'meta_description' => ['nullable', 'string', 'max:1000'],
+            'meta_keywords' => ['nullable', 'string', 'max:1000'],
+            'copyright_text' => ['nullable', 'string', 'max:255'],
+            'footer_description' => ['nullable', 'string', 'max:1000'],
+            'contact_phone' => ['nullable', 'string', 'max:100'],
+            'contact_address' => ['nullable', 'string', 'max:500'],
+            'social_facebook' => ['nullable', 'url', 'max:500'],
+            'social_instagram' => ['nullable', 'url', 'max:500'],
+            'social_youtube' => ['nullable', 'url', 'max:500'],
+            'social_telegram' => ['nullable', 'url', 'max:500'],
+            'ticker_text' => ['nullable', 'string', 'max:1000'],
+            'disclaimer_content' => ['nullable', 'string', 'max:10000'],
+            'chart_chunk_size' => ['nullable', 'integer', 'min:1', 'max:50'],
             'referral_percentage' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100'],
             'referral_min_amount' => ['sometimes', 'required', 'numeric', 'min:0', 'max:1000000'],
             'site_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
@@ -38,7 +53,7 @@ class SettingController extends Controller
 
         try {
             DB::transaction(function () use ($request, $validated, &$newFiles, &$oldFiles) {
-                foreach (['title', 'email', 'referral_percentage', 'referral_min_amount'] as $key) {
+                foreach (['title', 'email', 'site_description', 'meta_title', 'meta_description', 'meta_keywords', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'ticker_text', 'disclaimer_content', 'chart_chunk_size', 'referral_percentage', 'referral_min_amount'] as $key) {
                     if (array_key_exists($key, $validated)) {
                         Setting::updateOrCreate(
                             ['option' => $key],
