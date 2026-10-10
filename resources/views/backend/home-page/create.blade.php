@@ -52,19 +52,19 @@
                                     <label for="phone" class="small mb-1"> Phone <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control " id="phone" name="phone"
-                                        value="{{ old('phone') }}" placeholder="Enter phone number" required>
+                                        value="{{ old('phone') }}" placeholder="Enter phone number">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="whatsapp" class="small mb-1"> WhatsApp <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control " id="whatsapp" name="whatsapp"
-                                        value="{{ old('whatsapp') }}" placeholder="Enter WhatsApp number/link" required>
+                                        value="{{ old('whatsapp') }}" placeholder="Enter WhatsApp number/link">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="telegram" class="small mb-1"> Telegram <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control " id="telegram" name="telegram"
-                                        value="{{ old('telegram') }}" placeholder="Enter Telegram username/link" required>
+                                        value="{{ old('telegram') }}" placeholder="Enter Telegram username/link">
                                 </div>
                             </div>
                         </div>
@@ -100,7 +100,7 @@
                                 <label for="background" class="small mb-1"> Background <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control " id="background" name="background"
-                                    value="{{ old('background') }}" placeholder="e.g. #f8f9fa or CSS class" required>
+                                    value="{{ old('background') }}" placeholder="e.g. #f8f9fa or CSS class">
                                 <div class="form-text"> Enter a color, CSS value, class name, or background identifier.
                                 </div>
                             </div>
