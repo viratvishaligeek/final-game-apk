@@ -1,13 +1,13 @@
 @php
     $canonicalBase = rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/');
-    $defaultTitle = setting('meta_title', setting('title', 'Play Online Khaiwal | Satta King Results & Monthly Charts'));
-    $defaultDescription = setting('meta_description', setting('site_description', 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on Play Online Khaiwal.'));
-    $siteName = setting('title', 'Play Online Khaiwal');
+    $defaultTitle = filled(setting('meta_title')) ? setting('meta_title') : (filled(setting('title')) ? setting('title') . ' | Satta King Results & Monthly Charts' : 'Play Online Khaiwal | Satta King Results & Monthly Charts');
+    $defaultDescription = filled(setting('meta_description')) ? setting('meta_description') : (filled(setting('site_description')) ? setting('site_description') : 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on Play Online Khaiwal.');
+    $siteName = filled(setting('title')) ? setting('title') : 'Play Online Khaiwal';
     $sectionTitle = trim($__env->yieldContent('title', $defaultTitle));
     $sectionDescription = trim($__env->yieldContent('meta_description', $defaultDescription));
     $useGlobalSocialDefaults = request()->routeIs('index') && !request()->filled('year') && !request()->filled('month');
-    $ogTitle = $useGlobalSocialDefaults ? setting('og_title', $sectionTitle) : $sectionTitle;
-    $ogDescription = $useGlobalSocialDefaults ? setting('og_description', $sectionDescription) : $sectionDescription;
+    $ogTitle = $useGlobalSocialDefaults && filled(setting('og_title')) ? setting('og_title') : $sectionTitle;
+    $ogDescription = $useGlobalSocialDefaults && filled(setting('og_description')) ? setting('og_description') : $sectionDescription;
     $metaImage = setting('og_image', setting('site_logo'));
     $canonicalPath = request()->getPathInfo();
     $canonicalUrl = $canonicalBase . ($canonicalPath === '/' ? '' : $canonicalPath);
