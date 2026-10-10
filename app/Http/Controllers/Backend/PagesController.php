@@ -29,6 +29,12 @@ class PagesController extends Controller
             'status' => ['required', 'in:active,inactive'],
             'content' => ['nullable', 'string'],
             'is_editable' => ['required', 'in:yes,no'],
+            'menu_visible' => ['sometimes', 'boolean'],
+            'menu_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'meta_title' => ['nullable', 'string', 'max:255'],
+            'meta_description' => ['nullable', 'string', 'max:2000'],
+            'meta_keywords' => ['nullable', 'string', 'max:2000'],
+            'noindex' => ['sometimes', 'boolean'],
         ]);
 
         Page::create([
@@ -37,6 +43,12 @@ class PagesController extends Controller
             'status' => $validated['status'],
             'content' => $validated['content'] ?? '',
             'is_editable' => $validated['is_editable'],
+            'menu_visible' => $request->boolean('menu_visible', true),
+            'menu_order' => $validated['menu_order'] ?? 0,
+            'meta_title' => $validated['meta_title'] ?? null,
+            'meta_description' => $validated['meta_description'] ?? null,
+            'meta_keywords' => $validated['meta_keywords'] ?? null,
+            'noindex' => $request->boolean('noindex'),
         ]);
 
         return redirect()
@@ -59,21 +71,36 @@ class PagesController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:pages,name,' . $page->id],
             'status' => ['required', 'in:active,inactive'],
             'content' => ['nullable', 'string'],
+            'is_editable' => ['required', 'in:yes,no'],
+            'menu_visible' => ['sometimes', 'boolean'],
+            'menu_order' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'meta_title' => ['nullable', 'string', 'max:255'],
+            'meta_description' => ['nullable', 'string', 'max:2000'],
+            'meta_keywords' => ['nullable', 'string', 'max:2000'],
+            'noindex' => ['sometimes', 'boolean'],
         ]);
 
+        $metadata = [
+            'menu_visible' => $request->boolean('menu_visible'),
+            'menu_order' => $validated['menu_order'] ?? 0,
+            'meta_title' => $validated['meta_title'] ?? null,
+            'meta_description' => $validated['meta_description'] ?? null,
+            'meta_keywords' => $validated['meta_keywords'] ?? null,
+            'noindex' => $request->boolean('noindex'),
+        ];
+
         if ($page->is_editable === 'no') {
-            $page->update([
+            $page->update(array_merge([
                 'content' => $validated['content'] ?? '',
-                'is_editable' => $request->is_editable,
-            ]);
+            ], $metadata));
         } else {
-            $page->update([
+            $page->update(array_merge([
                 'name' => $validated['name'],
                 'slug' => Str::slug($validated['name']),
                 'status' => $validated['status'],
                 'content' => $validated['content'] ?? '',
-                'is_editable' => $request->is_editable,
-            ]);
+                'is_editable' => $validated['is_editable'],
+            ], $metadata));
         }
         return redirect()->route('admin.pages.index')->with('success', 'Page updated successfully.');
     }
