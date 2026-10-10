@@ -79,6 +79,36 @@ class MainController extends Controller
         $monthlyEntries = $charts->paginate($monthlyRows, $request, $chunkSize);
         $monthLabel = $charts->monthLabel($selectedYear, $selectedMonth);
 
+        $homeCanonicalBase = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/');
+        $homeCanonical = $homeCanonicalBase . '/';
+        if ($request->filled('year') || $request->filled('month')) {
+            $homeCanonical .= '?' . http_build_query(['year' => $selectedYear, 'month' => $selectedMonth]);
+        }
+        $homeGraph = [[
+            '@type' => 'WebPage',
+            'name' => $request->filled('year') || $request->filled('month')
+                ? $monthLabel . ' Satta King Result Chart | Play Online Khaiwal'
+                : 'Play Online Khaiwal | Satta King Results & Monthly Charts',
+            'url' => $homeCanonical,
+            'description' => $request->filled('year') || $request->filled('month')
+                ? 'Monthly result chart for ' . $monthLabel . ', using saved market records.'
+                : app(AppSettingsService::class)->value('meta_description', 'Satta King result records and monthly charts on Play Online Khaiwal.'),
+        ]];
+        if ($faqs->isNotEmpty()) {
+            $homeGraph[] = [
+                '@type' => 'FAQPage',
+                'mainEntity' => $faqs->map(fn ($faq) => [
+                    '@type' => 'Question',
+                    'name' => strip_tags((string) $faq->question),
+                    'acceptedAnswer' => [
+                        '@type' => 'Answer',
+                        'text' => strip_tags((string) $faq->answer),
+                    ],
+                ])->values()->all(),
+            ];
+        }
+        $homeSchema = ['@context' => 'https://schema.org', '@graph' => $homeGraph];
+
         // Public winner display is opt-in: names are never taken from private user
         // profile fields, and no amount or unverified claim is published.
         $topWinners = Winner::query()
@@ -106,7 +136,8 @@ class MainController extends Controller
             'availableYears',
             'selectedYear',
             'selectedMonth',
-            'monthOptions'
+            'monthOptions',
+            'homeSchema'
         ));
     }
 
