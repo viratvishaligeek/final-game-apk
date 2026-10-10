@@ -47,6 +47,13 @@
                         <input class="form-control" id="site_favicon" name="site_favicon" type="file"
                             accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
                     </div>
+                    <div class="col-lg-6 mb-3">
+                        <label class="small mb-1" for="og_image">Default Open Graph Image</label>
+                        <input class="form-control" id="og_image" name="og_image" type="file"
+                            accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                        <small class="text-muted">Used for social previews when an individual page has no dedicated image.</small>
+                        @error('og_image')<small class="text-danger">{{ $message }}</small>@enderror
+                    </div>
                 </div>
                 <div class="card-footer text-end">
                     <button class="btn btn-primary" type="submit">
