@@ -262,3 +262,22 @@ a,button,input,summary{-webkit-tap-highlight-color:transparent}
  .button-gold{animation:none!important}
  .result-board-card,.market-card,.chart-market,.quick-paths>a,.button,.faq-item,.back-top{transition:none!important}
 }
+
+/* Restore progressive scroll reveals; content stays visible without JS. */
+.has-reveal .section-heading,
+.has-reveal .result-board-card,
+.has-reveal .market-card,
+.has-reveal .archive-feature,
+.has-reveal .chart-market,
+.has-reveal .guide-list article,
+.has-reveal .faq-item{opacity:0;transform:translateY(12px);transition:opacity 420ms var(--ease),transform 420ms var(--ease)}
+.has-reveal .section-heading.is-revealed,
+.has-reveal .result-board-card.is-revealed,
+.has-reveal .market-card.is-revealed,
+.has-reveal .archive-feature.is-revealed,
+.has-reveal .chart-market.is-revealed,
+.has-reveal .guide-list article.is-revealed,
+.has-reveal .faq-item.is-revealed{opacity:1;transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){
+ .has-reveal .section-heading,.has-reveal .result-board-card,.has-reveal .market-card,.has-reveal .archive-feature,.has-reveal .chart-market,.has-reveal .guide-list article,.has-reveal .faq-item{opacity:1!important;transform:none!important}
+}
