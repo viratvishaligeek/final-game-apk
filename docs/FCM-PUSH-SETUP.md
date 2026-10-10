@@ -15,6 +15,7 @@ The web project ID must match the project that issues the FCM registration token
 After changing Laravel environment values, run:
 
 ```sh
+php artisan migrate --force
 php artisan optimize:clear
 php artisan config:cache
 ```
@@ -40,10 +41,10 @@ Install the newly built APK. The app uses a versioned notification channel (**ga
 
 ## Public and private targeting
 
-- Website guests and app installations register a token through **POST /api/v1/push/subscribe**; the token is stored in the existing push_subscriptions table and is eligible for public broadcasts.
+- Website guests and app installations register a token through **POST /api/v1/push/subscribe**; the token is stored in the existing push_subscriptions table with public_enabled=true.
 - Authenticated app devices register through **POST /api/v1/push/register-user**. Individual sends query only subscriptions whose user_id matches the intended user.
-- Unsubscribe removes the supplied token from the existing subscription table. Website unsubscribe removes that browser token; it does not change OS permission settings.
-- Public broadcast sends to every row in push_subscriptions, including authenticated app devices. Token-hash upsert prevents duplicate rows for the same token, but a browser token and a separate native-app token are distinct subscriptions and can both receive a public event.
+- Unsubscribe disables public eligibility. If a token is still linked to a user, its row remains available for private notifications; otherwise the row is removed. Website unsubscribe does not change OS permission settings. Logout detaches only the current device from the account.
+- Public broadcast sends only rows with public_enabled=true, including eligible authenticated app devices. Token-hash upsert prevents duplicate rows for the same token, but a browser token and a separate native-app token are distinct subscriptions and can both receive a public event.
 - Wallet-request approval/rejection and game reward notifications are persisted as user-scoped records and sent only to the relevant user's registered tokens.
 
 ## Reproducible verification
