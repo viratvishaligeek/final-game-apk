@@ -10,7 +10,6 @@ use App\Models\Page;
 use App\Models\Result;
 use App\Services\AppSettingsService;
 use Carbon\Carbon;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class MainController extends Controller
@@ -18,7 +17,9 @@ class MainController extends Controller
     public function index()
     {
         $frontendResults = $this->getFrontendResults();
-        $marketResults = $this->getMarketResults();
+        $marketResults = collect($frontendResults)->map(fn (array $game) => collect($game)->only([
+            'id', 'name', 'slug', 'time', 'today', 'yesterday',
+        ])->all())->all();
         $recordYears = $this->getRecordYears();
         $homepageSections = HomePage::query()->where('status', 'active')->orderBy('id')->get();
         $faqs = Faq::query()->latest('id')->get();
@@ -139,33 +140,6 @@ class MainController extends Controller
                 'today' => $todayResult !== null && $todayResult !== '' ? (string) $todayResult : '--',
                 'yesterday' => $yesterdayResult !== null && $yesterdayResult !== '' ? (string) $yesterdayResult : '--',
                 'last_result' => $game->last_result !== null && $game->last_result !== '' ? (string) $game->last_result : '--',
-            ];
-        })->values()->toArray();
-    }
-
-    private function getMarketResults(): array
-    {
-        $now = now()->timezone(config('app.timezone'));
-        $games = Game::query()->where('status', 'active')->orderBy('serial')->orderBy('id')
-            ->get(['id', 'name', 'slug', 'result_time']);
-        $businessDates = $this->businessDatesFor($games, $now);
-        $resultDates = collect($businessDates)->flatMap(fn(array $dates) => array_values($dates))->unique()->values();
-        $results = Result::query()->whereIn('game_id', $games->pluck('id'))->where('type', 'jodi')
-            ->whereIn('game_date', $resultDates)->get(['game_id', 'game_date', 'number'])->groupBy('game_id');
-
-        return $games->map(function ($game) use ($results, $businessDates) {
-            $gameResults = $results->get($game->id, collect());
-            $dates = $businessDates[$game->id];
-            $todayResult = optional($gameResults->firstWhere('game_date', $dates['today']))->number;
-            $yesterdayResult = optional($gameResults->firstWhere('game_date', $dates['yesterday']))->number;
-
-            return [
-                'id' => $game->id,
-                'name' => $game->name,
-                'slug' => $game->slug,
-                'time' => $game->result_time ? Carbon::parse($game->result_time)->format('h:i A') : '—',
-                'today' => $todayResult !== null && $todayResult !== '' ? (string) $todayResult : '--',
-                'yesterday' => $yesterdayResult !== null && $yesterdayResult !== '' ? (string) $yesterdayResult : '--',
             ];
         })->values()->toArray();
     }
