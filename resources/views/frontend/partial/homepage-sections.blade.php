@@ -10,7 +10,7 @@
                     <p>{{ $section->short_desc }}</p>
                 @endif
                 @if (filled($section->content))
-                    <div class="homepage-managed-content">{{ nl2br(e(strip_tags($section->content))) }}</div>
+                    <div class="homepage-managed-content">{!! nl2br(e(strip_tags($section->content))) !!}</div>
                 @endif
                 @if ($section->phone || $section->whatsapp || $section->telegram)
                     <div class="ribbon-actions">
