@@ -23,6 +23,6 @@ class PushNotificationController extends Controller
 
         $sent = $push->broadcast($data['subject'], $data['message']);
 
-        return back()->with('success', "Public notification saved. Push delivered to {$sent} subscriber(s).");
+        return back()->with('success', "Public notification saved. FCM accepted {$sent} send request(s); device display is not confirmed by the FCM response.");
     }
 }
