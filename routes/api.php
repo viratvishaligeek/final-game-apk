@@ -32,6 +32,7 @@ Route::prefix('v1')->group(function () {
     // after login routes
     Route::middleware(['auth:sanctum', EnsureUserIsActive::class])->group(function () {
         Route::post('push/register-user', [PushSubscriptionController::class, 'subscribeUser'])->middleware('throttle:20,1');
+        Route::post('push/unregister-user', [PushSubscriptionController::class, 'unsubscribeUser'])->middleware('throttle:20,1');
         Route::get('referrals', [ReferralController::class, 'index']);
         Route::post('referrals/apply', [ReferralController::class, 'applyCode'])->middleware('throttle:10,1');
         Route::controller(DashboardController::class)->group(function () {
