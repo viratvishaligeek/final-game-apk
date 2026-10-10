@@ -35,6 +35,7 @@ class DynamicFrontendIntegrationTest extends TestCase
     public function test_homepage_renders_saved_sections_and_paginated_current_month_results(): void
     {
         Setting::updateOrCreate(['option' => 'chart_chunk_size'], ['value' => '1']);
+        app(AppSettingsService::class)->forgetCache();
 
         $first = $this->createGame('First Market', 'first-market', 1);
         $second = $this->createGame('Second Market', 'second-market', 2);
@@ -71,6 +72,8 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertSee('Managed short description')
             ->assertSee('Managed section body')
             ->assertSee('October 2026')
+            ->assertSee('Download App')
+            ->assertSee('<th>Game</th><th>Date</th><th>Result</th><th>Status</th>', false)
             ->assertSee('07')
             ->assertSee('1 entries per page')
             ->assertSee('Next')
@@ -171,6 +174,8 @@ class DynamicFrontendIntegrationTest extends TestCase
 
     public function test_dedicated_game_chart_is_month_scoped_and_legacy_urls_redirect_to_monthly_urls(): void
     {
+        Setting::updateOrCreate(['option' => 'chart_chunk_size'], ['value' => '50']);
+        app(AppSettingsService::class)->forgetCache();
         $game = $this->createGame('First Market', 'first-market', 1);
 
         Result::create([
@@ -197,8 +202,8 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->get(route('frontend.chart', ['slug' => $game->slug, 'year' => 2026, 'month' => 9]))
             ->assertOk()
             ->assertSee('September 2026')
-            ->assertSee('99')
-            ->assertDontSee('07');
+            ->assertSee('>99</span>', false)
+            ->assertDontSee('>07</span>', false);
 
         $this->get(route('frontend.chart', ['slug' => $game->slug]))
             ->assertRedirect(route('frontend.chart', ['slug' => $game->slug, 'year' => 2026, 'month' => 10]));
@@ -299,10 +304,45 @@ class DynamicFrontendIntegrationTest extends TestCase
             'option' => 'canonical_url',
             'value' => 'https://playonlinekhaiwal.com',
         ]);
-        $this->assertDatabaseMissing('pages', [
-            'slug' => 'whatsapp',
-            'content' => 'support@example.com',
+        $whatsappContent = (string) Page::query()->where('slug', 'whatsapp')->value('content');
+        $this->assertStringNotContainsString('support@example.com', $whatsappContent);
+        $this->assertStringNotContainsString('91XXXXXXXXXX', $whatsappContent);
+    }
+
+    public function test_canonical_brand_metadata_and_sitemap_use_monthly_urls(): void
+    {
+        Setting::updateOrCreate(['option' => 'canonical_url'], ['value' => 'https://playonlinekhaiwal.com']);
+        Setting::updateOrCreate(['option' => 'title'], ['value' => 'Play Online Khaiwal']);
+        app(AppSettingsService::class)->forgetCache();
+
+        $game = $this->createGame('First Market', 'first-market', 1);
+        Result::create([
+            'game_id' => $game->id,
+            'game_date' => '2026-10-05',
+            'type' => 'jodi',
+            'number' => '07',
         ]);
+        Result::create([
+            'game_id' => $game->id,
+            'game_date' => '2026-09-05',
+            'type' => 'jodi',
+            'number' => '08',
+        ]);
+
+        $this->get(route('index'))
+            ->assertOk()
+            ->assertSee('<link rel="canonical" href="https://playonlinekhaiwal.com">', false)
+            ->assertSee('Play Online Khaiwal')
+            ->assertSee('"@type":"Organization"', false)
+            ->assertSee('Download App')
+            ->assertDontSee('Find market');
+
+        $this->get(route('sitemap'))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
+            ->assertSee('https://playonlinekhaiwal.com/charts/first-market/2026/10')
+            ->assertSee('https://playonlinekhaiwal.com/charts/first-market/2026/9')
+            ->assertDontSee('https://playonlinekhaiwal.com/charts/first-market/2026</loc>');
     }
 
     private function createGame(string $name, string $slug, int $serial): Game
