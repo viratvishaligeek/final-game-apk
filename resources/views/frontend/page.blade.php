@@ -14,7 +14,7 @@
     <section class="section-block section-light">
         <div class="wrap">
             <article class="market-card">
-                <div class="homepage-managed-content">{!! nl2br(e(strip_tags((string) $page->content))) !!}</div>
+                <div class="homepage-managed-content">{!! \App\Support\SafeHtml::sanitize((string) $page->content) !!}</div>
             </article>
         </div>
     </section>
