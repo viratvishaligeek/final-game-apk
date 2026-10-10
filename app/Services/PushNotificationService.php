@@ -14,15 +14,23 @@ class PushNotificationService
 {
     public function register(string $token, string $platform, ?User $user = null): PushSubscription
     {
-        $subscription = PushSubscription::query()->updateOrCreate(
-            ['token_hash' => hash('sha256', $token)],
-            ['token' => $token, 'user_id' => $user?->id, 'platform' => $platform]
-        );
+        $subscription = PushSubscription::query()->firstOrNew([
+            'token_hash' => hash('sha256', $token),
+        ]);
+        $subscription->token = $token;
+        $subscription->platform = $platform;
+        $subscription->public_enabled = true;
+        // Public subscription must not silently detach a token from its user.
+        // Logout uses the dedicated authenticated unregister-user endpoint.
+        if ($user !== null) {
+            $subscription->user_id = $user->id;
+        }
+        $subscription->save();
 
         Log::info('Push token registered.', [
             'subscription_id' => $subscription->id,
             'platform' => $platform,
-            'user_id' => $user?->id,
+            'user_id' => $subscription->user_id,
             'token_hash_prefix' => substr($subscription->token_hash, 0, 12),
         ]);
 
@@ -53,7 +61,7 @@ class PushNotificationService
     public function sendPublicPush(string $title, string $body): int
     {
         return $this->sendToSubscriptions(
-            PushSubscription::query()->get(),
+            PushSubscription::query()->where('public_enabled', true)->get(),
             $title,
             $body,
             'public'
