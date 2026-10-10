@@ -22,9 +22,18 @@ class GameSeeder extends Seeder
         ];
 
         foreach ($games as $index => $name) {
-            Game::firstOrCreate(['slug' => Str::slug($name)], [
+            $slug = Str::slug($name);
+            $alreadyExists = Game::query()
+                ->where(fn ($query) => $query->where('slug', $slug)->orWhere('name', $name))
+                ->exists();
+
+            if ($alreadyExists) {
+                continue;
+            }
+
+            Game::create([
                 'name'        => $name,
-                'slug'        => Str::slug($name),
+                'slug'        => $slug,
                 'result_time' => '23:00:00',
                 'play_start'  => '18:00:00',
                 'play_end'    => '20:00:00',
