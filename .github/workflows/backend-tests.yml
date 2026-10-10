@@ -25,6 +25,7 @@ jobs:
           coverage: none
       - run: composer validate --no-check-publish
       - run: composer install --no-interaction --prefer-dist
+      - run: php artisan test --filter=DynamicFrontendIntegrationTest
       - run: php artisan test --filter=PushNotificationSubscriptionTest
       - name: Run full regression suite (non-blocking; settlement failures tracked separately)
         run: php artisan test
