@@ -11,6 +11,8 @@
              <a class="site-nav__link" href="chart.php#archive-vault">Records</a>
              <a class="site-nav__cta" href="https://wa.me/919258825697?text=Hello%20Satta786" rel="noopener"
                  target="_blank">Satta Leak</a>
+             <button class="site-nav__cta" type="button" id="public-push-subscribe" aria-pressed="false"
+                 style="border:0;cursor:pointer" title="Subscribe to public notifications">🔔 Subscribe</button>
          </nav>
      </div>
 
