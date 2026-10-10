@@ -7,7 +7,7 @@
                 @else
                     <span class="brand-emblem">786</span>
                 @endif
-                <span class="brand-word">{{ setting('title', 'Satta 786') }}<small>{{ setting('site_description', 'RESULTS • RECORDS • CHARTS') }}</small></span>
+                <span class="brand-word">{{ setting('title', 'Satta 786') }}<small>{{ setting('site_tagline', 'RESULTS • RECORDS • CHARTS') }}</small></span>
             </a>
             <p>{{ setting('footer_description', setting('site_description', 'A structured reference for published market results, schedules, and historical records.')) }}</p>
             @if (filled(setting('email')))<p><a href="mailto:{{ setting('email') }}">{{ setting('email') }}</a></p>@endif
