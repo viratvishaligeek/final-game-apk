@@ -75,6 +75,7 @@ class MainController extends Controller
         $faqs = Faq::query()->latest('id')->get();
         $chunkSize = $charts->chunkSize();
         $monthlyRows = $charts->homepageRows($games, $monthStart, $monthEnd, $monthDays);
+        $hasMonthlyResults = $monthlyRows->contains(fn (array $row) => $row['status'] === 'published');
         $monthlyEntries = $charts->paginate($monthlyRows, $request, $chunkSize);
         $monthLabel = $charts->monthLabel($selectedYear, $selectedMonth);
 
@@ -98,6 +99,7 @@ class MainController extends Controller
             'faqs',
             'topWinners',
             'monthlyEntries',
+            'hasMonthlyResults',
             'monthLabel',
             'chunkSize',
             'availableMonths',
