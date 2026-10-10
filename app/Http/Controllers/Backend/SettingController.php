@@ -52,6 +52,7 @@ class SettingController extends Controller
             'referral_min_amount' => ['sometimes', 'required', 'numeric', 'min:0', 'max:1000000'],
             'site_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'site_favicon' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'og_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:4096'],
         ]);
 
         $newFiles = [];
@@ -68,7 +69,7 @@ class SettingController extends Controller
                     }
                 }
 
-                foreach (['site_logo', 'site_favicon'] as $key) {
+                foreach (['site_logo', 'site_favicon', 'og_image'] as $key) {
                     if (!$request->hasFile($key)) {
                         continue;
                     }
