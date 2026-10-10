@@ -72,6 +72,7 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
         // These are intentionally empty until the operator configures real URLs.
         Setting::firstOrCreate(['option' => 'app_download_url'], ['value' => '']);
         Setting::firstOrCreate(['option' => 'social_facebook'], ['value' => '']);
+        Setting::firstOrCreate(['option' => 'social_whatsapp'], ['value' => '']);
         Setting::firstOrCreate(['option' => 'social_instagram'], ['value' => '']);
         Setting::firstOrCreate(['option' => 'social_youtube'], ['value' => '']);
         Setting::firstOrCreate(['option' => 'social_telegram'], ['value' => '']);
