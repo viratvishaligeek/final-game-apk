@@ -19,6 +19,7 @@
         setting('social_instagram'),
         setting('social_youtube'),
         setting('social_telegram'),
+        setting('social_whatsapp'),
     ])->filter(fn ($url) => is_string($url) && filter_var($url, FILTER_VALIDATE_URL) && in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https'], true))->values()->all();
     $organizationSchema = [
         '@type' => 'Organization',
