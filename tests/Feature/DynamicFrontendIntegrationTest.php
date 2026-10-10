@@ -287,18 +287,21 @@ class DynamicFrontendIntegrationTest extends TestCase
             \Database\Seeders\PlayOnlineKhaiwalSettingsSeeder::class,
             \Database\Seeders\GameSeeder::class,
             \Database\Seeders\PageSeeder::class,
+            \Database\Seeders\PlayOnlineKhaiwalFaqSeeder::class,
         ];
 
         $this->seed($seeders);
         $gameCount = Game::query()->count();
         $pageCount = Page::query()->count();
         $settingCount = Setting::query()->count();
+        $faqCount = \App\Models\Faq::query()->count();
 
         $this->seed($seeders);
 
         $this->assertSame($gameCount, Game::query()->count());
         $this->assertSame($pageCount, Page::query()->count());
         $this->assertSame($settingCount, Setting::query()->count());
+        $this->assertSame($faqCount, \App\Models\Faq::query()->count());
         $this->assertSame(0, Result::query()->count());
         $this->assertDatabaseHas('settings', [
             'option' => 'canonical_url',
