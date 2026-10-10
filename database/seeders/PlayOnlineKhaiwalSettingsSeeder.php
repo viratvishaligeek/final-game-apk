@@ -32,6 +32,14 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
             'chart_chunk_size' => '10',
         ];
 
+        $knownLegacyDefaults = [
+            'site_tagline' => ['RESULTS • RECORDS • CHARTS'],
+            'site_description' => ['A structured reference for published market results, schedules, and historical records.'],
+            'meta_title' => ['Satta 786 Results Today, Market Board & Historical Charts', 'Satta 786 Results & Historical Charts'],
+            'meta_description' => ['Browse published market results, compare today and yesterday, and open market-wise historical charts and year-wise records.', 'Browse published market results, schedules, and historical result charts by market and year.'],
+            'footer_description' => ['A structured reference for published market results, schedules, and historical records.'],
+        ];
+
         foreach ($defaults as $option => $value) {
             // Brand and SEO defaults are intentional project defaults. Existing
             // operator-entered values are preserved, except legacy identity and
@@ -53,6 +61,7 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
                 str_contains(strtolower($current), 'satta 786')
                 || str_contains(strtolower($current), 'example.com')
                 || str_contains(strtolower($current), 'placeholder')
+                || in_array($current, $knownLegacyDefaults[$option] ?? [], true)
             ));
 
             if ($isLegacyBrand) {
