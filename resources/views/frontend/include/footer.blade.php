@@ -10,6 +10,7 @@
                 <span class="brand-word">{{ setting('title', 'Satta 786') }}<small>{{ setting('site_description', 'RESULTS • RECORDS • CHARTS') }}</small></span>
             </a>
             <p>{{ setting('footer_description', setting('site_description', 'A structured reference for published market results, schedules, and historical records.')) }}</p>
+            @if (filled(setting('email')))<p><a href="mailto:{{ setting('email') }}">{{ setting('email') }}</a></p>@endif
             @if (filled(setting('contact_phone')))<p><a href="tel:{{ preg_replace('/[^0-9+]/', '', setting('contact_phone')) }}">{{ setting('contact_phone') }}</a></p>@endif
             @if (filled(setting('contact_address')))<p>{{ setting('contact_address') }}</p>@endif
             <div class="footer-socials">
