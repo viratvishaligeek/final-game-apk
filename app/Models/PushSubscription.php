@@ -7,7 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PushSubscription extends Model
 {
-    protected $fillable = ['user_id', 'token', 'token_hash', 'platform'];
+    protected $fillable = ['user_id', 'token', 'token_hash', 'platform', 'public_enabled'];
+
+    protected function casts(): array
+    {
+        return ['public_enabled' => 'boolean'];
+    }
 
     public function user(): BelongsTo
     {

@@ -145,13 +145,14 @@ class ResultController extends Controller
 
             $message = sprintf('Result for %s is %s', $game->name, $jodi);
 
-            Notification::create([
+            $publicNotification = Notification::create([
                 'user_id' => null,
                 'subject' => 'Game Result Out',
                 'message' => $message,
             ]);
 
-            $this->sendResultNotification($game, $gameDate, $jodi);
+            $this->sendResultNotification($game, $gameDate, $jodi, $publicNotification->id);
+            $this->sendWinnerNotifications($game, $gameDate);
 
             return redirect()->back()->with(
                 'success',
@@ -358,12 +359,13 @@ class ResultController extends Controller
     }
 
     /** Send FCM result notification. */
-    private function sendResultNotification(Game $game, string $gameDate, string $result): void
+    private function sendResultNotification(Game $game, string $gameDate, string $result, int $notificationId): void
     {
         try {
             app(\App\Services\PushNotificationService::class)->sendPublicPush(
                 $game->name . ' Result Published',
-                "Result for {$game->name} is {$result}"
+                "Result for {$game->name} is {$result}",
+                $notificationId
             );
         } catch (\Throwable $e) {
             Log::error('FCM notification failed', [
@@ -371,6 +373,58 @@ class ResultController extends Controller
                 'game_date' => $gameDate,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+
+    /**
+     * Send private reward alerts only to users who won in this settlement.
+     * Run after the settlement transaction has committed.
+     */
+    private function sendWinnerNotifications(Game $game, string $gameDate): void
+    {
+        $totalsByUser = Winner::query()
+            ->where('game_id', $game->id)
+            ->where('game_date', $gameDate)
+            ->selectRaw('user_id, SUM(winning_amount) as total_won')
+            ->groupBy('user_id')
+            ->get();
+
+        foreach ($totalsByUser as $winner) {
+            try {
+                $user = User::query()->find($winner->user_id);
+                if (!$user) {
+                    continue;
+                }
+
+                $amount = number_format((float) $winner->total_won, 2);
+                $title = 'Game reward credited';
+                $body = sprintf('You won ₹%s in %s for %s.', $amount, $game->name, $gameDate);
+
+                $notification = Notification::query()->create([
+                    'user_id' => $user->id,
+                    'subject' => $title,
+                    'message' => $body,
+                ]);
+
+                $accepted = app(\App\Services\PushNotificationService::class)
+                    ->sendToUser($user, $title, $body, $notification->id);
+
+                Log::info('Private game reward notification processed.', [
+                    'game_id' => $game->id,
+                    'game_date' => $gameDate,
+                    'user_id' => $user->id,
+                    'fcm_accepted_count' => $accepted,
+                ]);
+            } catch (\Throwable $exception) {
+                Log::warning('Private game reward notification failed.', [
+                    'game_id' => $game->id,
+                    'game_date' => $gameDate,
+                    'user_id' => $winner->user_id,
+                    'error_class' => get_class($exception),
+                    'error' => $exception->getMessage(),
+                ]);
+            }
         }
     }
 

@@ -7,6 +7,40 @@ use App\Http\Controllers\WelcomeController;
 
 
 require 'admin.php';
+
+// Firebase web config contains public SDK identifiers only. Service-account
+// credentials remain server-side in FCM_SERVICE_ACCOUNT_JSON.
+Route::get('/firebase-config.js', function () {
+    $web = config('services.fcm_web');
+    $firebaseConfig = [
+        'apiKey' => $web['api_key'] ?? '',
+        'authDomain' => $web['auth_domain'] ?? '',
+        'projectId' => $web['project_id'] ?? '',
+        'messagingSenderId' => $web['messaging_sender_id'] ?? '',
+        'appId' => $web['app_id'] ?? '',
+    ];
+
+    $javascript = 'self.FIREBASE_CONFIG = ' . json_encode($firebaseConfig, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ';'
+        . 'self.FIREBASE_VAPID_KEY = ' . json_encode($web['vapid_key'] ?? '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ';';
+
+    return response($javascript, 200, [
+        'Content-Type' => 'application/javascript; charset=UTF-8',
+        'Cache-Control' => 'no-store, max-age=0',
+    ]);
+});
+Route::get('/firebase-config.json', function () {
+    $web = config('services.fcm_web');
+
+    return response()->json([
+        'apiKey' => $web['api_key'] ?? '',
+        'authDomain' => $web['auth_domain'] ?? '',
+        'projectId' => $web['project_id'] ?? '',
+        'messagingSenderId' => $web['messaging_sender_id'] ?? '',
+        'appId' => $web['app_id'] ?? '',
+        'vapidKey' => $web['vapid_key'] ?? '',
+    ])->header('Cache-Control', 'no-store, max-age=0');
+});
+
 Route::get('/clear', function () {
     $exitCode = Artisan::call('optimize:clear');
     return '<h1>Optimize Cleared Now</h1>';

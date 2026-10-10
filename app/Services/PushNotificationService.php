@@ -14,54 +14,78 @@ class PushNotificationService
 {
     public function register(string $token, string $platform, ?User $user = null): PushSubscription
     {
-        return PushSubscription::query()->updateOrCreate(
-            ['token_hash' => hash('sha256', $token)],
-            ['token' => $token, 'user_id' => $user?->id, 'platform' => $platform]
-        );
+        $subscription = PushSubscription::query()->firstOrNew([
+            'token_hash' => hash('sha256', $token),
+        ]);
+        $subscription->token = $token;
+        $subscription->platform = $platform;
+        $subscription->public_enabled = true;
+        // Public subscription must not silently detach a token from its user.
+        // Logout uses the dedicated authenticated unregister-user endpoint.
+        if ($user !== null) {
+            $subscription->user_id = $user->id;
+        }
+        $subscription->save();
+
+        Log::info('Push token registered.', [
+            'subscription_id' => $subscription->id,
+            'platform' => $platform,
+            'user_id' => $subscription->user_id,
+            'token_hash_prefix' => substr($subscription->token_hash, 0, 12),
+        ]);
+
+        return $subscription;
     }
 
-    public function sendToUser(User $user, string $title, string $body): void
+    public function sendToUser(User $user, string $title, string $body, ?int $notificationId = null): int
     {
-        $this->sendToSubscriptions(
+        return $this->sendToSubscriptions(
             PushSubscription::query()->where('user_id', $user->id)->get(),
             $title,
-            $body
+            $body,
+            'individual',
+            $notificationId
         );
     }
 
     public function broadcast(string $title, string $body): int
     {
-        Notification::query()->create([
+        $notification = Notification::query()->create([
             'user_id' => null,
             'subject' => $title,
             'message' => $body,
         ]);
 
-        return $this->sendPublicPush($title, $body);
+        return $this->sendPublicPush($title, $body, $notification->id);
     }
 
-    public function sendPublicPush(string $title, string $body): int
+    public function sendPublicPush(string $title, string $body, ?int $notificationId = null): int
     {
         return $this->sendToSubscriptions(
-            PushSubscription::query()->get(),
+            PushSubscription::query()->where('public_enabled', true)->get(),
             $title,
-            $body
+            $body,
+            'public',
+            $notificationId
         );
     }
 
-    private function sendToSubscriptions($subscriptions, string $title, string $body): int
+    private function sendToSubscriptions($subscriptions, string $title, string $body, string $notificationType, ?int $notificationId): int
     {
         $sent = 0;
 
         foreach ($subscriptions as $subscription) {
             try {
-                if ($this->send($subscription->token, $title, $body)) {
+                if ($this->send($subscription->token, $title, $body, $subscription, $notificationType, $notificationId)) {
                     $sent++;
                 }
             } catch (Throwable $exception) {
                 // Push delivery must never break the underlying game/wallet action.
                 Log::warning('Push notification delivery failed.', [
                     'subscription_id' => $subscription->id,
+                    'notification_type' => $notificationType,
+                    'notification_id' => $notificationId,
+                    'error_class' => get_class($exception),
                     'error' => $exception->getMessage(),
                 ]);
             }
@@ -70,7 +94,7 @@ class PushNotificationService
         return $sent;
     }
 
-    private function send(string $token, string $title, string $body): bool
+    private function send(string $token, string $title, string $body, PushSubscription $subscription, string $notificationType, ?int $notificationId): bool
     {
         $projectId = config('services.fcm.project_id');
         $serviceAccountJson = config('services.fcm.service_account_json');
@@ -81,17 +105,17 @@ class PushNotificationService
         }
 
         $accessToken = $this->accessToken($serviceAccountJson);
-        $response = Http::withToken($accessToken)
+        $response = Http::timeout(15)->withToken($accessToken)
             ->acceptJson()
             ->post("https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send", [
                 'message' => [
                     'token' => $token,
                     'notification' => ['title' => $title, 'body' => $body],
-                    'data' => ['url' => '/notifications'],
+                    'data' => ['url' => $subscription->platform === 'web' ? 'https://galidisawar.com/' : '/notifications'],
                     'android' => [
                         'priority' => 'HIGH',
                         'notification' => [
-                            'channel_id' => 'default',
+                            'channel_id' => 'game-alerts-v2',
                             'sound' => 'notification_tune',
                         ],
                     ],
@@ -104,23 +128,40 @@ class PushNotificationService
                             'badge' => '/favicon.ico',
                             'requireInteraction' => false,
                         ],
-                        'fcm_options' => ['link' => 'https://galidisawar.com/notifications'],
+                        'fcm_options' => ['link' => 'https://galidisawar.com/'],
                     ],
                 ],
             ]);
 
         if ($response->successful()) {
+            Log::info('FCM accepted push message.', [
+                'notification_type' => $notificationType,
+                'notification_id' => $notificationId,
+                'subscription_id' => $subscription->id,
+                'platform' => $subscription->platform,
+                'user_id' => $notificationType === 'individual' ? $subscription->user_id : null,
+                'fcm_message_id' => $response->json('name'),
+            ]);
             return true;
         }
 
-        $errorCode = $response->json('error.details.0.errorCode');
-        if ($errorCode === 'UNREGISTERED') {
+        $errorDetails = $response->json('error.details', []);
+        $errorCode = is_array($errorDetails)
+            ? collect($errorDetails)->pluck('errorCode')->filter()->first()
+            : null;
+        if ($errorCode === 'UNREGISTERED' || $response->json('error.status') === 'UNREGISTERED') {
             PushSubscription::query()->where('token_hash', hash('sha256', $token))->delete();
         }
 
         Log::warning('FCM rejected a push message.', [
-            'status' => $response->status(),
-            'response' => $response->json(),
+            'notification_type' => $notificationType,
+            'notification_id' => $notificationId,
+            'subscription_id' => $subscription->id,
+            'platform' => $subscription->platform,
+            'http_status' => $response->status(),
+            'fcm_error_status' => $response->json('error.status'),
+            'fcm_error_code' => $errorCode,
+            'fcm_error_message' => $response->json('error.message'),
         ]);
 
         return false;
@@ -128,8 +169,18 @@ class PushNotificationService
 
     private function accessToken(string $serviceAccountJson): string
     {
-        return Cache::remember('fcm.oauth_access_token', now()->addMinutes(50), function () use ($serviceAccountJson) {
-            $account = json_decode($serviceAccountJson, true, flags: JSON_THROW_ON_ERROR);
+        $account = json_decode($serviceAccountJson, true, flags: JSON_THROW_ON_ERROR);
+
+        $configuredProjectId = (string) config('services.fcm.project_id');
+        if (!empty($account['project_id']) && $account['project_id'] !== $configuredProjectId) {
+            throw new \RuntimeException('FCM_PROJECT_ID does not match the service-account project_id.');
+        }
+        if (empty($account['client_email']) || empty($account['private_key'])) {
+            throw new \RuntimeException('FCM service-account JSON is missing client_email or private_key.');
+        }
+
+        $cacheKey = 'fcm.oauth_access_token.' . hash('sha256', $serviceAccountJson);
+        return Cache::remember($cacheKey, now()->addMinutes(50), function () use ($account) {
             $now = time();
             $encode = static fn (string $value): string => rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
             $header = $encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT'], JSON_THROW_ON_ERROR));
@@ -147,7 +198,7 @@ class PushNotificationService
             }
 
             $assertion = $unsigned.'.'.$encode($signature);
-            $response = Http::asForm()->post(
+            $response = Http::timeout(15)->asForm()->post(
                 $account['token_uri'] ?? 'https://oauth2.googleapis.com/token',
                 [
                     'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
