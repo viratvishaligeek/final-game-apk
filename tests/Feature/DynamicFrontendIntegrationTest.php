@@ -88,6 +88,7 @@ class DynamicFrontendIntegrationTest extends TestCase
 
         $this->actingAs($admin, 'admin')
             ->post(route('admin.setting.store'), [
+                'title' => 'Updated Brand Name',
                 'homepage_intro' => 'Updated homepage introduction',
                 'site_description' => 'Updated global description',
                 'chart_chunk_size' => '15',
@@ -95,6 +96,7 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseHas('settings', ['option' => 'homepage_intro', 'value' => 'Updated homepage introduction']);
+        $this->get(route('index'))->assertOk()->assertSee('Updated Brand Name')->assertSee('Updated homepage introduction');
         $this->assertDatabaseHas('settings', ['option' => 'site_description', 'value' => 'Updated global description']);
         $this->assertDatabaseHas('settings', ['option' => 'chart_chunk_size', 'value' => '15']);
     }
