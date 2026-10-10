@@ -37,7 +37,7 @@ class SettingController extends Controller
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:1000'],
             'meta_keywords' => ['nullable', 'string', 'max:1000'],
-            'canonical_url' => ['nullable', 'url', 'max:500'],
+            'canonical_url' => ['nullable', 'url', 'starts_with:https://', 'max:500'],
             'og_title' => ['nullable', 'string', 'max:255'],
             'og_description' => ['nullable', 'string', 'max:1000'],
             'robots_default' => ['nullable', 'string', 'in:index,follow,noindex,follow,index,nofollow,noindex,nofollow'],
