@@ -69,9 +69,10 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertSee('October 2026')
             ->assertSee('07')
             ->assertSee('1 markets per page')
+            ->assertSee('Next')
             ->assertDontSee('99');
 
-        $this->assertDatabaseHas('results', ['game_id' => $second->id, 'type' => 'jodi']) === false;
+        $this->assertDatabaseMissing('results', ['game_id' => $second->id, 'type' => 'jodi']);
     }
 
     public function test_global_settings_persist_homepage_copy_and_chart_chunk_size(): void
