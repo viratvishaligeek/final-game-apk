@@ -48,6 +48,9 @@ Route::get('/clear', function () {
 
 Route::controller(MainController::class)->group(function () {
     Route::get('/', 'index')->name('index');
+    Route::get('/markets/{slug}', 'market')->name('frontend.market');
+    Route::get('/charts/{slug}/{year?}', 'chart')->whereNumber('year')->name('frontend.chart');
+    Route::get('/info/{page}', 'information')->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])->name('information');
 });
 
 
