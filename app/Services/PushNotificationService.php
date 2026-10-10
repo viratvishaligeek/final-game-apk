@@ -182,7 +182,7 @@ class PushNotificationService
         $cacheKey = 'fcm.oauth_access_token.' . hash('sha256', $serviceAccountJson);
         return Cache::remember($cacheKey, now()->addMinutes(50), function () use ($account) {
             $now = time();
-            $encode = static fn (string $value): string => rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+            $encode = static fn(string $value): string => rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
             $header = $encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT'], JSON_THROW_ON_ERROR));
             $claims = $encode(json_encode([
                 'iss' => $account['client_email'],
@@ -191,13 +191,13 @@ class PushNotificationService
                 'iat' => $now,
                 'exp' => $now + 3600,
             ], JSON_THROW_ON_ERROR));
-            $unsigned = $header.'.'.$claims;
+            $unsigned = $header . '.' . $claims;
 
             if (!openssl_sign($unsigned, $signature, $account['private_key'], OPENSSL_ALGO_SHA256)) {
                 throw new \RuntimeException('Unable to sign FCM service-account assertion.');
             }
 
-            $assertion = $unsigned.'.'.$encode($signature);
+            $assertion = $unsigned . '.' . $encode($signature);
             $response = Http::timeout(15)->asForm()->post(
                 $account['token_uri'] ?? 'https://oauth2.googleapis.com/token',
                 [
