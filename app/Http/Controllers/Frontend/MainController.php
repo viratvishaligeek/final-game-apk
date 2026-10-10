@@ -131,6 +131,13 @@ class MainController extends Controller
         $now = now()->timezone(config('app.timezone'));
         $availableMonths = $charts->availableMonths($game->id);
 
+        if ($year === null && request()->filled('year') && filter_var(request()->query('year'), FILTER_VALIDATE_INT)) {
+            $year = (int) request()->query('year');
+        }
+        if ($month === null && request()->filled('month') && filter_var(request()->query('month'), FILTER_VALIDATE_INT)) {
+            $month = (int) request()->query('month');
+        }
+
         $year ??= (int) $now->format('Y');
         abort_if($year < 2000 || $year > (int) $now->format('Y'), 404);
 
