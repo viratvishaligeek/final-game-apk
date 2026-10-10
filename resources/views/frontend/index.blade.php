@@ -385,39 +385,8 @@
 
 
 @section('structured_data')
-    @php
-        $homeCanonicalBase = rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/');
-        $homeCanonical = $homeCanonicalBase . '/';
-        if (request()->filled('year') || request()->filled('month')) {
-            $homeCanonical .= '?' . http_build_query(['year' => $selectedYear, 'month' => $selectedMonth]);
-        }
-        $homeGraph = [[
-            '@type' => 'WebPage',
-            'name' => request()->filled('year') || request()->filled('month')
-                ? $monthLabel . ' Satta King Result Chart | Play Online Khaiwal'
-                : 'Play Online Khaiwal | Satta King Results & Monthly Charts',
-            'url' => $homeCanonical,
-            'description' => request()->filled('year') || request()->filled('month')
-                ? 'Monthly result chart for ' . $monthLabel . ', using saved market records.'
-                : setting('meta_description', 'Satta King result records and monthly charts on Play Online Khaiwal.'),
-        ]];
-        if ($faqs->isNotEmpty()) {
-            $homeGraph[] = [
-                '@type' => 'FAQPage',
-                'mainEntity' => $faqs->map(fn ($faq) => [
-                    '@type' => 'Question',
-                    'name' => strip_tags((string) $faq->question),
-                    'acceptedAnswer' => [
-                        '@type' => 'Answer',
-                        'text' => strip_tags((string) $faq->answer),
-                    ],
-                ])->values()->all(),
-            ];
-        }
-        $homeSchema = ['@context' => 'https://schema.org', '@graph' => $homeGraph];
-    @endphp
     <script type="application/ld+json">@json($homeSchema, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT)</script>
-@endsection
+
 
 @section('script')
 <script>
