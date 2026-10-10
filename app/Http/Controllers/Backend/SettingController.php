@@ -43,7 +43,7 @@ class SettingController extends Controller
             'og_description' => ['nullable', 'string', 'max:1000'],
             'robots_default' => ['nullable', 'string', Rule::in(['index,follow', 'noindex,follow', 'index,nofollow', 'noindex,nofollow'])],
             'twitter_card' => ['nullable', 'string', 'in:summary,summary_large_image'],
-            'app_download_url' => ['nullable', 'url', 'max:1000'],
+            'app_download_url' => ['nullable', 'url', 'starts_with:https://', 'max:1000'],
             'copyright_text' => ['nullable', 'string', 'max:255'],
             'footer_description' => ['nullable', 'string', 'max:1000'],
             'contact_phone' => ['nullable', 'string', 'max:100'],
