@@ -67,6 +67,12 @@ Route::get('/sitemap.xml', function () {
     }
 
     $charts = app(MonthlyChartService::class);
+    foreach ($charts->availableMonths() as $year => $months) {
+        foreach ($months as $month) {
+            $urls[] = $base . '/?year=' . (int) $year . '&month=' . (int) $month;
+        }
+    }
+
     $games = Game::query()->where('status', 'active')->orderBy('serial')->get(['id', 'slug']);
     foreach ($games as $game) {
         $monthsByYear = $charts->availableMonths($game->id);
