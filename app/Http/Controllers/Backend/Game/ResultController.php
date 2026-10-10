@@ -406,7 +406,7 @@ class ResultController extends Controller
                     'message' => $body,
                 ]);
 
-                $accepted = app(\\App\\Services\\PushNotificationService::class)
+                $accepted = app(\App\Services\PushNotificationService::class)
                     ->sendToUser($user, $title, $body);
 
                 Log::info('Private game reward notification processed.', [
@@ -415,7 +415,7 @@ class ResultController extends Controller
                     'user_id' => $user->id,
                     'fcm_accepted_count' => $accepted,
                 ]);
-            } catch (\\Throwable $exception) {
+            } catch (\Throwable $exception) {
                 Log::warning('Private game reward notification failed.', [
                     'game_id' => $game->id,
                     'game_date' => $gameDate,
