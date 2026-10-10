@@ -13,7 +13,7 @@ class AppDownloadController extends Controller
         $destination = trim((string) app(AppSettingsService::class)->value('app_download_url', ''));
         $scheme = $destination !== '' ? parse_url($destination, PHP_URL_SCHEME) : null;
 
-        if (filter_var($destination, FILTER_VALIDATE_URL) && in_array(strtolower((string) $scheme), ['https', 'http'], true)) {
+        if (filter_var($destination, FILTER_VALIDATE_URL) && strtolower((string) $scheme) === 'https') {
             return redirect()->away($destination);
         }
 
