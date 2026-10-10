@@ -263,6 +263,21 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertSee('First Market');
     }
 
+    public function test_global_disclaimer_rich_text_is_sanitized_before_rendering(): void
+    {
+        Setting::updateOrCreate(
+            ['option' => 'disclaimer_content'],
+            ['value' => '<p>Safe disclaimer copy</p><script>alert(1)</script><a href="javascript:alert(2)">unsafe link</a>']
+        );
+        app(AppSettingsService::class)->forgetCache();
+
+        $this->get(route('information', ['page' => 'disclaimer']))
+            ->assertOk()
+            ->assertSee('Safe disclaimer copy')
+            ->assertDontSee('alert(1)')
+            ->assertDontSee('javascript:alert(2)');
+    }
+
     public function test_download_button_uses_configured_destination_and_does_not_invent_one(): void
     {
         Setting::updateOrCreate(
