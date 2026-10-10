@@ -28,6 +28,7 @@ class SettingController extends Controller
             'title' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'site_description' => ['nullable', 'string', 'max:1000'],
+            'site_tagline' => ['nullable', 'string', 'max:255'],
             'homepage_heading_line1' => ['nullable', 'string', 'max:120'],
             'homepage_heading_line2' => ['nullable', 'string', 'max:120'],
             'homepage_heading_line3' => ['nullable', 'string', 'max:120'],
@@ -58,7 +59,7 @@ class SettingController extends Controller
 
         try {
             DB::transaction(function () use ($request, $validated, &$newFiles, &$oldFiles) {
-                foreach (['title', 'email', 'site_description', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'announcement_text', 'meta_title', 'meta_description', 'meta_keywords', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'ticker_text', 'disclaimer_content', 'chart_chunk_size', 'referral_percentage', 'referral_min_amount'] as $key) {
+                foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'announcement_text', 'meta_title', 'meta_description', 'meta_keywords', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'ticker_text', 'disclaimer_content', 'chart_chunk_size', 'referral_percentage', 'referral_min_amount'] as $key) {
                     if (array_key_exists($key, $validated)) {
                         Setting::updateOrCreate(
                             ['option' => $key],
