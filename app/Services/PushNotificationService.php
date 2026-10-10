@@ -111,7 +111,7 @@ class PushNotificationService
                 'message' => [
                     'token' => $token,
                     'notification' => ['title' => $title, 'body' => $body],
-                    'data' => ['url' => '/notifications'],
+                    'data' => ['url' => $subscription->platform === 'web' ? 'https://galidisawar.com/' : '/notifications'],
                     'android' => [
                         'priority' => 'HIGH',
                         'notification' => [
@@ -128,7 +128,7 @@ class PushNotificationService
                             'badge' => '/favicon.ico',
                             'requireInteraction' => false,
                         ],
-                        'fcm_options' => ['link' => 'https://galidisawar.com/notifications'],
+                        'fcm_options' => ['link' => 'https://galidisawar.com/'],
                     ],
                 ],
             ]);
