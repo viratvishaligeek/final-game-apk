@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Throwable;
 
 class SettingController extends Controller
@@ -40,7 +41,7 @@ class SettingController extends Controller
             'canonical_url' => ['nullable', 'url', 'starts_with:https://', 'max:500'],
             'og_title' => ['nullable', 'string', 'max:255'],
             'og_description' => ['nullable', 'string', 'max:1000'],
-            'robots_default' => ['nullable', 'string', 'in:index,follow,noindex,follow,index,nofollow,noindex,nofollow'],
+            'robots_default' => ['nullable', 'string', Rule::in(['index,follow', 'noindex,follow', 'index,nofollow', 'noindex,nofollow'])],
             'twitter_card' => ['nullable', 'string', 'in:summary,summary_large_image'],
             'app_download_url' => ['nullable', 'url', 'max:1000'],
             'copyright_text' => ['nullable', 'string', 'max:255'],
