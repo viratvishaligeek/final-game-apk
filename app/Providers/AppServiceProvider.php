@@ -15,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        View::composer('frontend.include.header', function ($view) {
+        View::composer(['frontend.include.header', 'frontend.include.footer'], function ($view) {
             $reservedSlugs = [
                 'about', 'contact', 'faq', 'privacy-policy',
                 'terms-and-conditions', 'disclaimer',
