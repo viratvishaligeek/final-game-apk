@@ -52,7 +52,7 @@
                                     Short Description
                                     <span class="text-danger">*</span>
                                 </label>
-                                <textarea class="form-control " id="short_desc" name="short_desc" rows="5" required>{{ old('short_desc', $homePage->short_desc) }}</textarea>
+                                <textarea class="form-control " id="short_desc" name="short_desc" rows="5">{{ old('short_desc', $homePage->short_desc) }}</textarea>
                             </div>
                             <div class="mb-3">
                                 <label for="content" class="small mb-1">

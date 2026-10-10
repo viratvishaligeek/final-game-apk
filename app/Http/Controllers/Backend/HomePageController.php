@@ -37,14 +37,14 @@ class HomePageController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255',],
-            'short_desc' => ['required', 'string',],
-            'content' => ['required', 'string',],
+            'short_desc' => ['nullable', 'string', 'max:10000'],
+            'content' => ['nullable', 'string', 'max:50000'],
             'status' => ['required', 'in:active,inactive',],
-            'location' => ['required', 'string', 'max:255',],
-            'whatsapp' => ['required', 'string', 'max:255',],
-            'phone' => ['required', 'string', 'max:255',],
-            'telegram' => ['required', 'string', 'max:255',],
-            'background' => ['required', 'string', 'max:255',],
+            'location' => ['required', 'in:first_place,first_place_another,second_place,second_place_another,third_place,third_place_another,before_footer,after_footer'],
+            'whatsapp' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'telegram' => ['nullable', 'string', 'max:255'],
+            'background' => ['nullable', 'string', 'max:255'],
         ]);
         HomePage::create($validated);
         return redirect()

@@ -17,5 +17,6 @@ Route::controller(MainController::class)->group(function () {
     Route::get('/markets/{slug}', 'market')->name('frontend.market');
     Route::get('/charts/{slug}/{year?}', 'chart')->whereNumber('year')->name('frontend.chart');
     Route::get('/info/{page}', 'information')->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])->name('information');
+    Route::get('/pages/{slug}', 'showPage')->where('slug', '[A-Za-z0-9-]+')->name('frontend.page');
 });
 

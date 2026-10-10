@@ -64,7 +64,7 @@ Updated terms will become effective once published on this platform.
 If you have any questions regarding these terms, please contact our support team.
 </p>
 HTML,
-                'status' => 1,
+                'status' => 'active',
             ],
 
             [
@@ -131,7 +131,7 @@ Eligible winnings are credited according to the applicable game rules
 and platform configuration.
 </p>
 HTML,
-                'status' => 1,
+                'status' => 'active',
             ],
 
             [
@@ -188,7 +188,7 @@ available at the time of play.
 Please check the game information before placing your bet.
 </p>
 HTML,
-                'status' => 1,
+                'status' => 'active',
             ],
 
             [
@@ -249,7 +249,7 @@ This privacy policy may be updated from time to time. Any changes will be
 published on this page.
 </p>
 HTML,
-                'status' => 1,
+                'status' => 'active',
             ],
 
             [
@@ -295,7 +295,7 @@ reliability, and security for our users.
 For questions or assistance, please contact our support team.
 </p>
 HTML,
-                'status' => 1,
+                'status' => 'active',
             ],
             [
                 'name' => 'Offers',
@@ -343,7 +343,7 @@ page regularly for updates.
 <li>Please check the offer details before participating.</li>
 </ul>
 HTML,
-                'status' => 1,
+                'status' => 'active',
             ],
 
             [
@@ -396,7 +396,7 @@ please contact our support team with the relevant details.
 <strong>Availability:</strong> Add your support hours here
 </p>
 HTML,
-                'status' => 1,
+                'status' => 'active',
             ],
         ];
 

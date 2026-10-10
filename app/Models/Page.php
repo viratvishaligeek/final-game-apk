@@ -13,4 +13,10 @@ class Page extends Model
     public $timestamps = true;
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'menu_visible' => 'boolean',
+        'menu_order' => 'integer',
+        'noindex' => 'boolean',
+    ];
+
 }

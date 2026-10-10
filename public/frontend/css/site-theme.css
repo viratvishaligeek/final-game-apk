@@ -281,3 +281,44 @@ a,button,input,summary{-webkit-tap-highlight-color:transparent}
 @media(prefers-reduced-motion:reduce){
  .has-reveal .section-heading,.has-reveal .result-board-card,.has-reveal .market-card,.has-reveal .archive-feature,.has-reveal .chart-market,.has-reveal .guide-list article,.has-reveal .faq-item{opacity:1!important;transform:none!important}
 }
+
+
+/* Database-driven current-month chart: retain the existing theme while keeping
+   the day matrix readable on narrow screens through the existing scroll shell. */
+.monthly-result-table {
+    min-width: max-content;
+    width: 100%;
+}
+.monthly-result-table th:first-child,
+.monthly-result-table td:first-child {
+    min-width: 150px;
+}
+.monthly-result-table thead th {
+    white-space: nowrap;
+    text-align: center;
+}
+.monthly-result-table tbody td {
+    min-width: 42px;
+    text-align: center;
+}
+.monthly-result-table tbody th a {
+    color: inherit;
+    text-decoration: none;
+}
+.monthly-result-table tbody th a:hover {
+    text-decoration: underline;
+}
+.homepage-managed-content {
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+.footer-socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: .75rem;
+}
+
+.monthly-result-table .is-upcoming {
+    opacity: .55;
+}

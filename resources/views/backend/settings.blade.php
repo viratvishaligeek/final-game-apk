@@ -47,6 +47,13 @@
                         <input class="form-control" id="site_favicon" name="site_favicon" type="file"
                             accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
                     </div>
+                    <div class="col-lg-6 mb-3">
+                        <label class="small mb-1" for="og_image">Default Open Graph Image</label>
+                        <input class="form-control" id="og_image" name="og_image" type="file"
+                            accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                        <small class="text-muted">Used for social previews when an individual page has no dedicated image.</small>
+                        @error('og_image')<small class="text-danger">{{ $message }}</small>@enderror
+                    </div>
                 </div>
                 <div class="card-footer text-end">
                     <button class="btn btn-primary" type="submit">
@@ -80,6 +87,59 @@
                     <button class="btn btn-primary" type="submit">
                         <i class="me-1" data-feather="save"></i> Save Referral Settings
                     </button>
+                </div>
+            </div>
+        </form>
+
+        <form action="{{ route('admin.setting.store') }}" method="POST">
+            @csrf
+            <div class="card mb-4">
+                <div class="card-header">Frontend Content, SEO & Results Chart</div>
+                <div class="card-body row">
+                    @php($globalFields = [
+                        'site_description' => ['Site Description', 'textarea'],
+                        'site_tagline' => ['Brand Tagline', 'text'],
+                        'homepage_heading_line1' => ['Homepage Heading — Line 1', 'text'],
+                        'homepage_heading_line2' => ['Homepage Heading — Line 2', 'text'],
+                        'homepage_heading_line3' => ['Homepage Heading — Line 3', 'text'],
+                        'homepage_intro' => ['Homepage Introduction', 'textarea'],
+                        'announcement_text' => ['Announcement Text', 'textarea'],
+                        'meta_title' => ['Default SEO Title', 'text'],
+                        'meta_description' => ['Default Meta Description', 'textarea'],
+                        'meta_keywords' => ['Default SEO Keywords', 'textarea'],
+                        'copyright_text' => ['Copyright Text', 'text'],
+                        'footer_description' => ['Footer Description', 'textarea'],
+                        'contact_phone' => ['Public Contact Phone', 'text'],
+                        'contact_address' => ['Public Contact Address', 'textarea'],
+                        'social_facebook' => ['Facebook URL', 'url'],
+                        'social_instagram' => ['Instagram URL', 'url'],
+                        'social_youtube' => ['YouTube URL', 'url'],
+                        'social_telegram' => ['Telegram URL', 'url'],
+                        'ticker_text' => ['Header Ticker Text', 'textarea'],
+                        'disclaimer_content' => ['Shared Disclaimer (plain text)', 'textarea'],
+                    ])
+                    @foreach ($globalFields as $key => $field)
+                        <div class="col-lg-6 mb-3">
+                            <label class="small mb-1" for="{{ $key }}">{{ $field[0] }}</label>
+                            @if ($field[1] === 'textarea')
+                                <textarea class="form-control" id="{{ $key }}" name="{{ $key }}" rows="3">{{ old($key, optional($setting->firstWhere('option', $key))->value) }}</textarea>
+                            @else
+                                <input class="form-control" id="{{ $key }}" name="{{ $key }}" type="{{ $field[1] }}"
+                                    value="{{ old($key, optional($setting->firstWhere('option', $key))->value) }}">
+                            @endif
+                            @error($key)<small class="text-danger">{{ $message }}</small>@enderror
+                        </div>
+                    @endforeach
+                    <div class="col-lg-6 mb-3">
+                        <label class="small mb-1" for="chart_chunk_size">Monthly Chart Games Per Page</label>
+                        <input class="form-control" id="chart_chunk_size" name="chart_chunk_size" type="number" min="1" max="50"
+                            value="{{ old('chart_chunk_size', optional($setting->firstWhere('option', 'chart_chunk_size'))->value ?? 10) }}">
+                        <small class="text-muted">Choose 1–50 markets per page. Invalid or missing values use 10.</small>
+                        @error('chart_chunk_size')<small class="text-danger">{{ $message }}</small>@enderror
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button class="btn btn-primary" type="submit"><i class="me-1" data-feather="save"></i> Save Frontend Settings</button>
                 </div>
             </div>
         </form>

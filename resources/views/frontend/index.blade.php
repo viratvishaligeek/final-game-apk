@@ -1,22 +1,22 @@
 @extends('frontend.include.app')
-@section('title', 'Satta 786 Results Today, Market Board & Historical Charts')
-@section('meta_description', 'Browse published Satta market results, compare today and yesterday, and open market-wise
-    historical charts and year-wise records.')
+@section('title', setting('meta_title', setting('title', 'Satta 786 Results Today, Market Board & Historical Charts')))
+@section('meta_description', setting('meta_description', setting('site_description', 'Browse published market results, compare today and yesterday, and open market-wise historical charts and year-wise records.')))
 @section('content')
     <div class="freshness-bar">
         <div class="wrap freshness-inner"><span class="freshness-date"><b>DATE DESK</b>
                 {{ now()->timezone(config('app.timezone'))->format('D, d M Y') }}</span><span class="freshness-note"><i></i>
-                Records shown are read from the site's published result database</span><a
+                {{ setting('announcement_text', "{{ setting('announcement_text', "Records shown are read from the site's published result database") }}") }}</span><a
                 href="{{ route('information', ['page' => 'disclaimer']) }}">Data & legal notice ↗</a></div>
     </div>
+
+    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'first_place')])
 
     <section class="hero-shell" id="home">
         <div class="hero-grid wrap">
             <div class="hero-copy">
                 <p class="hero-kicker"><span class="kicker-line"></span> THE RESULT & RECORD CENTER</p>
-                <h1>Every market.<br><span>Every record.</span><br><em>One clear board.</em></h1>
-                <p class="hero-intro">Find published results, compare recent records, and move straight into the chart you
-                    need. Clear status labels separate available results from pending records.</p>
+                <h1>{{ setting('homepage_heading_line1', 'Every market.') }}<br><span>{{ setting('homepage_heading_line2', 'Every record.') }}</span><br><em>{{ setting('homepage_heading_line3', 'One clear board.') }}</em></h1>
+                <p class="hero-intro">{{ setting('homepage_intro', 'Find published results, compare recent records, and move straight into the chart you need. Clear status labels separate available results from pending records.') }}</p>
                 <div class="hero-actions"><a class="button button-gold" href="#today-results">Download App
                         <span>↓</span></a><a class="button button-outline" href="#records">Register Now
                         <span>↗</span></a></div>
@@ -54,6 +54,8 @@
         <div class="hero-decor hero-decor-one"></div>
         <div class="hero-decor hero-decor-two"></div>
     </section>
+
+    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'first_place_another')])
 
     <div class="quick-paths wrap"><a href="#today-results"><span class="path-icon path-red">01</span><span><b>Today's
                     board</b><small>Published and pending</small></span><strong>↗</strong></a><a href="#quick-record"><span
@@ -93,6 +95,9 @@
         </div>
     </section>
 
+    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'second_place')])
+    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'second_place_another')])
+
    <section class="info-ribbon">
         <div class="wrap ribbon-inner">
             <div>
@@ -130,6 +135,8 @@
         </div>
     </section>
 
+    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'third_place')])
+
     <section class="info-ribbon">
         <div class="wrap ribbon-inner">
             <div>
@@ -143,6 +150,42 @@
             <div class="ribbon-stamp">RECORD<br><b>DESK</b><span>786</span></div>
         </div>
     </section>
+
+    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'third_place_another')])
+
+    <section class="section-block section-light" id="market-charts">
+        <div class="wrap">
+            @include('frontend.partial.section-heading', [
+                'eyebrow' => 'CURRENT-MONTH RESULT CHART',
+                'title' => 'Monthly <span>market chart</span>',
+                'description' => 'Published values are shown from saved records. A dash marks a date with no stored result; future dates are not due yet.',
+            ])
+            <div class="page-toolbar"><h2>{{ $monthLabel }}</h2><span>{{ $monthlyGames->total() }} active markets · {{ $chunkSize }} markets per page</span></div>
+            <div class="table-shell light-table"><div class="table-scroll">
+                <table class="quick-record-table monthly-result-table">
+                    <thead><tr><th>Market</th>@foreach ($monthDays as $day)<th>{{ $day->format('d') }}</th>@endforeach</tr></thead>
+                    <tbody>
+                    @forelse ($monthlyGames as $monthlyGame)
+                        <tr>
+                            <th scope="row"><a href="{{ route('frontend.market', ['slug' => $monthlyGame->slug]) }}">{{ $monthlyGame->name }}</a></th>
+                            @foreach ($monthDays as $day)
+                                @php($dayResult = $monthlyGame->results->firstWhere('game_date', $day->toDateString()))
+                                @php($hasPublishedResult = $dayResult && filled($dayResult->number))
+                                @php($dayStatus = $hasPublishedResult ? 'Published result' : ($day->gt(now()->timezone(config('app.timezone'))->startOfDay()) ? 'Not due yet' : 'No result published'))
+                                <td><span class="table-result {{ $hasPublishedResult ? 'is-published' : ($dayStatus === 'Not due yet' ? 'is-upcoming' : 'is-pending') }}" title="{{ $dayStatus }}" aria-label="{{ $dayStatus }}">{{ $hasPublishedResult ? (string) $dayResult->number : '—' }}</span></td>
+                            @endforeach
+                        </tr>
+                    @empty
+                        <tr><td colspan="{{ count($monthDays) + 1 }}" class="table-empty">No active markets are configured.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div></div>
+            <nav class="mt-3" aria-label="Monthly result chart pagination">{{ $monthlyGames->links() }}</nav>
+        </div>
+    </section>
+
+    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'before_footer')])
 
     <section class="section-block section-light" id="records">
         <div class="wrap">
@@ -244,36 +287,14 @@
                         href="#markets" class="text-action">Find a market ↗</a>
                 </div>
                 <div class="faq-list">
-                    <details class="faq-item">
-                        <summary>Where can I find today's published results?<span>+</span></summary>
-                        <div class="faq-answer">Use the Today’s market results board. It reads the current business date
-                            for each active market and labels missing results as pending.</div>
-                    </details>
-                    <details class="faq-item">
-                        <summary>How do I check yesterday's result?<span>+</span></summary>
-                        <div class="faq-answer">The quick comparison table and market cards include the previous
-                            business-date value when one is available in the database.</div>
-                    </details>
-                    <details class="faq-item">
-                        <summary>How can I view historical records?<span>+</span></summary>
-                        <div class="faq-answer">Choose a market card, then select a year shown in its chart index.
-                            Available years are derived from saved result dates.</div>
-                    </details>
-                    <details class="faq-item">
-                        <summary>What does pending mean?<span>+</span></summary>
-                        <div class="faq-answer">Pending means the application did not find a stored result for that market
-                            and date. No value is guessed or generated.</div>
-                    </details>
-                    <details class="faq-item">
-                        <summary>How often is the information updated?<span>+</span></summary>
-                        <div class="faq-answer">This page reads the database when it is requested. The page does not claim
-                            to be a live feed or show a fabricated last-update time.</div>
-                    </details>
-                    <details class="faq-item">
-                        <summary>Do past results predict future results?<span>+</span></summary>
-                        <div class="faq-answer">No. Historical records are not predictions and do not guarantee future
-                            outcomes or financial gains.</div>
-                    </details>
+                    @forelse ($faqs as $faq)
+                        <details class="faq-item">
+                            <summary>{{ $faq->question }}<span>+</span></summary>
+                            <div class="faq-answer">{{ $faq->answer }}</div>
+                        </details>
+                    @empty
+                        <p class="faq-answer">No frequently asked questions have been added yet.</p>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -285,9 +306,7 @@
             <div>
                 <p class="eyebrow">IMPORTANT INFORMATION</p>
                 <h2>Records are information — <span>not promises.</span></h2>
-                <p>This website presents stored result information for reference. It does not guarantee accuracy, predict
-                    future outcomes, or promise financial gains. Follow applicable local laws and make responsible
-                    decisions.</p>
+                <p>{{ setting('disclaimer_content', 'This website presents stored result information for reference. It does not guarantee accuracy, predict future outcomes, or promise financial gains. Follow applicable local laws and make responsible decisions.') }}</p>
             </div><a class="button button-dark" href="{{ route('information', ['page' => 'disclaimer']) }}">Full disclaimer
                 ↗</a>
         </div>
