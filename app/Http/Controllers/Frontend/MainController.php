@@ -29,7 +29,7 @@ class MainController extends Controller
         $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
         $yearExpression = DB::connection()->getDriverName() === 'sqlite' ? "CAST(strftime('%Y', game_date) AS INTEGER)" : 'YEAR(game_date)';
         $years = Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereNotNull('game_date')
-            ->selectRaw("{$yearExpression} as year")->distinct()->orderByDesc('year')->pluck('year')->map(fn ($year) => (int) $year)->values();
+            ->selectRaw("{$yearExpression} as year")->distinct()->orderByDesc('year')->pluck('year')->map(fn($year) => (int) $year)->values();
         $results = Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereNotNull('game_date')
             ->orderByDesc('game_date')->paginate(60);
         return view('frontend.market', compact('game', 'years', 'results'));
@@ -43,7 +43,7 @@ class MainController extends Controller
         $results = $query->paginate(100)->withQueryString();
         $yearExpression = DB::connection()->getDriverName() === 'sqlite' ? "CAST(strftime('%Y', game_date) AS INTEGER)" : 'YEAR(game_date)';
         $years = Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereNotNull('game_date')
-            ->selectRaw("{$yearExpression} as year")->distinct()->orderByDesc('year')->pluck('year')->map(fn ($item) => (int) $item)->values();
+            ->selectRaw("{$yearExpression} as year")->distinct()->orderByDesc('year')->pluck('year')->map(fn($item) => (int) $item)->values();
         return view('frontend.chart', compact('game', 'year', 'years', 'results'));
     }
 
@@ -80,7 +80,7 @@ class MainController extends Controller
 
         $businessDates = $this->businessDatesFor($games, $now);
         $resultDates = collect($businessDates)
-            ->flatMap(fn (array $dates) => array_values($dates))
+            ->flatMap(fn(array $dates) => array_values($dates))
             ->unique()
             ->values();
 
@@ -136,7 +136,7 @@ class MainController extends Controller
 
         $businessDates = $this->businessDatesFor($games, $now);
         $resultDates = collect($businessDates)
-            ->flatMap(fn (array $dates) => array_values($dates))
+            ->flatMap(fn(array $dates) => array_values($dates))
             ->unique()
             ->values();
 
@@ -206,7 +206,7 @@ class MainController extends Controller
             ->distinct()
             ->orderByDesc('year')
             ->pluck('year')
-            ->map(fn ($year) => (int) $year)
+            ->map(fn($year) => (int) $year)
             ->values()
             ->toArray();
     }
