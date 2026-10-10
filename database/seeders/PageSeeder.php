@@ -106,7 +106,7 @@ HTML,
         // Replace only known placeholder/default copy from the previous seeder;
         // customized page content is left untouched.
         $legacyDefaults = [
-            'whatsapp' => ['%91XXXXXXXXXX%', '%support@example.com%', '%Add your WhatsApp number here%'],
+            'whatsapp' => ['%XXXXXXXXXX%', '%@example.%', '%Add your WhatsApp number here%'],
             'about-us' => ['%Welcome to our platform.%'],
             'terms-conditions' => ['%Wallet & Transactions%', '%Account Responsibility%'],
             'privacy-policy' => ['%This privacy policy explains how%'],
