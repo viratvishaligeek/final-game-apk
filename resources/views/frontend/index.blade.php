@@ -1,438 +1,64 @@
 @extends('frontend.include.app')
+@section('title', 'Satta 786 Results Today, Market Board & Historical Charts')
+@section('meta_description', 'Browse published Satta market results, compare today and yesterday, and open market-wise historical charts and year-wise records.')
 @section('content')
-    {{-- top box ad start --}}
-    <section class="boxc3">
-        <div
-            style="background-image: linear-gradient(gold 60%, #30e0f2); font-weight: bold; border-width: 3px; border-color:#000; border-style: outset; padding: 10px; border-radius: 10px; text-align: center;">
-            <font style="color:red;font-size:20px">
-                PLAY ONLINE</font><br>
-            <font style="color:black; font-size:14px">
+<div class="freshness-bar"><div class="wrap freshness-inner"><span class="freshness-date"><b>DATE DESK</b> {{ now()->timezone(config('app.timezone'))->format('D, d M Y') }}</span><span class="freshness-note"><i></i> Records shown are read from the site's published result database</span><a href="{{ route('information',['page'=>'disclaimer']) }}">Data & legal notice ↗</a></div></div>
 
-
-
-                सीधे सट्टा कंपनी का 𝐍𝐨 𝟏 खाईवाल<br>
-                *🏆 AMAN 𝐁𝐇𝐀𝐈 𝐊𝐇𝐀𝐈𝐖𝐀𝐋🏆*<br>
-                ♦️ *दिल्ली बाजार* ————— 𝟬𝟯:𝟬𝟬 𝗣𝗠<br>
-                ♦️ *श्री गणेश* ——————— 𝟬𝟰:4𝟬 𝗣𝗠<br>
-                ♦️ *फरीदाबाद* —–———— 𝟬6:0𝟬 𝗣𝗠<br>
-                ♦️ *गाजियाबाद* ————— 𝟬𝟵:5𝟬 𝗣𝗠<br>
-                ♦️ *गली* ————————— 𝟭𝟭:55 𝗣𝗠<br>
-                ♦️ *दिसावर* ——————— 𝟬4:𝟬𝟬 𝗔𝗠<br>
-
-                ((जोड़ी रेट 𝟏𝟎𝟎=𝟗7𝟎𝟎/-👈🥳💰<br>
-                ((हर्फ रेट 𝟏𝟎𝟎𝟎=𝟗7𝟎𝟎/-👈🥳💰<br>
-                नाम और काम दोनों का ब्रांड एक बार <br>सेवा का मोका जरूर<br> दे"𝐃𝐇𝐀𝐍𝐘𝐀𝐕𝐀𝐀𝐃🙏<br>
-                9120196528<br>
-
-            </font><br>
-            <font style="color:red;font-size:25px">09120196528</font><br>
-            <a href="https://t.me/+JIJNYLNuHqQ3ZmRl"><button
-                    style="height:35px; width:300px; background-color:blue; color:#fff">
-                    <font size="4px"><b>JOIN TELEGRAM</b></font>
-                </button></a><br>
-            <a href="whatsapp://send?text=Hello Sir!&phone=+919120196528"><button
-                    style="height: 30px; width: 120px; background-color: #FFF; color: #000;"><span
-                        style="font-size: large;"><b>WHATSAPP</b></span></button></a>
-            <a href="tel:9120196528"><button style="height:30px; width:120px; background-color:green; color:#fff">
-                    <font size="4px"><b>CALL NOW</b></font>
-                </button></a>
-            <br>
-        </div>
-    </section>
-    {{-- top box ad end --}}
-
-    {{-- Result today top start --}}
-    <section id="results">
-        <div class="result-heading">
-            <a href="index.php">SATTA786 Satta King</a>
-            <p>दिल्ली सत्ता | दिल्ली सट्टा दिसावर | दिल्ली सट्टा किंग</p>
-        </div>
-
-        <div class="resultmain">
-            <p class="resultmaintime">{{ now()->format('d F Y h:i A') }}</p>
-            <p class="resultmaintoday">Live Satta King Results – लाइव सट्टा किंग रिजल्ट</p>
-
-            @foreach ($frontendResults as $game)
-                <p class="livegame">{{ $game['name'] }}</p><br>
-                <p class="liveresult">{{ $game['today'] }}</p><br>
-            @endforeach
-        </div>
-    </section>
-
-    {{-- Result today top start --}}
-
-    <!-- Quick Link: Guessing Forum (after result, before records) -->
-    <div class="result-bottom">
-        <a href="satta-king-gali-satta-disawar-satta.php" title="Satta King 786 Guessing Forum">SATTA KING 786
-            GUESSING FORUM</a>
+<section class="hero-shell" id="home"><div class="hero-grid wrap">
+    <div class="hero-copy"><p class="hero-kicker"><span class="kicker-line"></span> THE RESULT & RECORD CENTER</p><h1>Every market.<br><span>Every record.</span><br><em>One clear board.</em></h1><p class="hero-intro">Find published results, compare recent records, and move straight into the chart you need. Clear status labels separate available results from pending records.</p><div class="hero-actions"><a class="button button-gold" href="#today-results">Explore today's board <span>↓</span></a><a class="button button-outline" href="#records">Browse archives <span>↗</span></a></div><div class="hero-facts"><div><strong>{{ count($marketResults) }}</strong><span>Active markets</span></div><div><strong>{{ count($recordYears) }}</strong><span>Record years</span></div><div><strong>{{ collect($frontendResults)->filter(fn($g) => $g['today'] !== '--')->count() }}</strong><span>Today's published</span></div></div></div>
+    <div class="hero-spotlight"><div class="spotlight-orbit orbit-a"></div><div class="spotlight-orbit orbit-b"></div><div class="spotlight-top"><span class="spotlight-label">FEATURED MARKET</span><span class="status-badge"><i></i> DATABASE STATUS</span></div>
+        @php($featured = $frontendResults[0] ?? null)
+        @if($featured)
+        <div class="spotlight-market">{{ $featured['name'] }}</div><div class="spotlight-date">{{ now()->timezone(config('app.timezone'))->format('d F Y') }} <span>•</span> Scheduled {{ $featured['time'] }}</div><div class="spotlight-number">{{ $featured['today'] }}</div><div class="spotlight-caption">{{ $featured['today'] === '--' ? 'NO RESULT PUBLISHED FOR CURRENT BUSINESS DATE' : 'PUBLISHED RESULT FOR CURRENT BUSINESS DATE' }}</div><div class="spotlight-bottom"><span>Previous record <b>{{ $featured['yesterday'] }}</b></span><a href="{{ route('frontend.market',['slug'=>$featured['slug']]) }}">View market history ↗</a></div>
+        @else <div class="spotlight-market">No active markets</div><p>Market records will appear when active markets are configured.</p>@endif
     </div>
+</div><div class="hero-decor hero-decor-one"></div><div class="hero-decor hero-decor-two"></div></section>
 
-    <section id="markets-quick-record">
-        {{-- chart link  --}}
-        <div class="result-heading">
-            <a href="chart.php" title="Satta King 786 Record Chart">TODAY LIVE SATTA KING 786 RESULT</a>
-            <p>MARKET TIME • RECORD CHART • YESTERDAY / TODAY</p>
-        </div>
-        {{-- chart link  --}}
+<div class="quick-paths wrap"><a href="#today-results"><span class="path-icon path-red">01</span><span><b>Today's board</b><small>Published and pending</small></span><strong>↗</strong></a><a href="#quick-record"><span class="path-icon path-cyan">02</span><span><b>Compare records</b><small>Yesterday vs today</small></span><strong>↗</strong></a><a href="#records"><span class="path-icon path-gold">03</span><span><b>Archive vault</b><small>Years and markets</small></span><strong>↗</strong></a><a href="#faq"><span class="path-icon path-green">04</span><span><b>How to read</b><small>Guide and definitions</small></span><strong>↗</strong></a></div>
 
-        {{-- middle box ad start --}}
-        <style>
-            .box {
-                max-width: auto;
-                width: 95%;
-                margin: 8px auto;
-                padding: 8px;
-                background: #000;
-                border: 3px solid #FFD700;
-                border-radius: 16px;
-                text-align: center;
-                color: #FFD700;
-                box-sizing: border-box;
-                box-shadow: 0 0 15px #FFD700;
-                animation: glow 1s infinite alternate
-            }
+<section class="section-block section-light" id="today-results"><div class="wrap">
+    @include('frontend.partial.section-heading',['eyebrow'=>'THE DAILY RESULT BOARD','title'=>'Today’s <span>market results</span>','description'=>'Values are taken from stored records for each market’s current business date. A dash means no result is published for that date.'])
+    <div class="result-board-grid">@forelse($frontendResults as $index => $game)<article class="result-board-card {{ $index===0 ? 'result-board-card--lead' : '' }}"><div class="result-board-head"><span class="market-index">{{ str_pad((string)($index+1),2,'0',STR_PAD_LEFT) }}</span><span class="result-state {{ $game['today']==='--'?'is-pending':'is-published' }}"><i></i>{{ $game['today']==='--'?'PENDING':'PUBLISHED' }}</span></div><h3>{{ $game['name'] }}</h3><div class="result-big {{ $game['today']==='--'?'result-big--pending':'' }}">{{ $game['today'] }}</div><div class="result-meta"><span>Scheduled {{ $game['time'] }}</span><span>Prev. {{ $game['yesterday'] }}</span></div><a href="{{ route('frontend.market',['slug'=>$game['slug']]) }}">Full result history <b>↗</b></a></article>@empty<div class="empty-state"><b>No active markets are configured.</b><p>Once a market is activated in the admin area, its published records will appear here.</p></div>@endforelse</div>
+</div></section>
 
-            .heading {
-                font-size: 18px;
-                font-weight: 700;
-                color: #fff;
-                text-shadow: 0 0 8px red;
-                margin-bottom: 6px
-            }
+<section class="section-block section-dark" id="quick-record"><div class="wrap">
+    @include('frontend.partial.section-heading',['eyebrow'=>'SIDE-BY-SIDE RECORDS','title'=>'Quick record <span>comparison</span>','description'=>'A compact view of market time, yesterday’s stored result, and today’s published record.','class'=>'heading-on-dark','action'=>['url'=>'#markets','label'=>'Browse all markets']])
+    <div class="table-shell"><div class="table-topline"><span>MARKET REGISTER</span><span>{{ count($frontendResults) }} ACTIVE ENTRIES</span></div><div class="table-scroll"><table class="quick-record-table"><thead><tr><th>Market</th><th>Market time</th><th>Record chart</th><th>Yesterday</th><th>Today</th></tr></thead><tbody>@forelse($frontendResults as $index => $game)<tr class="{{ $index===0?'is-featured-row':'' }}"><td><span class="table-market-number">{{ str_pad((string)($index+1),2,'0',STR_PAD_LEFT) }}</span><b>{{ $game['name'] }}</b></td><td>{{ $game['time'] }}</td><td><a class="table-link" href="{{ route('frontend.market',['slug'=>$game['slug']]) }}">Open chart ↗</a></td><td><span class="table-result">{{ $game['yesterday'] }}</span></td><td><span class="table-result {{ $game['today']==='--'?'table-result-pending':'' }}">{{ $game['today'] }}</span></td></tr>@empty<tr><td colspan="5" class="table-empty">No market records are available yet.</td></tr>@endforelse</tbody></table></div></div>
+    <p class="table-footnote">Results are shown as stored. Pending values are not estimated or filled with sample numbers.</p>
+</div></section>
 
-            .line {
-                font-size: 14px;
-                font-weight: bold;
-                margin: 2px 0
-            }
+<section class="section-block section-light" id="markets"><div class="wrap">
+    @include('frontend.partial.section-heading',['eyebrow'=>'MARKET DIRECTORY','title'=>'Choose your <span>market</span>','description'=>'Open an individual market page to browse its latest stored records and historical chart years.'])
+    <div class="market-tools"><label class="market-search"><span aria-hidden="true">⌕</span><input id="market-search" type="search" placeholder="Search market name…" aria-label="Search markets"><kbd>/</kbd></label><span class="market-count">{{ count($marketResults) }} markets available</span></div>
+    <div class="market-grid" id="market-grid">@forelse($marketResults as $index => $game)@include('frontend.partial.market-card',['game'=>$game,'index'=>$index])@empty<div class="empty-state"><b>No markets to display</b><p>Activate a market from the admin area to show it here.</p></div>@endforelse</div><p class="empty-state" id="no-markets" hidden>No market matches that search. Try another name.</p>
+</div></section>
 
-            .rate {
-                color: #00ff88;
-                font-size: 15px;
-                font-weight: bold;
-                margin: 6px 0
-            }
+<section class="info-ribbon"><div class="wrap ribbon-inner"><div><p class="eyebrow">NEED A QUICK REFERENCE?</p><h2>Schedules, records and context.<br><span>Without the guesswork.</span></h2><p>Use the schedule displayed on each market card, then open its chart to browse stored dates. The page never predicts missing results.</p></div><div class="ribbon-actions"><a class="button button-gold" href="#records">Go to record center ↗</a><a class="button button-light" href="{{ route('information',['page'=>'faq']) }}">Read the guide</a></div><div class="ribbon-stamp">RECORD<br><b>DESK</b><span>786</span></div></div></section>
 
-            .note {
-                color: #ff4444;
-                font-size: 13px;
-                font-weight: bold;
-                margin: 6px 0
-            }
+<section class="section-block section-light" id="records"><div class="wrap">
+    @include('frontend.partial.section-heading',['eyebrow'=>'HISTORICAL RECORD CENTER','title'=>'The archive <span>vault</span>','description'=>'Browse supported years and open market-specific records. Archive years are discovered from saved result dates.'])
+    <div class="archive-overview"><div class="archive-feature"><span class="archive-symbol">▦</span><p class="eyebrow">HISTORICAL REGISTER</p><h3>Old results.<br><span>Clear chronology.</span></h3><p>Choose a market and a supported year to review saved jodi records in date order.</p><a class="button button-gold" href="#market-charts">Explore year-wise charts ↗</a></div><div class="archive-years"><div class="archive-years-head"><b>AVAILABLE YEARS</b><span>{{ count($recordYears) }} year{{ count($recordYears)===1?'':'s' }}</span></div>@forelse($recordYears as $year)<a href="#market-charts" class="year-tile"><span>{{ $year }}</span><small>Browse market charts</small><b>↗</b></a>@empty<div class="archive-empty">No historical result years are available yet.</div>@endforelse</div></div>
+</div></section>
 
-            .btn-wrap {
-                display: flex;
-                gap: 8px;
-                justify-content: center
-            }
+<section class="section-block section-blue" id="market-charts"><div class="wrap">
+    @include('frontend.partial.section-heading',['eyebrow'=>'MARKET × YEAR INDEX','title'=>'Year-wise <span>chart finder</span>','description'=>'Each tile links to a market-specific chart. Only years found in the saved result records are listed.','class'=>'heading-on-dark'])
+    <div class="chart-grid">@forelse($marketResults as $index => $game)<article class="chart-market"><div class="chart-market-symbol">{{ strtoupper(substr($game['name'],0,1)) }}</div><div><h3>{{ $game['name'] }}</h3><p>{{ $game['time'] }} schedule</p></div><div class="chart-year-list">@forelse($recordYears as $year)<a href="{{ route('frontend.chart',['slug'=>$game['slug'],'year'=>$year]) }}">{{ $year }} <span>↗</span></a>@empty<a href="{{ route('frontend.market',['slug'=>$game['slug']]) }}">Latest records <span>↗</span></a>@endforelse</div></article>@empty<div class="empty-state empty-state-dark">No active markets are configured.</div>@endforelse</div>
+</div></section>
 
-            .btn {
-                flex: 1;
-                max-width: 140px;
-                padding: 8px 0;
-                border-radius: 25px;
-                text-decoration: none;
-                font: bold 14px;
-                color: #fff
-            }
+<section class="section-block section-light" id="about"><div class="wrap learn-grid"><div>@include('frontend.partial.section-heading',['eyebrow'=>'RESULT READING GUIDE','title'=>'Read the board <span>with clarity</span>','description'=>'A quick guide to the labels and tools used across this result directory.'])<div class="guide-list"><article><span>01</span><div><h3>Published result</h3><p>A number stored for that market and business date. The displayed value reflects the saved record.</p></div></article><article><span>02</span><div><h3>Pending result</h3><p>A dash (—) means no result was found for the relevant date. It is not a prediction or an estimated value.</p></div></article><article><span>03</span><div><h3>Historical chart</h3><p>Open a market chart to review saved records by date and use the year links to narrow the archive.</p></div></article><article><span>04</span><div><h3>Corrected records</h3><p>If a record is corrected in the source system, the page reflects the database value on the next request. This page does not independently verify a result.</p></div></article></div></div><aside class="glossary-panel"><p class="eyebrow">QUICK GLOSSARY</p><h3>Terms you’ll see</h3><dl><dt>Jodi</dt><dd>A two-digit result value recorded by the system.</dd><dt>Market time</dt><dd>The configured schedule for a market's result.</dd><dt>Business date</dt><dd>The date assigned to a result by that market’s date rules.</dd><dt>Archive year</dt><dd>A year discovered from saved result dates.</dd></dl><div class="glossary-note">Historical patterns do not guarantee or reliably predict future results.</div></aside></div></section>
 
-            .call {
-                background: #ff4444
-            }
+<section class="section-block section-dark faq-section" id="faq"><div class="wrap">
+    @include('frontend.partial.section-heading',['eyebrow'=>'HELP CENTER','title'=>'Frequently asked <span>questions</span>','description'=>'Practical answers about records, status labels, and the information shown on this site.','class'=>'heading-on-dark','action'=>['url'=>route('information',['page'=>'faq']),'label'=>'Full FAQ page']])
+    <div class="faq-layout"><div class="faq-lead"><span class="faq-mark">?</span><h3>Need to find<br>a specific record?</h3><p>Start with the market board or use the year-wise chart finder to narrow your search.</p><a href="#markets" class="text-action">Find a market ↗</a></div><div class="faq-list">
+        <details class="faq-item"><summary>Where can I find today's published results?<span>+</span></summary><div class="faq-answer">Use the Today’s market results board. It reads the current business date for each active market and labels missing results as pending.</div></details>
+        <details class="faq-item"><summary>How do I check yesterday's result?<span>+</span></summary><div class="faq-answer">The quick comparison table and market cards include the previous business-date value when one is available in the database.</div></details>
+        <details class="faq-item"><summary>How can I view historical records?<span>+</span></summary><div class="faq-answer">Choose a market card, then select a year shown in its chart index. Available years are derived from saved result dates.</div></details>
+        <details class="faq-item"><summary>What does pending mean?<span>+</span></summary><div class="faq-answer">Pending means the application did not find a stored result for that market and date. No value is guessed or generated.</div></details>
+        <details class="faq-item"><summary>How often is the information updated?<span>+</span></summary><div class="faq-answer">This page reads the database when it is requested. The page does not claim to be a live feed or show a fabricated last-update time.</div></details>
+        <details class="faq-item"><summary>Do past results predict future results?<span>+</span></summary><div class="faq-answer">No. Historical records are not predictions and do not guarantee future outcomes or financial gains.</div></details>
+    </div></div>
+</div></section>
 
-            .whatsapp {
-                background: #25D366
-            }
-
-            @keyframes glow {
-                from {
-                    box-shadow: 0 0 8px #FFD700
-                }
-
-                to {
-                    box-shadow: 0 0 20px #FFD700
-                }
-            }
-        </style>
-
-        <div class="box">
-            <div class="heading">🔥 ONLINE KHAIWAL 🔥</div>
-
-            <div class="line">VARUN भाई सट्टा खाईवाल</div>
-            <div class="line">हिमाचल _ 2:00PM</div>
-            <div class="line">दिल्ली बाजार • 3:00 PM</div>
-            <div class="line">श्री गणेश • 4:30 PM</div>
-            <div class="line">फरीदाबाद • 5:55 PM</div>
-            <div class="line">गाजियाबाद • 9:30 PM</div>
-            <div class="line">गली • 11:30 PM</div>
-            <div class="line">दिसावर • 4:30 AM</div>
-
-            <div class="rate">पेमेंट रेट</div>
-            <div class="line">जोड़ी रेट : 10 के 980</div>
-            <div class="line">हर्फ रेट : 100 के 980</div>
-
-            <div class="note">⚡ सुपर फास्ट पेमेंट का वादा ⚡</div>
-
-            <div class="btn-wrap">
-                <a class="btn call" href="tel:+917496087518">📞 Call</a>
-                <a class="btn whatsapp" href="https://wa.me/917496087518" target="_blank">💬 WhatsApp</a>
-            </div>
-        </div>
-        {{-- middle box ad end --}}
-
-        {{-- market table with result  --}}
-        <div class="seo-box quick-record-box">
-            <div style="overflow:auto;">
-                <table class="quick-record-table">
-                    <thead>
-                        <tr>
-                            <th>MARKET</th>
-                            <th>TIME</th>
-                            <th>RECORD</th>
-                            <th>YESTERDAY</th>
-                            <th>TODAY</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach ($frontendResults as $game)
-                            <tr class="">
-                                <td class="qr-market">{{ $game['name'] }}</td>
-
-                                <td class="qr-time">{{ $game['time'] }}</td>
-
-                                <td class="qr-link">
-                                    <a href="{{ url('/' . $game['slug'] . '-satta-786.php') }}">
-                                        Record Chart
-                                    </a>
-                                </td>
-
-                                <td class="qr-val">
-                                    {{ $game['yesterday'] }}
-                                </td>
-
-                                <td class="qr-val">
-                                    {{ $game['today'] }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {{-- market table with result  --}}
-    </section>
-
-    {{-- result box start --}}
-    <section id="markets">
-        <div class="market-list">
-            @foreach ($marketResults as $game)
-                <div class="market-card {{ $loop->first ? 'market-card--full' : '' }}">
-                    <div class="market-card-head">
-                        <div class="market-card-name">
-                            <a href="{{ url('/' . $game['slug'] . '-satta-786.php') }}"
-                                title="{{ $game['name'] }} Gali Disawar Record">
-                                {{ $game['name'] }}
-                            </a>
-                        </div>
-
-                        <div class="market-card-time">
-                            ({{ $game['time'] }})
-                        </div>
-                    </div>
-
-                    <div class="market-card-body">
-                        <div class="market-card-res">
-                            { {{ $game['yesterday'] }} }
-
-                            <span class="market-arrow">➜</span>
-
-                            [ {{ $game['today'] }} ]
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    </section>
-
-    {{-- result box start --}}
-
-
-
-    {{-- middle second ad start --}}
-    <section class="boxc3">
-        <div
-            style="background-image: linear-gradient(pink 60%, #30e0f2); font-weight: bold; border-width: 3px; border-color:#000; border-style: outset; padding: 10px; border-radius: 10px; text-align: center;">
-            <font style="color:red;font-size:20px">
-                PLAY ONLINE</font><br>
-            <font style="color:blue; font-size:14px">
-
-
-
-                सीधे सट्टा कंपनी का 𝐍𝐨 𝟏 खाईवाल<br>
-                *🏆 POOJA MADAM🏆*<br>
-                ♦️ *दिल्ली बाजार* ————— 𝟬𝟯:𝟬𝟬 𝗣𝗠<br>
-                ♦️ *श्री गणेश* ——————— 𝟬𝟰:𝟯𝟬 𝗣𝗠<br>
-                ♦️ *फरीदाबाद* —–———— 𝟬𝟱:𝟱𝟬 𝗣𝗠<br>
-                ♦️ *गाजियाबाद* ————— 𝟬𝟵:𝟮𝟬 𝗣𝗠<br>
-                ♦️ *गली* ————————— 𝟭𝟭:𝟮𝟬 𝗣𝗠<br>
-                ♦️ *दिसावर* ——————— 𝟬𝟮:𝟬𝟬 𝗔𝗠<br>
-
-                ((जोड़ी रेट 𝟏𝟎𝟎=𝟗5𝟎𝟎/-👈🥳💰<br>
-                ((हर्फ रेट 𝟏𝟎𝟎𝟎=𝟗5𝟎𝟎/-👈🥳💰<br>
-                नाम और काम दोनों का ब्रांड एक बार <br>सेवा का मोका जरूर दे"<br>
-                9053878009<br>
-
-            </font><br>
-            <font style="color:red;font-size:25px">08570860536</font><br>
-            <a href="https://t.me/+JIJNYLNuHqQ3ZmRl"><button
-                    style="height:35px; width:300px; background-color:blue; color:#fff">
-                    <font size="4px"><b>JOIN TELEGRAM</b></font>
-                </button></a><br>
-            <a href="whatsapp://send?text=Hello Sir!&phone=+918570860536"><button
-                    style="height: 30px; width: 120px; background-color: #FFF; color: #000;"><span
-                        style="font-size: large;"><b>WHATSAPP</b></span></button></a>
-            <a href="tel:8570860536"><button style="height:30px; width:120px; background-color:green; color:#fff">
-                    <font size="4px"><b>CALL NOW</b></font>
-                </button></a>
-            <br>
-        </div>
-    </section>
-    <div
-        style="background-color: #FCDFFF;color:white;font-weight: bold;border: double 3px blue;padding: 5px;border-radius: 20px;text-align: center;">
-        <p style=" font-size: 16px; color: black; ">सिंगल जोड़ी गली ओर देशावर में
-            गेम 100% गारंटी से पास
-            सट्टे की दुनिया में काम के साथ नाम भी चलता है!
-            जितने लोग हमसे जुड़े सब मालामाल हुए हैं
-            बड़े खिलाड़ी आज ही संपर्क करें!
-        </p>
-        <p style="font-size:20px; color:BLUE "> Satta King 𝐂,𝐌,𝐎)</p>
-        <a href="https://whatsapp.com/channel/0029Vb8wEsIKAwEsEUURHi3V"><button
-                style="height: 40px;width: 220px;background-color: green;color:#FFF;border: double 3px red;border-radius: 20px;">
-                <font size="4px"><b>WHATSSAP NOW</b></font>
-            </button></a>
-    </div>
-    {{-- middle second ad start --}}
-
-    <!-- Reference-style Old Record / Charts -->
-    <section id="records">
-        <div class="result-heading">
-            <a href="chart.php" title="Satta King Record Chart">
-                Satta King Old Record — सट्टा किंग चार्ट रिकॉर्ड
-                <br>{{ $recordYears ? min($recordYears) : date('Y') }} TO
-                {{ $recordYears ? max($recordYears) : date('Y') }}
-            </a>
-
-            <p>DESAWER | FARIDABAD | GHAZIABAD | GALI</p>
-        </div>
-        <table class="hotlink yearline">
-            @foreach ($recordYears as $year)
-                <tr>
-                    @foreach ($marketResults as $game)
-                        <td>
-                            <a href="{{ url('/' . $game['slug'] . '-charts/' . $year) }}"
-                                title="{{ $game['name'] }} Satta Chart {{ $year }}">
-                                {{ strtoupper($game['name']) }} Satta Chart {{ $year }}
-                            </a>
-                        </td>
-                        @if ($loop->iteration % 8 === 0)
-                </tr>
-                @if (!$loop->last)
-                    <tr>
-                @endif
-            @endif
-            @endforeach
-            </tr>
-            @endforeach
-        </table>
-    </section>
-
-    <!-- Reference-style Old Record / Charts -->
-
-
-    <!-- Reference-style SEO Content + FAQ -->
-    <section id="seo" style="margin-bottom:0;">
-        <div class="result-heading">
-            <a href="index.php" title="Gali Disawar Information">Gali Disawar INFORMATION</a>
-            <p>Gali Disawar | SATTA KING 786 | Gali Disawar RESULT TODAY | CHART | RECORD</p>
-        </div>
-
-        <div class="seo-jump" aria-label="Quick jumps">
-            <a href="#markets-quick-record">Today</a>
-            <a href="#records">Old Record</a>
-            <a href="chart.php">Chart</a>
-            <a href="#faq">FAQ</a>
-        </div>
-
-        <div class="seo-box">
-            <h2>DISCLAIMER – डिस्क्लेमर</h2>
-            <p>Dear user, this site is made only for entertainment and informational purpose. satta786.com is not
-                involved with any gambling activity. All data shown on the website is record/information. Please follow
-                your country rules and laws. You are responsible for any gain or loss.</p>
-            <p>प्रिय उपयोगकर्ता, यह साइट केवल मनोरंजन और जानकारी के लिए बनाई गई है। satta786.com किसी भी जुए की गतिविधि
-                में शामिल नहीं है। वेबसाइट पर दिया गया डेटा केवल रिकॉर्ड/जानकारी है। कृपया अपने देश के नियमों का पालन
-                करें। किसी भी लाभ या हानि के लिए आप स्वयं जिम्मेदार होंगे।</p>
-            <p style="margin-top:10px;">Read full policy: <a href="disclaimer.php"><b>Disclaimer Page</b></a></p>
-        </div>
-
-        <div class="seo-box">
-            <h2>How to use Satta King 786 Chart (Simple तरीका)</h2>
-            <p>Chart/record ka use informational purpose ke liye होता है: aap year/month select karke old results check
-                कर सकते हैं। “Today” aur “Yesterday” results compare करने के लिए ऊपर का quick record table देखें.</p>
-            <p>Helpful: <a href="chart.php"><b>Satta King 786 Chart</b></a> • <a href="gali-satta-786.php"><b>Gali
-                        Record (1 Year)</b></a> • <a href="disawar-satta-786.php"><b>Disawar Record (1 Year)</b></a>
-            </p>
-        </div>
-
-        <div class="seo-box dark">
-            <h2 style="color:#ff0;">SATTA KING DICTIONARY</h2>
-            <p><b>Jodi</b>: any two-digit number 00–99.</p>
-            <p><b>Haruf</b>: single digit of the result (ander/bahar).</p>
-            <p><b>Munda</b>: represents 0 in the tens place (e.g., 01).</p>
-        </div>
-
-        <div class="seo-box" id="faq">
-            <h2>FREQUENTLY ASKED QUESTIONS (FAQ)</h2>
-
-            <div class="faq-accordion">
-                <details class="faq-item">
-                    <summary>Q1: Gali Disawar result today kahan milega?</summary>
-                    <div class="faq-answer">Homepage par “Today Live Satta King 786 Result” section me latest update
-                        मिलता है. Record ke liye <a href="chart.php"><b>Satta King 786 Chart</b></a> देखें.</div>
-                </details>
-
-                <details class="faq-item">
-                    <summary>Q2: Satta King 786 live result ka matlab kya hai?</summary>
-                    <div class="faq-answer">Live result ka मतलब latest updated market result. Is page par aapko
-                        Today/Yesterday columns ke साथ fast update दिखता है.</div>
-                </details>
-            </div>
-        </div>
-
-        <!-- JSON-LD for FAQs (kept for SEO) -->
-        {{-- <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "Gali Disawar result today kahan milega?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Homepage par Today Live Satta King 786 Result section me latest update milta hai. Record ke liye Satta King 786 Chart dekhein."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Satta King 786 live result ka matlab kya hai?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Live result ka matlab latest updated market result. Is page par Today/Yesterday columns ke saath fast update dikhaya jata hai."
-          }
-        }
-      ]
-    }
-    </script> --}}
-    </section>
+<section class="disclaimer-section" id="disclaimer"><div class="wrap disclaimer-inner"><div class="disclaimer-icon">!</div><div><p class="eyebrow">IMPORTANT INFORMATION</p><h2>Records are information — <span>not promises.</span></h2><p>This website presents stored result information for reference. It does not guarantee accuracy, predict future outcomes, or promise financial gains. Follow applicable local laws and make responsible decisions.</p></div><a class="button button-dark" href="{{ route('information',['page'=>'disclaimer']) }}">Full disclaimer ↗</a></div></section>
+<div class="jump-bar"><div class="wrap"><span>QUICK JUMP</span><a href="#today-results">Today's results</a><a href="#markets">Markets</a><a href="#quick-record">Comparison</a><a href="#records">Archives</a><a href="#market-charts">Charts</a><a href="#faq">FAQs</a><a href="#disclaimer">Disclaimer</a></div></div>
 @endsection

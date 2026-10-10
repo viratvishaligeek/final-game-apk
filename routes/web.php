@@ -4,6 +4,9 @@ use App\Http\Controllers\Frontend\MainController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\WelcomeController;
+use App\Models\Game;
+use App\Models\Result;
+use Illuminate\Support\Facades\DB;
 
 
 require 'admin.php';
@@ -46,8 +49,35 @@ Route::get('/clear', function () {
     return '<h1>Optimize Cleared Now</h1>';
 });
 
+Route::get('/sitemap.xml', function () {
+    $urls = [url('/')];
+    foreach (['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'] as $page) {
+        $urls[] = route('information', ['page' => $page]);
+    }
+    $games = Game::query()->where('status', 'active')->orderBy('serial')->get(['id', 'slug']);
+    $yearExpression = DB::connection()->getDriverName() === 'sqlite'
+        ? "CAST(strftime('%Y', game_date) AS INTEGER)" : 'YEAR(game_date)';
+    foreach ($games as $game) {
+        $urls[] = route('frontend.market', ['slug' => $game->slug]);
+        $years = Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereNotNull('game_date')
+            ->selectRaw("{$yearExpression} as year")->distinct()->pluck('year');
+        foreach ($years as $year) {
+            $urls[] = route('frontend.chart', ['slug' => $game->slug, 'year' => (int) $year]);
+        }
+    }
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    foreach (array_unique($urls) as $loc) {
+        $xml .= '<url><loc>' . htmlspecialchars($loc, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc></url>';
+    }
+    $xml .= '</urlset>';
+    return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
+})->name('sitemap');
+
 Route::controller(MainController::class)->group(function () {
     Route::get('/', 'index')->name('index');
+    Route::get('/markets/{slug}', 'market')->name('frontend.market');
+    Route::get('/charts/{slug}/{year?}', 'chart')->whereNumber('year')->name('frontend.chart');
+    Route::get('/info/{page}', 'information')->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])->name('information');
 });
 
 
