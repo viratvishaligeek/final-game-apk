@@ -1,3 +1,0 @@
-<section class="disclaimer-section"</div></section>
-
-<section class="disclaimer-section" id="disclaimer"><div class="wrap disclaimer-inner"><div class="disclaimer-icon">!</div><div><p class="eyebrow">IMPORTANT INFORMATION</p><h2>Records are information — <span>not promises.</span></h2><p>This website presents stored result information for reference. It does not guarantee accuracy, predict future outcomes, or promise financial gains. Follow applicable local laws and make responsible decisions.</p></div><a class="button button-dark" href="{{ route('information',['page'=>'disclaimer']) }}">Full disclaimer ↗</a></div></section>
