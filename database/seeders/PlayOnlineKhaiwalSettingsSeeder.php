@@ -35,7 +35,6 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
         $knownLegacyDefaults = [
             'site_tagline' => ['RESULTS • RECORDS • CHARTS'],
             'site_description' => ['A structured reference for published market results, schedules, and historical records.'],
-            'meta_title' => ['Satta 786 Results Today, Market Board & Historical Charts', 'Satta 786 Results & Historical Charts'],
             'meta_description' => ['Browse published market results, compare today and yesterday, and open market-wise historical charts and year-wise records.', 'Browse published market results, schedules, and historical result charts by market and year.'],
             'footer_description' => ['A structured reference for published market results, schedules, and historical records.'],
         ];
@@ -58,8 +57,8 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
                 'meta_description', 'meta_keywords', 'og_title', 'og_description', 'footer_description',
                 'copyright_text',
             ], true) && (
-                str_contains(strtolower($current), 'satta 786')
-                || str_contains(strtolower($current), 'example.com')
+                str_contains(strtolower($current), '786')
+                || str_contains(strtolower($current), 'example')
                 || str_contains(strtolower($current), 'placeholder')
                 || in_array($current, $knownLegacyDefaults[$option] ?? [], true)
             ));
