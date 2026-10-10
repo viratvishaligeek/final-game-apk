@@ -18,12 +18,13 @@
 
 <section class="section-block section-light" id="today-results"><div class="wrap">
     @include('frontend.partial.section-heading',['eyebrow'=>'THE DAILY RESULT BOARD','title'=>'Today’s <span>market results</span>','description'=>'Values are taken from stored records for each market’s current business date. A dash means no result is published for that date.'])
-    <div class="result-board-grid">@forelse($frontendResults as $index => $game)<article class="result-board-card {{ $index===0 ? 'result-board-card--lead' : '' }}"><div class="result-board-head"><span class="market-index">{{ str_pad((string)($index+1),2,'0',STR_PAD_LEFT) }}</span><span class="result-state {{ $game['today']==='--'?'is-pending':'is-published' }}"><i></i>{{ $game['today']==='--'?'PENDING':'PUBLISHED' }}</span></div><h3>{{ $game['name'] }}</h3><div class="result-big {{ $game['today']==='--'?'result-big--pending':'' }}">{{ $game['today'] }}</div><div class="result-meta"><span>Scheduled {{ $game['time'] }}</span><span>Prev. {{ $game['yesterday'] }}</span></div><a href="{{ route('frontend.market',['slug'=>$game['slug']]) }}">Full result history <b>↗</b></a></article>@empty<div class="empty-state"><b>No active markets are configured.</b><p>Once a market is activated in the admin area, its published records will appear here.</p></div>@endforelse</div>
-</div></section>
+    @include('frontend.partial.result-board')</div></section>
+
+<section class="section-block section-dark" id="quick-record"></div></section>
 
 <section class="section-block section-dark" id="quick-record"><div class="wrap">
     @include('frontend.partial.section-heading',['eyebrow'=>'SIDE-BY-SIDE RECORDS','title'=>'Quick record <span>comparison</span>','description'=>'A compact view of market time, yesterday’s stored result, and today’s published record.','class'=>'heading-on-dark','action'=>['url'=>'#markets','label'=>'Browse all markets']])
-    <div class="table-shell"><div class="table-topline"><span>MARKET REGISTER</span><span>{{ count($frontendResults) }} ACTIVE ENTRIES</span></div><div class="table-scroll"><table class="quick-record-table"><thead><tr><th>Market</th><th>Market time</th><th>Record chart</th><th>Yesterday</th><th>Today</th></tr></thead><tbody>@forelse($frontendResults as $index => $game)<tr class="{{ $index===0?'is-featured-row':'' }}"><td><span class="table-market-number">{{ str_pad((string)($index+1),2,'0',STR_PAD_LEFT) }}</span><b>{{ $game['name'] }}</b></td><td>{{ $game['time'] }}</td><td><a class="table-link" href="{{ route('frontend.market',['slug'=>$game['slug']]) }}">Open chart ↗</a></td><td><span class="table-result">{{ $game['yesterday'] }}</span></td><td><span class="table-result {{ $game['today']==='--'?'table-result-pending':'' }}">{{ $game['today'] }}</span></td></tr>@empty<tr><td colspan="5" class="table-empty">No market records are available yet.</td></tr>@endforelse</tbody></table></div></div>
+    @include('frontend.partial.quick-record-table')
     <p class="table-footnote">Results are shown as stored. Pending values are not estimated or filled with sample numbers.</p>
 </div></section>
 
@@ -49,16 +50,8 @@
 
 <section class="section-block section-dark faq-section" id="faq"><div class="wrap">
     @include('frontend.partial.section-heading',['eyebrow'=>'HELP CENTER','title'=>'Frequently asked <span>questions</span>','description'=>'Practical answers about records, status labels, and the information shown on this site.','class'=>'heading-on-dark','action'=>['url'=>route('information',['page'=>'faq']),'label'=>'Full FAQ page']])
-    <div class="faq-layout"><div class="faq-lead"><span class="faq-mark">?</span><h3>Need to find<br>a specific record?</h3><p>Start with the market board or use the year-wise chart finder to narrow your search.</p><a href="#markets" class="text-action">Find a market ↗</a></div><div class="faq-list">
-        <details class="faq-item"><summary>Where can I find today's published results?<span>+</span></summary><div class="faq-answer">Use the Today’s market results board. It reads the current business date for each active market and labels missing results as pending.</div></details>
-        <details class="faq-item"><summary>How do I check yesterday's result?<span>+</span></summary><div class="faq-answer">The quick comparison table and market cards include the previous business-date value when one is available in the database.</div></details>
-        <details class="faq-item"><summary>How can I view historical records?<span>+</span></summary><div class="faq-answer">Choose a market card, then select a year shown in its chart index. Available years are derived from saved result dates.</div></details>
-        <details class="faq-item"><summary>What does pending mean?<span>+</span></summary><div class="faq-answer">Pending means the application did not find a stored result for that market and date. No value is guessed or generated.</div></details>
-        <details class="faq-item"><summary>How often is the information updated?<span>+</span></summary><div class="faq-answer">This page reads the database when it is requested. The page does not claim to be a live feed or show a fabricated last-update time.</div></details>
-        <details class="faq-item"><summary>Do past results predict future results?<span>+</span></summary><div class="faq-answer">No. Historical records are not predictions and do not guarantee future outcomes or financial gains.</div></details>
-    </div></div>
-</div></section>
+    @include('frontend.partial.faq')</div></section>
 
-<section class="disclaimer-section" id="disclaimer"><div class="wrap disclaimer-inner"><div class="disclaimer-icon">!</div><div><p class="eyebrow">IMPORTANT INFORMATION</p><h2>Records are information — <span>not promises.</span></h2><p>This website presents stored result information for reference. It does not guarantee accuracy, predict future outcomes, or promise financial gains. Follow applicable local laws and make responsible decisions.</p></div><a class="button button-dark" href="{{ route('information',['page'=>'disclaimer']) }}">Full disclaimer ↗</a></div></section>
+@include('frontend.partial.disclaimer')
 <div class="jump-bar"><div class="wrap"><span>QUICK JUMP</span><a href="#today-results">Today's results</a><a href="#markets">Markets</a><a href="#quick-record">Comparison</a><a href="#records">Archives</a><a href="#market-charts">Charts</a><a href="#faq">FAQs</a><a href="#disclaimer">Disclaimer</a></div></div>
 @endsection
