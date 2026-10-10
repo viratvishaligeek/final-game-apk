@@ -28,8 +28,9 @@
         'description' => setting('site_description', $defaultDescription),
         'sameAs' => $safeSocialLinks,
     ];
-    if ($metaImage && is_file(public_path('logos/' . basename($metaImage)))) {
-        $organizationSchema['logo'] = $canonicalBase . '/logos/' . basename($metaImage);
+    $siteLogo = setting('site_logo');
+    if ($siteLogo && is_file(public_path('logos/' . basename($siteLogo)))) {
+        $organizationSchema['logo'] = $canonicalBase . '/logos/' . basename($siteLogo);
     }
     $siteSchema = [
         '@context' => 'https://schema.org',
