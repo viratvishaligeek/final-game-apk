@@ -17,6 +17,10 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
             'meta_title' => 'Play Online Khaiwal | Satta King Results & Monthly Charts',
             'meta_description' => 'Browse Satta King results, Satta Matka market records, and game-wise monthly result charts on Play Online Khaiwal. View saved results by game, date, month, and year.',
             'meta_keywords' => 'Satta King, Online Khaiwal, Satta Matka, Satta King Result, Satta Result Chart, Satta King Monthly Chart',
+            'og_title' => 'Play Online Khaiwal | Satta King Results & Monthly Charts',
+            'og_description' => 'Game-wise Satta King result records and monthly charts, organized by date and market.',
+            'robots_default' => 'index,follow',
+            'twitter_card' => 'summary_large_image',
             'canonical_url' => 'https://playonlinekhaiwal.com',
             'og_title' => 'Play Online Khaiwal | Satta King Results & Monthly Charts',
             'og_description' => 'Game-wise Satta King result records and monthly charts, organized by date and market.',
@@ -43,15 +47,16 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
             }
 
             $current = trim((string) $setting->value);
-            $isLegacyBrand = in_array($option, [
+            $isLegacyBrand = ($option === 'canonical_url' && $current !== $value)
+                || (in_array($option, [
                 'title', 'site_tagline', 'site_description', 'meta_title',
-                'meta_description', 'meta_keywords', 'footer_description',
+                'meta_description', 'meta_keywords', 'og_title', 'og_description', 'footer_description',
                 'copyright_text',
             ], true) && (
                 str_contains(strtolower($current), 'satta 786')
                 || str_contains(strtolower($current), 'example.com')
                 || str_contains(strtolower($current), 'placeholder')
-            );
+            ));
 
             if ($isLegacyBrand) {
                 $setting->update(['value' => $value]);
