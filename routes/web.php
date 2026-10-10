@@ -4,6 +4,9 @@ use App\Http\Controllers\Frontend\MainController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\WelcomeController;
+use App\Models\Game;
+use App\Models\Result;
+use Illuminate\Support\Facades\DB;
 
 
 require 'admin.php';
@@ -51,7 +54,7 @@ Route::get('/sitemap.xml', function () {
     foreach (['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'] as $page) {
         $urls[] = route('information', ['page' => $page]);
     }
-    $games = Game::query()->where('status', 'active')->orderBy('serial')->get(['slug']);
+    $games = Game::query()->where('status', 'active')->orderBy('serial')->get(['id', 'slug']);
     $yearExpression = \\Illuminate\\Support\\Facades\\DB::connection()->getDriverName() === 'sqlite'
         ? "CAST(strftime('%Y', game_date) AS INTEGER)" : 'YEAR(game_date)';
     foreach ($games as $game) {
