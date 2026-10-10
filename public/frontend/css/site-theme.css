@@ -322,3 +322,65 @@ a,button,input,summary{-webkit-tap-highlight-color:transparent}
 .monthly-result-table .is-upcoming {
     opacity: .55;
 }
+
+
+/* Monthly selectors reuse the archive panel and existing theme tokens. */
+.monthly-chart-filter {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+}
+.monthly-chart-filter label {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 700;
+}
+.monthly-chart-filter select {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    background: var(--paper);
+    font: inherit;
+}
+.monthly-chart-filter .button {
+    justify-content: center;
+    margin-top: 4px;
+}
+.month-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 10px 0 16px;
+}
+.month-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--ink-soft);
+    background: var(--paper);
+    font-size: var(--text-sm);
+    text-decoration: none;
+}
+.month-links a.is-current {
+    border-color: var(--royal);
+    color: var(--paper);
+    background: var(--royal);
+}
+.monthly-result-table td,
+.monthly-result-table th {
+    white-space: nowrap;
+}
+.monthly-result-table tbody th a {
+    color: inherit;
+    text-decoration: none;
+}
+.monthly-result-table tbody th a:hover {
+    text-decoration: underline;
+}
