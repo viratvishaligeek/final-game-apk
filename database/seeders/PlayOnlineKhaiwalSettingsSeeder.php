@@ -52,6 +52,7 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
 
             $current = trim((string) $setting->value);
             $isLegacyBrand = ($option === 'canonical_url' && $current !== $value)
+                || ($current === '' && in_array($option, ['title', 'site_tagline', 'site_description', 'meta_title', 'meta_description', 'meta_keywords', 'og_title', 'og_description', 'robots_default', 'footer_description', 'copyright_text'], true))
                 || (in_array($option, [
                 'title', 'site_tagline', 'site_description', 'meta_title',
                 'meta_description', 'meta_keywords', 'og_title', 'og_description', 'footer_description',
