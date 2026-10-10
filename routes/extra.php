@@ -86,7 +86,7 @@ Route::get('/sitemap.xml', function () {
     $pages = Page::query()
         ->where('status', 'active')
         ->where('noindex', false)
-        ->whereNotIn('slug', ['about-us', 'whatsapp', 'terms-conditions', 'privacy-policy'])
+        ->whereNotIn('slug', ['about-us', 'whatsapp', 'terms-conditions', 'privacy-policy', 'faq', 'disclaimer'])
         ->orderBy('id')
         ->get(['slug']);
     foreach ($pages as $page) {
