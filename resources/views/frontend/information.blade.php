@@ -1,9 +1,9 @@
 @extends('frontend.include.app')
-@section('title', $title . ' | ' . setting('title', 'Satta 786'))
+@section('title', $title . ' | ' . setting('title', 'Play Online Khaiwal'))
 @section('meta_description', $copy)
 @section('content')
 <div class="page-banner"><div class="wrap"><div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><b>{{ $title }}</b></div><p class="eyebrow">SITE INFORMATION</p><h1>{{ $title }}</h1><p>Helpful information about published records and responsible use.</p></div></div>
-<section class="section-block section-light"><div class="wrap information-panel"><p class="eyebrow">SATTA 786 · INFORMATION DESK</p><h2>{{ $title }}</h2><p>{{ $copy }}</p>@if($page==='faq')
+<section class="section-block section-light"><div class="wrap information-panel"><p class="eyebrow">PLAY ONLINE KHAIWAL · INFORMATION DESK</p><h2>{{ $title }}</h2><p>{{ $copy }}</p>@if($page==='faq')
 <div class="faq-list faq-list-light">
     @forelse ($faqs as $faq)
         <details class="faq-item">
