@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Backend\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use App\Models\User;
 use App\Models\WalletRequest;
+use App\Services\PushNotificationService;
 use App\Services\WalletService;
 use App\Services\ReferralService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class WalletRequestController extends Controller
@@ -145,6 +148,9 @@ class WalletRequestController extends Controller
                 ]);
             });
 
+            $walletRequest->refresh();
+            $this->notifyWalletRequest($walletRequest, 'approved');
+
             return back()->with(
                 'success',
                 'Wallet request approved successfully.'
@@ -195,6 +201,9 @@ class WalletRequestController extends Controller
                 ]);
             });
 
+            $walletRequest->refresh();
+            $this->notifyWalletRequest($walletRequest, 'rejected');
+
             return back()->with(
                 'success',
                 'Wallet request rejected successfully.'
@@ -212,4 +221,55 @@ class WalletRequestController extends Controller
             );
         }
     }
+
+    /**
+     * Persist a private notification and attempt delivery after the wallet
+     * transaction has committed. A push-provider outage must not undo or
+     * misreport a successful wallet operation.
+     */
+    private function notifyWalletRequest(WalletRequest $walletRequest, string $status): void
+    {
+        try {
+            $user = User::query()->find($walletRequest->user_id);
+            if (!$user) {
+                return;
+            }
+
+            $isDeposit = $walletRequest->request_type === 'credit';
+            $title = match ([$isDeposit, $status]) {
+                [true, 'approved'] => 'Deposit approved',
+                [false, 'approved'] => 'Withdrawal approved',
+                [true, 'rejected'] => 'Deposit request rejected',
+                default => 'Withdrawal request rejected',
+            };
+            $amount = number_format((float) $walletRequest->amount, 2);
+            $body = match ($status) {
+                'approved' => sprintf('Your %s of ₹%s was approved.', $isDeposit ? 'deposit' : 'withdrawal', $amount),
+                default => sprintf('Your %s request of ₹%s was rejected.', $isDeposit ? 'deposit' : 'withdrawal', $amount),
+            };
+
+            Notification::query()->create([
+                'user_id' => $user->id,
+                'subject' => $title,
+                'message' => $body,
+            ]);
+
+            $accepted = app(PushNotificationService::class)->sendToUser($user, $title, $body);
+            Log::info('Private wallet notification processed.', [
+                'wallet_request_id' => $walletRequest->id,
+                'user_id' => $user->id,
+                'status' => $status,
+                'fcm_accepted_count' => $accepted,
+            ]);
+        } catch (\Throwable $exception) {
+            Log::warning('Private wallet notification processing failed.', [
+                'wallet_request_id' => $walletRequest->id,
+                'user_id' => $walletRequest->user_id,
+                'status' => $status,
+                'error_class' => get_class($exception),
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
+
 }
