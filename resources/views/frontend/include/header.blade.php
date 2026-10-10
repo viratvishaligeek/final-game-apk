@@ -6,7 +6,7 @@
             @else
                 <span class="brand-emblem">786</span>
             @endif
-            <span class="brand-word">{{ setting('title', 'Satta 786') }}<small>{{ setting('site_description', 'RESULTS • RECORDS • CHARTS') }}</small></span>
+            <span class="brand-word">{{ setting('title', 'Satta 786') }}<small>{{ setting('site_tagline', 'RESULTS • RECORDS • CHARTS') }}</small></span>
         </a>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" data-menu-toggle><span></span><span></span><span></span><b class="sr-only">Toggle navigation</b></button>
         <nav class="primary-nav" id="primary-nav" aria-label="Main navigation">
