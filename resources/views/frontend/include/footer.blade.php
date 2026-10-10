@@ -2,7 +2,7 @@
     <div class="footer-top wrap">
         <div class="footer-brand-block">
             <a class="brand" href="{{ route('index') }}">
-                @if (filled(setting('site_logo')))
+                @if (filled(setting('site_logo')) && is_file(public_path('logos/' . basename(setting('site_logo')))))
                     <img class="brand-emblem" src="{{ asset('logos/' . basename(setting('site_logo'))) }}" alt="{{ setting('title', 'Satta 786') }}" loading="lazy">
                 @else
                     <span class="brand-emblem">786</span>
