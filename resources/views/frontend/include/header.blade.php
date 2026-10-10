@@ -1,33 +1,13 @@
- <header class="site-header" role="banner">
-     <div class="site-header__inner">
-         <a class="site-brand" href="index.php" title="Satta 786 Home">
-             <span class="site-brand__mark">Satta</span><span class="site-brand__num">786</span>
-         </a>
-
-         <nav class="site-nav" aria-label="Primary navigation">
-             <a class="site-nav__link is-active" href="index.php">Home</a>
-             <a class="site-nav__link " href="satta-king-gali-satta-disawar-satta.php">Guessing</a>
-             <a class="site-nav__link " href="chart.php">Chart</a>
-             <a class="site-nav__link" href="chart.php#archive-vault">Records</a>
-             <a class="site-nav__cta" href="https://wa.me/919258825697?text=Hello%20Satta786" rel="noopener"
-                 target="_blank">Satta Leak</a>
-             <button class="site-nav__cta" type="button" id="public-push-subscribe" aria-pressed="false"
-                 style="border:0;cursor:pointer" title="Subscribe to public notifications">🔔 Subscribe</button>
-         </nav>
-     </div>
-
-     <div class="site-ticker" aria-label="Satta 786 updates">
-         <div class="site-ticker__mask">
-             <div class="site-ticker__track">
-                 <span class="site-ticker__item">Satta 786, Satta King 786, Satta 786 Result Today, Delhi Bazar, Shri
-                     Ganesh, Faridabad, Ghaziabad, Gali, Disawar, Satta King 786 Chart, Satta King 786 Record</span>
-                 <span class="site-ticker__sep">•</span>
-                 <span class="site-ticker__item">Satta 786, Satta King 786, Satta 786 Result Today, Delhi Bazar, Shri
-                     Ganesh, Faridabad, Ghaziabad, Gali, Disawar, Satta King 786 Chart, Satta King 786 Record</span>
-                 <span class="site-ticker__sep">•</span>
-                 <span class="site-ticker__item">Satta 786, Satta King 786, Satta 786 Result Today, Delhi Bazar, Shri
-                     Ganesh, Faridabad, Ghaziabad, Gali, Disawar, Satta King 786 Chart, Satta King 786 Record</span>
-             </div>
-         </div>
-     </div>
- </header>
+<header class="site-header">
+    <div class="header-main wrap">
+        <a class="brand" href="{{ route('index') }}" aria-label="Satta 786 home">
+            <span class="brand-emblem">786</span><span class="brand-word">SATTA<span>786</span><small>RESULTS • RECORDS • CHARTS</small></span>
+        </a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" data-menu-toggle><span></span><span></span><span></span><b class="sr-only">Toggle navigation</b></button>
+        <nav class="primary-nav" id="primary-nav" aria-label="Main navigation">
+            <a href="{{ route('index') }}">Home</a><a href="{{ route('index') }}#today-results">Results</a><a href="{{ route('index') }}#market-charts">Charts</a><a href="{{ route('index') }}#records">Records</a><a href="{{ route('information', ['page'=>'faq']) }}">Help / FAQ</a>
+            <a class="nav-search" href="{{ route('index') }}#markets" aria-label="Find a market">⌕ <span>Find market</span></a>
+        </nav>
+    </div>
+</header>
+<div class="ticker" aria-label="Quick navigation ticker"><span class="ticker-label">RESULT DESK</span><div class="ticker-window"><div class="ticker-track"><span>Today's results</span><i>✦</i><span>Previous results</span><i>✦</i><span>Market schedules</span><i>✦</i><span>Historical charts</span><i>✦</i><span>Year-wise records</span><i>✦</i><span>Today's results</span><i>✦</i><span>Previous results</span><i>✦</i><span>Market schedules</span><i>✦</i><span>Historical charts</span><i>✦</i><span>Year-wise records</span></div></div></div>
