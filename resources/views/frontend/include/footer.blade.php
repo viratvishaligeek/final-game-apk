@@ -27,7 +27,7 @@
         </div>
         <div><h3>Policies</h3><a href="{{ route('information',['page'=>'terms-and-conditions']) }}">Terms & conditions</a><a href="{{ route('information',['page'=>'disclaimer']) }}">Disclaimer</a><p class="footer-note">{{ setting('disclaimer_content', 'Information only. No prediction or financial outcome is guaranteed.') }}</p></div>
     </div>
-    <div class="footer-bottom"><div class="wrap"><span>© {{ date('Y') }} {{ setting('copyright_text', setting('title', 'Satta 786')) }}</span><span>Use responsibly • Follow applicable local laws</span></div></div>
+    <div class="footer-bottom"><div class="wrap"><span>{{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Satta 786')) }}</span><span>Use responsibly • Follow applicable local laws</span></div></div>
 </footer>
 @if (request()->routeIs('index'))
     @include('frontend.partial.homepage-sections', ['sections' => ($homepageSections ?? collect())->where('location', 'after_footer')])
