@@ -23,6 +23,7 @@ class MainController extends Controller
         $availableMonths = $charts->availableMonths();
         $availableYears = array_map('intval', array_keys($availableMonths));
         $availableYears[] = (int) $now->format('Y');
+        $availableYears[] = $year;
         if ($request->filled('year') && filter_var($request->query('year'), FILTER_VALIDATE_INT)) {
             $requestedYear = (int) $request->query('year');
             if ($requestedYear >= 2000 && $requestedYear <= (int) $now->format('Y')) {
@@ -124,9 +125,9 @@ class MainController extends Controller
         ]);
     }
 
-    public function chart(Request $request, string $slug, ?int $year = null, ?int $month = null, ?MonthlyChartService $charts = null)
+    public function chart(Request $request, string $slug, ?int $year = null, ?int $month = null)
     {
-        $charts ??= app(MonthlyChartService::class);
+        $charts = app(MonthlyChartService::class);
         $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
         $now = now()->timezone(config('app.timezone'));
         $availableMonths = $charts->availableMonths($game->id);
