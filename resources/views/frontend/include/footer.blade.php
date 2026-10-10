@@ -3,11 +3,11 @@
         <div class="footer-brand-block">
             <a class="brand" href="{{ route('index') }}">
                 @if (filled(setting('site_logo')) && is_file(public_path('logos/' . basename(setting('site_logo')))))
-                    <img class="brand-emblem" src="{{ asset('logos/' . basename(setting('site_logo'))) }}" alt="{{ setting('title', 'Satta 786') }}" loading="lazy">
+                    <img class="brand-emblem" src="{{ asset('logos/' . basename(setting('site_logo'))) }}" alt="{{ setting('title', 'Play Online Khaiwal') }}" loading="lazy">
                 @else
-                    <span class="brand-emblem">786</span>
+                    <span class="brand-emblem">POK</span>
                 @endif
-                <span class="brand-word">{{ setting('title', 'Satta 786') }}<small>{{ setting('site_tagline', 'RESULTS • RECORDS • CHARTS') }}</small></span>
+                <span class="brand-word">{{ setting('title', 'Play Online Khaiwal') }}<small>{{ setting('site_tagline', 'RESULTS • RECORDS • CHARTS') }}</small></span>
             </a>
             <p>{{ setting('footer_description', setting('site_description', 'A structured reference for published market results, schedules, and historical records.')) }}</p>
             @if (filled(setting('email')))<p><a href="mailto:{{ setting('email') }}">{{ setting('email') }}</a></p>@endif
@@ -27,7 +27,7 @@
         </div>
         <div><h3>Policies</h3><a href="{{ route('information',['page'=>'terms-and-conditions']) }}">Terms & conditions</a><a href="{{ route('information',['page'=>'disclaimer']) }}">Disclaimer</a><p class="footer-note">{{ setting('disclaimer_content', 'Information only. No prediction or financial outcome is guaranteed.') }}</p></div>
     </div>
-    <div class="footer-bottom"><div class="wrap"><span>{{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Satta 786')) }}</span><span>Use responsibly • Follow applicable local laws</span></div></div>
+    <div class="footer-bottom"><div class="wrap"><span>{{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Play Online Khaiwal')) }}</span><span>Use responsibly • Follow applicable local laws</span></div></div>
 </footer>
 @if (request()->routeIs('index'))
     @include('frontend.partial.homepage-sections', ['sections' => ($homepageSections ?? collect())->where('location', 'after_footer')])
