@@ -170,7 +170,9 @@
                             <th scope="row"><a href="{{ route('frontend.market', ['slug' => $monthlyGame->slug]) }}">{{ $monthlyGame->name }}</a></th>
                             @foreach ($monthDays as $day)
                                 @php($dayResult = $monthlyGame->results->firstWhere('game_date', $day->toDateString()))
-                                <td><span class="table-result {{ $dayResult ? 'is-published' : 'is-pending' }}" title="{{ $dayResult ? 'Published result' : ($day->gt(now()->timezone(config('app.timezone'))->startOfDay()) ? 'Not due yet' : 'No result published') }}">{{ $dayResult && $dayResult->number !== '' ? (string) $dayResult->number : '—' }}</span></td>
+                                @php($hasPublishedResult = $dayResult && filled($dayResult->number))
+                                @php($dayStatus = $hasPublishedResult ? 'Published result' : ($day->gt(now()->timezone(config('app.timezone'))->startOfDay()) ? 'Not due yet' : 'No result published'))
+                                <td><span class="table-result {{ $hasPublishedResult ? 'is-published' : ($dayStatus === 'Not due yet' ? 'is-upcoming' : 'is-pending') }}" title="{{ $dayStatus }}" aria-label="{{ $dayStatus }}">{{ $hasPublishedResult ? (string) $dayResult->number : '—' }}</span></td>
                             @endforeach
                         </tr>
                     @empty
