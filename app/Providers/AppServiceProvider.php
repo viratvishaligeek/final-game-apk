@@ -21,13 +21,17 @@ class AppServiceProvider extends ServiceProvider
                 'terms-and-conditions', 'disclaimer',
             ];
 
-            $pages = Page::query()
-                ->where('status', 'active')
-                ->where('menu_visible', true)
-                ->whereNotIn('slug', $reservedSlugs)
-                ->orderBy('menu_order')
-                ->orderBy('name')
-                ->get(['id', 'name', 'slug']);
+            $pages = request()->attributes->get('frontend_nav_pages');
+            if ($pages === null) {
+                $pages = Page::query()
+                    ->where('status', 'active')
+                    ->where('menu_visible', true)
+                    ->whereNotIn('slug', $reservedSlugs)
+                    ->orderBy('menu_order')
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'slug']);
+                request()->attributes->set('frontend_nav_pages', $pages);
+            }
 
             $view->with('navPages', $pages);
         });
