@@ -91,7 +91,13 @@ class MainController extends Controller
 
     public function information(string $page)
     {
-        $databasePage = Page::query()->where('slug', $page)->where('status', 'active')->first();
+        $pageAliases = [
+            'about' => 'about-us',
+            'contact' => 'whatsapp',
+            'terms-and-conditions' => 'terms-conditions',
+        ];
+        $databaseSlug = $pageAliases[$page] ?? $page;
+        $databasePage = Page::query()->where('slug', $databaseSlug)->where('status', 'active')->first();
         if ($databasePage && $page !== 'faq') {
             return view('frontend.page', ['page' => $databasePage]);
         }
