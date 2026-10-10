@@ -562,7 +562,7 @@ class WalletController extends Controller
         $frontendUrl = $this->gatewayValue(
             'frontend_return_url',
             'services.upi_gateway.frontend_return_url'
-        ) ?? rtrim((string) config('app.url'), '/') . '/wallet/add';
+        ) ?? 'https://playonlinekhaiwal.com/wallet/add';
 
         $query = http_build_query([
             'gateway_return' => '1',
