@@ -248,13 +248,13 @@ class WalletRequestController extends Controller
                 default => sprintf('Your %s request of ₹%s was rejected.', $isDeposit ? 'deposit' : 'withdrawal', $amount),
             };
 
-            Notification::query()->create([
+            $notification = Notification::query()->create([
                 'user_id' => $user->id,
                 'subject' => $title,
                 'message' => $body,
             ]);
 
-            $accepted = app(PushNotificationService::class)->sendToUser($user, $title, $body);
+            $accepted = app(PushNotificationService::class)->sendToUser($user, $title, $body, $notification->id);
             Log::info('Private wallet notification processed.', [
                 'wallet_request_id' => $walletRequest->id,
                 'user_id' => $user->id,
