@@ -3,6 +3,11 @@
     $defaultTitle = setting('meta_title', setting('title', 'Play Online Khaiwal | Satta King Results & Monthly Charts'));
     $defaultDescription = setting('meta_description', setting('site_description', 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on Play Online Khaiwal.'));
     $siteName = setting('title', 'Play Online Khaiwal');
+    $sectionTitle = trim($__env->yieldContent('title', $defaultTitle));
+    $sectionDescription = trim($__env->yieldContent('meta_description', $defaultDescription));
+    $useGlobalSocialDefaults = request()->routeIs('index') && !request()->filled('year') && !request()->filled('month');
+    $ogTitle = $useGlobalSocialDefaults ? setting('og_title', $sectionTitle) : $sectionTitle;
+    $ogDescription = $useGlobalSocialDefaults ? setting('og_description', $sectionDescription) : $sectionDescription;
     $metaImage = setting('og_image', setting('site_logo'));
     $canonicalPath = request()->getPathInfo();
     $canonicalUrl = $canonicalBase . ($canonicalPath === '/' ? '' : $canonicalPath);
@@ -52,15 +57,15 @@
 <meta name="theme-color" content="#071329">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="{{ $siteName }}">
-<meta property="og:title" content="@yield('title', setting('og_title', $defaultTitle))">
-<meta property="og:description" content="@yield('meta_description', setting('og_description', $defaultDescription))">
+<meta property="og:title" content="{{ $ogTitle }}">
+<meta property="og:description" content="{{ $ogDescription }}">
 <meta property="og:url" content="{{ $canonicalUrl }}">
 @if ($metaImage && is_file(public_path('logos/' . basename($metaImage))))
     <meta property="og:image" content="{{ $canonicalBase . '/logos/' . basename($metaImage) }}">
 @endif
 <meta name="twitter:card" content="{{ setting('twitter_card', 'summary_large_image') }}">
-<meta name="twitter:title" content="@yield('title', setting('og_title', $defaultTitle))">
-<meta name="twitter:description" content="@yield('meta_description', setting('og_description', $defaultDescription))">
+<meta name="twitter:title" content="{{ $ogTitle }}">
+<meta name="twitter:description" content="{{ $ogDescription }}">
 @if ($metaImage && is_file(public_path('logos/' . basename($metaImage))))
     <meta name="twitter:image" content="{{ $canonicalBase . '/logos/' . basename($metaImage) }}">
 @endif
