@@ -73,6 +73,8 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertDontSee('99');
 
         $this->assertDatabaseMissing('results', ['game_id' => $second->id, 'type' => 'jodi']);
+
+        $this->get(route('index', ['page' => 2]))->assertOk()->assertSee('Second Market');
     }
 
     public function test_global_settings_persist_homepage_copy_and_chart_chunk_size(): void
@@ -130,6 +132,11 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertSee('Page-managed content')
             ->assertDontSee('alert(1)')
             ->assertSee('noindex,follow', false);
+
+        $this->get(route('index'))
+            ->assertOk()
+            ->assertSee('About Project')
+            ->assertDontSee('Hidden Page');
 
         $this->get(route('frontend.page', ['slug' => 'hidden-page']))->assertNotFound();
     }
