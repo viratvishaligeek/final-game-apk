@@ -102,7 +102,7 @@ class DynamicFrontendIntegrationTest extends TestCase
         Page::create([
             'name' => 'About Project',
             'slug' => 'about-project',
-            'content' => '<p>Page-managed content</p>',
+            'content' => '<p>Page-managed content</p><script>alert(1)</script>',
             'status' => 'active',
             'is_editable' => 'yes',
             'menu_visible' => true,
@@ -128,6 +128,7 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertOk()
             ->assertSee('About Project SEO')
             ->assertSee('Page-managed content')
+            ->assertDontSee('alert(1)')
             ->assertSee('noindex,follow', false);
 
         $this->get(route('frontend.page', ['slug' => 'hidden-page']))->assertNotFound();
