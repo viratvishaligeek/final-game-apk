@@ -38,8 +38,43 @@ class PushSubscriptionController extends Controller
     public function unsubscribe(Request $request): JsonResponse
     {
         $data = $request->validate(['token' => ['required', 'string', 'max:4096']]);
-        \App\Models\PushSubscription::query()->where('token_hash', hash('sha256', $data['token']))->delete();
+        $subscription = \App\Models\PushSubscription::query()
+            ->where('token_hash', hash('sha256', $data['token']))
+            ->first();
 
-        return response()->json(['success' => true, 'message' => 'Notifications disabled.']);
+        if ($subscription) {
+            $subscription->public_enabled = false;
+            if ($subscription->user_id === null) {
+                $subscription->delete();
+            } else {
+                $subscription->save();
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Public notifications disabled.']);
     }
+
+    public function unsubscribeUser(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:4096'],
+        ]);
+
+        $subscription = \App\Models\PushSubscription::query()
+            ->where('token_hash', hash('sha256', $data['token']))
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if ($subscription) {
+            $subscription->user_id = null;
+            if (!$subscription->public_enabled) {
+                $subscription->delete();
+            } else {
+                $subscription->save();
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Private device association removed.']);
+    }
+
 }
