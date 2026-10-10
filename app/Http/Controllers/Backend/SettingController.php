@@ -63,6 +63,17 @@ class SettingController extends Controller
             'og_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:4096'],
         ]);
 
+        foreach ([
+            'title' => 'Play Online Khaiwal',
+            'canonical_url' => 'https://playonlinekhaiwal.com',
+            'robots_default' => 'index,follow',
+            'twitter_card' => 'summary_large_image',
+        ] as $key => $default) {
+            if (!isset($validated[$key]) || trim((string) $validated[$key]) === '') {
+                $validated[$key] = $default;
+            }
+        }
+
         $newFiles = [];
         $oldFiles = [];
 
