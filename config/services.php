@@ -61,7 +61,6 @@ return [
      */
     'fcm' => [
         'project_id' => env('FCM_PROJECT_ID'),
-        // Store the complete Firebase service-account JSON in this environment value.
         'service_account_json' => env('FCM_SERVICE_ACCOUNT_JSON'),
     ],
 

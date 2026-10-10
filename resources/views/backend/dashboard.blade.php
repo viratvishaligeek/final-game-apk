@@ -3,7 +3,7 @@
 @section('content')
     <br>
     <div class="row">
-        <a href="{{ route('admin.users.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-1">
+        <a href="{{ route('admin.users.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
             <div class="card bg-white text-black h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -19,7 +19,7 @@
             </div>
         </a>
         {{-- Games --}}
-        <a href="{{ route('admin.games.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-1">
+        <a href="{{ route('admin.games.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
             <div class="card bg-white text-black h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -35,7 +35,7 @@
             </div>
         </a>
         {{-- Today Total Bids --}}
-        <a href="{{ route('admin.bidding-desk.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-1">
+        <a href="{{ route('admin.bidding-desk.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
             <div class="card bg-white text-black h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -53,7 +53,7 @@
             </div>
         </a>
         {{-- Today Bid Amount --}}
-        <a href="{{ route('admin.bidding-desk.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-1">
+        <a href="{{ route('admin.bidding-desk.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
             <div class="card bg-white text-black h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -71,7 +71,7 @@
             </div>
         </a>
         {{-- Pages --}}
-        <a href="{{ route('admin.pages.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-1">
+        <a href="{{ route('admin.pages.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
             <div class="card bg-white text-black h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -89,7 +89,7 @@
             </div>
         </a>
         {{-- Pending Withdraw --}}
-        <a href="{{ route('admin.wallet.request-withdraw') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-1">
+        <a href="{{ route('admin.wallet.request-withdraw') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
             <div class="card bg-white text-black h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -107,7 +107,7 @@
             </div>
         </a>
         {{-- Complete Withdraw --}}
-        <a href="{{ route('admin.wallet.request-withdraw') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-1">
+        <a href="{{ route('admin.wallet.request-withdraw') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
             <div class="card bg-white text-black h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -125,7 +125,7 @@
             </div>
         </a>
         {{-- Pending Add Money --}}
-        <a href="{{ route('admin.wallet.request-add') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-1">
+        <a href="{{ route('admin.wallet.request-add') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
             <div class="card bg-white text-black h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -145,7 +145,7 @@
     </div>
     <div class="row">
         {{-- Withdraw Chart --}}
-        <div class="col-12 mb-4">
+        <div class="col-12 col-md-6  mb-4">
             <div class="card card-header-actions h-100">
                 <div class="card-header">
                     Withdraw Completed
@@ -179,7 +179,7 @@
             </div>
         </div>
         {{-- Money Added Chart --}}
-        <div class="col-12 mb-4">
+        <div class="col-12 col-md-6  mb-4">
             <div class="card card-header-actions h-100">
                 <div class="card-header">
                     Money Added Completed
