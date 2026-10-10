@@ -28,3 +28,6 @@
     </div>
     <div class="footer-bottom"><div class="wrap"><span>© {{ date('Y') }} {{ setting('copyright_text', setting('title', 'Satta 786')) }}</span><span>Use responsibly • Follow applicable local laws</span></div></div>
 </footer>
+@if (request()->routeIs('index'))
+    @include('frontend.partial.homepage-sections', ['sections' => ($homepageSections ?? collect())->where('location', 'after_footer')])
+@endif
