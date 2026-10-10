@@ -118,6 +118,7 @@
                         'contact_phone' => ['Public Contact Phone', 'text'],
                         'contact_address' => ['Public Contact Address', 'textarea'],
                         'social_facebook' => ['Facebook URL', 'url'],
+                        'social_whatsapp' => ['WhatsApp URL', 'url'],
                         'social_instagram' => ['Instagram URL', 'url'],
                         'social_youtube' => ['YouTube URL', 'url'],
                         'social_telegram' => ['Telegram URL', 'url'],
