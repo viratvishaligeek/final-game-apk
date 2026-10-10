@@ -298,6 +298,8 @@ class DynamicFrontendIntegrationTest extends TestCase
 
     public function test_brand_seeder_is_repeatable_and_does_not_seed_fake_result_values(): void
     {
+        $this->createGame('Gali', 'gali-custom-slug', 1);
+
         $seeders = [
             \Database\Seeders\PlayOnlineKhaiwalSettingsSeeder::class,
             \Database\Seeders\GameSeeder::class,
@@ -318,6 +320,8 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->assertSame($settingCount, Setting::query()->count());
         $this->assertSame($faqCount, \App\Models\Faq::query()->count());
         $this->assertSame(0, Result::query()->count());
+        $this->assertSame(1, Game::query()->where('name', 'Gali')->count());
+        $this->assertDatabaseHas('games', ['name' => 'Gali', 'slug' => 'gali-custom-slug']);
         $this->assertDatabaseHas('settings', [
             'option' => 'canonical_url',
             'value' => 'https://playonlinekhaiwal.com',
