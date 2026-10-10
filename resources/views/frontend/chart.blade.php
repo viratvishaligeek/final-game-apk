@@ -6,6 +6,9 @@
 @section('structured_data')
     @php
         $chartCanonical = rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/charts/' . $game->slug . '/' . $year . '/' . $month;
+        if ((int) request()->query('page', 1) > 1) {
+            $chartCanonical .= '?' . http_build_query(['page' => (int) request()->query('page')]);
+        }
         $chartSchema = [
             '@context' => 'https://schema.org',
             '@type' => 'WebPage',
