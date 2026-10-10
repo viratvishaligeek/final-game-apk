@@ -100,7 +100,7 @@
             @include('frontend.partial.section-heading', [
                 'eyebrow' => 'PUBLIC WINNER RECORDS',
                 'title' => 'Top 10 <span>Winners</span>',
-                'description' => 'Only winner records approved for public display by an administrator appear here. No private profile names or winning amounts are published.',
+                'description' => 'Latest approved winner records appear first, up to 10 entries. Only administrator-approved display names are shown; private profile names and winning amounts are never published.',
             ])
             <div class="result-board-grid">
                 @forelse ($topWinners as $winner)
