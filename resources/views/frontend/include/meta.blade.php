@@ -3,11 +3,11 @@
     $defaultTitle = filled(setting('meta_title')) ? setting('meta_title') : (filled(setting('title')) ? setting('title') . ' | Satta King Results & Monthly Charts' : 'Play Online Khaiwal | Satta King Results & Monthly Charts');
     $defaultDescription = filled(setting('meta_description')) ? setting('meta_description') : (filled(setting('site_description')) ? setting('site_description') : 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on Play Online Khaiwal.');
     $siteName = filled(setting('title')) ? setting('title') : 'Play Online Khaiwal';
-    $sectionTitle = trim($__env->yieldContent('title', $defaultTitle));
-    $sectionDescription = trim($__env->yieldContent('meta_description', $defaultDescription));
+    $sectionTitle = trim(strip_tags($__env->yieldContent('title', $defaultTitle)));
+    $sectionDescription = trim(strip_tags($__env->yieldContent('meta_description', $defaultDescription)));
     $useGlobalSocialDefaults = request()->routeIs('index') && !request()->filled('year') && !request()->filled('month');
-    $ogTitle = $useGlobalSocialDefaults && filled(setting('og_title')) ? setting('og_title') : $sectionTitle;
-    $ogDescription = $useGlobalSocialDefaults && filled(setting('og_description')) ? setting('og_description') : $sectionDescription;
+    $ogTitle = $useGlobalSocialDefaults && filled(setting('og_title')) ? trim(strip_tags((string) setting('og_title'))) : $sectionTitle;
+    $ogDescription = $useGlobalSocialDefaults && filled(setting('og_description')) ? trim(strip_tags((string) setting('og_description'))) : $sectionDescription;
     $metaImage = setting('og_image', setting('site_logo'));
     $canonicalPath = request()->getPathInfo();
     $canonicalUrl = $canonicalBase . ($canonicalPath === '/' ? '' : $canonicalPath);
@@ -58,10 +58,10 @@
 @endphp
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>@yield('title', $defaultTitle)</title>
-<meta name="description" content="@yield('meta_description', $defaultDescription)">
+<title>{{ $sectionTitle }}</title>
+<meta name="description" content="{{ $sectionDescription }}">
 @if (filled(setting('meta_keywords')) || filled(trim($__env->yieldContent('meta_keywords'))))
-    <meta name="keywords" content="@yield('meta_keywords', setting('meta_keywords', ''))">
+    <meta name="keywords" content="{{ trim(strip_tags($__env->yieldContent('meta_keywords', setting('meta_keywords', '')))) }}">
 @endif
 <link rel="canonical" href="{{ $canonicalUrl }}">
 @if (filled(setting('site_favicon')) && is_file(public_path('logos/' . basename(setting('site_favicon')))))
@@ -82,6 +82,6 @@
 @if ($metaImage && is_file(public_path('logos/' . basename($metaImage))))
     <meta name="twitter:image" content="{{ $canonicalBase . '/logos/' . basename($metaImage) }}">
 @endif
-<meta name="robots" content="@yield('robots_content', setting('robots_default', 'index,follow'))">
+<meta name="robots" content="{{ trim(strip_tags($__env->yieldContent('robots_content', setting('robots_default', 'index,follow')))) }}">
 <script type="application/ld+json">@json($siteSchema, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT)</script>
 @yield('structured_data')
