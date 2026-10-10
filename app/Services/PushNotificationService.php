@@ -169,17 +169,18 @@ class PushNotificationService
 
     private function accessToken(string $serviceAccountJson): string
     {
-        return Cache::remember('fcm.oauth_access_token', now()->addMinutes(50), function () use ($serviceAccountJson) {
-            $account = json_decode($serviceAccountJson, true, flags: JSON_THROW_ON_ERROR);
+        $account = json_decode($serviceAccountJson, true, flags: JSON_THROW_ON_ERROR);
 
-            $configuredProjectId = (string) config('services.fcm.project_id');
-            if (!empty($account['project_id']) && $account['project_id'] !== $configuredProjectId) {
-                throw new \RuntimeException('FCM_PROJECT_ID does not match the service-account project_id.');
-            }
-            if (empty($account['client_email']) || empty($account['private_key'])) {
-                throw new \RuntimeException('FCM service-account JSON is missing client_email or private_key.');
-            }
+        $configuredProjectId = (string) config('services.fcm.project_id');
+        if (!empty($account['project_id']) && $account['project_id'] !== $configuredProjectId) {
+            throw new \RuntimeException('FCM_PROJECT_ID does not match the service-account project_id.');
+        }
+        if (empty($account['client_email']) || empty($account['private_key'])) {
+            throw new \RuntimeException('FCM service-account JSON is missing client_email or private_key.');
+        }
 
+        $cacheKey = 'fcm.oauth_access_token.' . hash('sha256', $serviceAccountJson);
+        return Cache::remember($cacheKey, now()->addMinutes(50), function () use ($account) {
             $now = time();
             $encode = static fn (string $value): string => rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
             $header = $encode(json_encode(['alg' => 'RS256', 'typ' => 'JWT'], JSON_THROW_ON_ERROR));
@@ -197,7 +198,7 @@ class PushNotificationService
             }
 
             $assertion = $unsigned.'.'.$encode($signature);
-            $response = Http::asForm()->post(
+            $response = Http::timeout(15)->asForm()->post(
                 $account['token_uri'] ?? 'https://oauth2.googleapis.com/token',
                 [
                     'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
