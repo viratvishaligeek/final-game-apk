@@ -107,6 +107,12 @@
                         'meta_title' => ['Default SEO Title', 'text'],
                         'meta_description' => ['Default Meta Description', 'textarea'],
                         'meta_keywords' => ['Default SEO Keywords', 'textarea'],
+                        'canonical_url' => ['Canonical Site URL', 'url'],
+                        'og_title' => ['Default Open Graph Title', 'text'],
+                        'og_description' => ['Default Open Graph Description', 'textarea'],
+                        'robots_default' => ['Default Robots Directive', 'select'],
+                        'twitter_card' => ['Twitter Card Type', 'select'],
+                        'app_download_url' => ['App Download URL (optional)', 'url'],
                         'copyright_text' => ['Copyright Text', 'text'],
                         'footer_description' => ['Footer Description', 'textarea'],
                         'contact_phone' => ['Public Contact Phone', 'text'],
@@ -123,6 +129,18 @@
                             <label class="small mb-1" for="{{ $key }}">{{ $field[0] }}</label>
                             @if ($field[1] === 'textarea')
                                 <textarea class="form-control" id="{{ $key }}" name="{{ $key }}" rows="3">{{ old($key, optional($setting->firstWhere('option', $key))->value) }}</textarea>
+                            @elseif ($field[1] === 'select')
+                                <select class="form-select" id="{{ $key }}" name="{{ $key }}">
+                                    @if ($key === 'robots_default')
+                                        @foreach (['index,follow' => 'Index, follow links', 'noindex,follow' => 'No index, follow links', 'index,nofollow' => 'Index, no follow links', 'noindex,nofollow' => 'No index, no follow links'] as $value => $label)
+                                            <option value="{{ $value }}" {{ old($key, optional($setting->firstWhere('option', $key))->value ?? 'index,follow') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    @else
+                                        @foreach (['summary' => 'Summary', 'summary_large_image' => 'Large image summary'] as $value => $label)
+                                            <option value="{{ $value }}" {{ old($key, optional($setting->firstWhere('option', $key))->value ?? 'summary_large_image') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
                             @else
                                 <input class="form-control" id="{{ $key }}" name="{{ $key }}" type="{{ $field[1] }}"
                                     value="{{ old($key, optional($setting->firstWhere('option', $key))->value) }}">
