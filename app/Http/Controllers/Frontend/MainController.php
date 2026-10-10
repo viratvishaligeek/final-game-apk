@@ -221,6 +221,17 @@ class MainController extends Controller
 
     public function showPage(string $slug)
     {
+        $informationAliases = [
+            'about-us' => 'about',
+            'whatsapp' => 'contact',
+            'terms-conditions' => 'terms-and-conditions',
+            'privacy-policy' => 'privacy-policy',
+        ];
+
+        if (isset($informationAliases[$slug])) {
+            return redirect()->route('information', ['page' => $informationAliases[$slug]], 301);
+        }
+
         $page = Page::query()->where('slug', $slug)->where('status', 'active')->firstOrFail();
 
         return view('frontend.page', compact('page'));
