@@ -1,5 +1,6 @@
 @extends('frontend.include.app')
 @section('title', request()->filled('year') || request()->filled('month') ? $monthLabel . ' Satta King Result Chart | ' . setting('title', 'Play Online Khaiwal') : setting('meta_title', 'Play Online Khaiwal | Satta King Results & Monthly Charts'))
+@section('robots_content', (request()->filled('year') || request()->filled('month')) && !$hasMonthlyResults ? 'noindex,follow' : setting('robots_default', 'index,follow'))
 @section('meta_description', request()->filled('year') || request()->filled('month') ? 'Browse the ' . $monthLabel . ' Satta King monthly result chart across active markets on Play Online Khaiwal. Values reflect saved records; missing results are marked pending.' : setting('meta_description', setting('site_description', 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on Play Online Khaiwal.')))
 @section('content')
     <div class="freshness-bar">
