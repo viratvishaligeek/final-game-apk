@@ -173,6 +173,7 @@
                         <th>Bid Amount</th>
                         <th>Winning Amount</th>
                         <th>Date</th>
+                        <th>Public Top 10</th>
                     </tr>
                 </thead>
                 <tfoot>
@@ -185,6 +186,7 @@
                         <th>Bid Amount</th>
                         <th>Winning Amount</th>
                         <th>Date</th>
+                        <th>Public Top 10</th>
                     </tr>
                 </tfoot>
                 <tbody>
@@ -249,6 +251,20 @@
 
                             <td>
                                 {{ \Carbon\Carbon::parse($winner->game_date)->format('d M Y') }}
+                            </td>
+                            <td style="min-width: 260px;">
+                                <form method="POST" action="{{ route('admin.winner.public-display', $winner) }}" class="d-flex flex-column gap-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input class="form-control form-control-sm" type="text" name="public_display_name"
+                                        maxlength="60" value="{{ old('public_display_name', $winner->public_display_name) }}"
+                                        placeholder="Approved public name" aria-label="Approved public display name">
+                                    <input type="hidden" name="is_public" value="0">
+                                    <label class="small"><input type="checkbox" name="is_public" value="1" {{ $winner->is_public ? 'checked' : '' }}>
+                                        Show in homepage Top 10</label>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Save public display</button>
+                                    @error('public_display_name')<small class="text-danger">{{ $message }}</small>@enderror
+                                </form>
                             </td>
                         </tr>
                     @empty
