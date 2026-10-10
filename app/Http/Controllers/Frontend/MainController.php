@@ -81,8 +81,15 @@ class MainController extends Controller
 
         $homeCanonicalBase = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/');
         $homeCanonical = $homeCanonicalBase . '/';
-        if ($request->filled('year') || $request->filled('month')) {
-            $homeCanonical .= '?' . http_build_query(['year' => $selectedYear, 'month' => $selectedMonth]);
+        $homeCanonicalParams = [];
+        if ($request->filled('year') || $request->filled('month') || (int) $request->query('page', 1) > 1) {
+            $homeCanonicalParams = ['year' => $selectedYear, 'month' => $selectedMonth];
+        }
+        if ((int) $request->query('page', 1) > 1) {
+            $homeCanonicalParams['page'] = (int) $request->query('page');
+        }
+        if ($homeCanonicalParams !== []) {
+            $homeCanonical .= '?' . http_build_query($homeCanonicalParams);
         }
         $homeGraph = [[
             '@type' => 'WebPage',
