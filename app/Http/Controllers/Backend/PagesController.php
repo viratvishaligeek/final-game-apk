@@ -39,7 +39,7 @@ class PagesController extends Controller
 
         Page::create([
             'name' => $validated['name'],
-            'slug' => Str::slug($validated['name']),
+            'slug' => $this->uniqueSlug($validated['name']),
             'status' => $validated['status'],
             'content' => $validated['content'] ?? '',
             'is_editable' => $validated['is_editable'],
@@ -96,13 +96,29 @@ class PagesController extends Controller
         } else {
             $page->update(array_merge([
                 'name' => $validated['name'],
-                'slug' => Str::slug($validated['name']),
+                'slug' => $this->uniqueSlug($validated['name'], (int) $page->id),
                 'status' => $validated['status'],
                 'content' => $validated['content'] ?? '',
                 'is_editable' => $validated['is_editable'],
             ], $metadata));
         }
         return redirect()->route('admin.pages.index')->with('success', 'Page updated successfully.');
+    }
+
+    private function uniqueSlug(string $name, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($name) ?: 'page';
+        $slug = $base;
+        $suffix = 2;
+
+        while (Page::query()
+            ->where('slug', $slug)
+            ->when($ignoreId !== null, fn($query) => $query->where('id', '!=', $ignoreId))
+            ->exists()) {
+            $slug = $base . '-' . $suffix++;
+        }
+
+        return $slug;
     }
 
     public function destroy(string $id)
