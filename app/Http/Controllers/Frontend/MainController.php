@@ -7,13 +7,10 @@ use App\Http\Controllers\Controller;
 class MainController extends Controller
 {
     /**
-     * Render the static frontend preview.
-     *
-     * Intentionally does not query models, databases, APIs, or other backend services.
-     * Replace the sample UI content when a separate backend integration phase is approved.
+     * Render the static frontend preview without database or API integration.
      */
     public function index()
     {
-        return view('frontend.index');
+        return view('frontend.static-preview');
     }
 }
