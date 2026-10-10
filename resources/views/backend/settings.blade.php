@@ -91,6 +91,7 @@
                 <div class="card-body row">
                     @php($globalFields = [
                         'site_description' => ['Site Description', 'textarea'],
+                        'site_tagline' => ['Brand Tagline', 'text'],
                         'homepage_heading_line1' => ['Homepage Heading — Line 1', 'text'],
                         'homepage_heading_line2' => ['Homepage Heading — Line 2', 'text'],
                         'homepage_heading_line3' => ['Homepage Heading — Line 3', 'text'],
