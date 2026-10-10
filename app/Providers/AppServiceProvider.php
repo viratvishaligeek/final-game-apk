@@ -17,8 +17,8 @@ class AppServiceProvider extends ServiceProvider
     {
         View::composer(['frontend.include.header', 'frontend.include.footer'], function ($view) {
             $reservedSlugs = [
-                'about', 'contact', 'faq', 'privacy-policy',
-                'terms-and-conditions', 'disclaimer',
+                'about', 'about-us', 'contact', 'whatsapp', 'faq', 'privacy-policy',
+                'terms-and-conditions', 'terms-conditions', 'disclaimer',
             ];
 
             $pages = request()->attributes->get('frontend_nav_pages');
