@@ -139,7 +139,7 @@
             </div>
             <div class="ribbon-actions"><a class="button button-gold" href="#records">Go to record center ↗</a><a
                     class="button button-light" href="{{ route('information', ['page' => 'faq']) }}">Read the guide</a></div>
-            <div class="ribbon-stamp">RECORD<br><b>DESK</b><span>786</span></div>
+            <div class="ribbon-stamp">RECORD<br><b>DESK</b><span>POK</span></div>
         </div>
     </section>
     <section class="section-block section-light" id="markets">
@@ -178,7 +178,7 @@
             </div>
             <div class="ribbon-actions"><a class="button button-gold" href="#records">Go to record center ↗</a><a
                     class="button button-light" href="{{ route('information', ['page' => 'faq']) }}">Read the guide</a></div>
-            <div class="ribbon-stamp">RECORD<br><b>DESK</b><span>786</span></div>
+            <div class="ribbon-stamp">RECORD<br><b>DESK</b><span>POK</span></div>
         </div>
     </section>
 
