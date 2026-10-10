@@ -2,6 +2,9 @@
 
 use App\Models\Game;
 use App\Models\Result;
+use App\Models\Page;
+use App\Services\MonthlyChartService;
+use App\Services\AppSettingsService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -56,25 +59,39 @@ Route::get('/storage-link', function () {
 });
 
 Route::get('/sitemap.xml', function () {
-    $urls = [url('/')];
+    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/');
+    $urls = [$base . '/'];
+
     foreach (['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'] as $page) {
-        $urls[] = route('information', ['page' => $page]);
+        $urls[] = $base . '/info/' . $page;
     }
+
+    $charts = app(MonthlyChartService::class);
     $games = Game::query()->where('status', 'active')->orderBy('serial')->get(['id', 'slug']);
-    $yearExpression = DB::connection()->getDriverName() === 'sqlite'
-        ? "CAST(strftime('%Y', game_date) AS INTEGER)" : 'YEAR(game_date)';
     foreach ($games as $game) {
-        $urls[] = route('frontend.market', ['slug' => $game->slug]);
-        $years = Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereNotNull('game_date')
-            ->selectRaw("{$yearExpression} as year")->distinct()->pluck('year');
-        foreach ($years as $year) {
-            $urls[] = route('frontend.chart', ['slug' => $game->slug, 'year' => (int) $year]);
+        $monthsByYear = $charts->availableMonths($game->id);
+        foreach ($monthsByYear as $year => $months) {
+            foreach ($months as $month) {
+                $urls[] = $base . '/charts/' . rawurlencode($game->slug) . '/' . (int) $year . '/' . (int) $month;
+            }
         }
     }
+
+    $pages = Page::query()
+        ->where('status', 'active')
+        ->where('noindex', false)
+        ->orderBy('id')
+        ->get(['slug']);
+    foreach ($pages as $page) {
+        $urls[] = $base . '/pages/' . rawurlencode($page->slug);
+    }
+
+    $urls = array_values(array_unique($urls));
     $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-    foreach (array_unique($urls) as $loc) {
+    foreach ($urls as $loc) {
         $xml .= '<url><loc>' . htmlspecialchars($loc, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc></url>';
     }
     $xml .= '</urlset>';
+
     return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
 })->name('sitemap');
