@@ -5,7 +5,7 @@
     <div class="freshness-bar">
         <div class="wrap freshness-inner"><span class="freshness-date"><b>DATE DESK</b>
                 {{ now()->timezone(config('app.timezone'))->format('D, d M Y') }}</span><span class="freshness-note"><i></i>
-                {{ setting('announcement_text', "Records shown are read from the site's published result database") }}</span><a
+                {{ setting('announcement_text', "{{ setting('announcement_text', "Records shown are read from the site's published result database") }}") }}</span><a
                 href="{{ route('information', ['page' => 'disclaimer']) }}">Data & legal notice ↗</a></div>
     </div>
 
@@ -16,8 +16,7 @@
             <div class="hero-copy">
                 <p class="hero-kicker"><span class="kicker-line"></span> THE RESULT & RECORD CENTER</p>
                 <h1>{{ setting('homepage_heading_line1', 'Every market.') }}<br><span>{{ setting('homepage_heading_line2', 'Every record.') }}</span><br><em>{{ setting('homepage_heading_line3', 'One clear board.') }}</em></h1>
-                <p class="hero-intro">Find published results, compare recent records, and move straight into the chart you
-                    need. Clear status labels separate available results from pending records.</p>
+                <p class="hero-intro">{{ setting('homepage_intro', 'Find published results, compare recent records, and move straight into the chart you need. Clear status labels separate available results from pending records.') }}</p>
                 <div class="hero-actions"><a class="button button-gold" href="#today-results">Download App
                         <span>↓</span></a><a class="button button-outline" href="#records">Register Now
                         <span>↗</span></a></div>
