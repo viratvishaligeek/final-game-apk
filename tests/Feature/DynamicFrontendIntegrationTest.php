@@ -122,7 +122,7 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->actingAs($admin, 'admin')
             ->get(route('admin.setting.create'))
             ->assertOk()
-            ->assertSee('Monthly Chart Entries Per Page')
+            ->assertSee('Games Per Homepage Results Table')
             ->assertSee('Brand Tagline')
             ->assertSee('Default Open Graph Image');
 
