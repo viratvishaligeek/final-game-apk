@@ -70,6 +70,9 @@ Route::get('/fresh-db', function () {
 $buildPublicSitemapEntries = function (): array {
     $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('app.url', 'https://playonlinekhaiwal.com')), '/');
     $entries = [$base . '/' => null];
+    foreach (['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'] as $informationSlug) {
+        $entries[$base . '/' . $informationSlug] = null;
+    }
 
     $latestResultUpdates = Result::query()
         ->where('type', 'jodi')
@@ -104,7 +107,7 @@ $buildPublicSitemapEntries = function (): array {
         ->orderBy('id')
         ->get(['slug', 'updated_at'])
         ->each(function (Page $page) use (&$entries, $base) {
-            $entries[$base . '/' . rawurlencode($page->slug)] = $page->updated_at;
+            $entries[$base . '/pages/' . rawurlencode($page->slug)] = $page->updated_at;
         });
 
     return $entries;
