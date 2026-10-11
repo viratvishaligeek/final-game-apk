@@ -90,8 +90,7 @@
                 <b>No published results for {{ $monthLabel }}.</b>
                 <p>Select another available month above to browse this market's stored records.</p>
             </div>
-        @else
-            <div class="table-shell light-table"><div class="table-scroll">
+        <div class="table-shell light-table"><div class="table-scroll">
                 <table class="quick-record-table monthly-result-table">
                     <thead><tr><th>Game</th><th>Date</th><th>Result</th><th>Status</th></tr></thead>
                     <tbody>
@@ -109,7 +108,6 @@
                 </table>
             </div></div>
             <nav class="mt-3" aria-label="Monthly game chart pagination">{{ $results->links() }}</nav>
-        @endif
     </div>
 </section>
 @endsection
