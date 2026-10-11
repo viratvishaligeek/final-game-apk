@@ -11,17 +11,9 @@
     $metaImage = setting('og_image', setting('site_logo'));
     $canonicalPath = request()->getPathInfo();
     $canonicalUrl = $canonicalBase . ($canonicalPath === '/' ? '' : $canonicalPath);
-    if (request()->routeIs('index') && isset($selectedYear, $selectedMonth)) {
-        $canonicalParams = [];
-        if (request()->filled('year') || request()->filled('month') || (int) request()->query('page', 1) > 1) {
-            $canonicalParams = ['year' => $selectedYear, 'month' => $selectedMonth];
-        }
-        if ((int) request()->query('page', 1) > 1) {
-            $canonicalParams['page'] = (int) request()->query('page');
-        }
-        if ($canonicalParams !== []) {
-            $canonicalUrl .= '?' . http_build_query($canonicalParams);
-        }
+    if (request()->routeIs('index')) {
+        // Query-string archive variants now resolve to the current-month homepage;
+        // keep the root URL canonical and avoid creating duplicate indexable pages.
     } elseif ((int) request()->query('page', 1) > 1) {
         $canonicalUrl .= '?' . http_build_query(['page' => (int) request()->query('page')]);
     }
