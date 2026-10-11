@@ -113,6 +113,14 @@ class GuessingAndYearlyChartTest extends TestCase
         $this->assertDatabaseHas('settings', ['option' => 'community_post_approval', 'value' => 'automatic']);
     }
 
+    public function test_admin_moderation_and_policy_routes_require_admin_authentication(): void
+    {
+        $this->get(route('admin.guessing.index'))->assertRedirect(route('login'));
+        $this->post(route('admin.guessing.policy'), ['community_post_approval' => 'automatic'])
+            ->assertRedirect(route('login'));
+        $this->assertDatabaseMissing('settings', ['option' => 'community_post_approval', 'value' => 'automatic']);
+    }
+
     public function test_automatic_approval_publishes_posts_and_authenticated_replies_are_saved(): void
     {
         $game = $this->game();
