@@ -102,10 +102,15 @@ class GuessingAndYearlyChartTest extends TestCase
 
         $admin = Admin::create(['name' => 'Moderator', 'email' => 'moderator@example.com', 'password' => 'Password123', 'status' => 'active']);
         $this->actingAs($admin, 'admin')
-            ->patch(route('admin.guessing.moderate', $post), ['status' => 'approved'])
+            ->patch(route('admin.guessing.moderate', $post), ['status' => 'rejected'])
             ->assertRedirect();
+        $this->get(route('community.show', $post->id))->assertNotFound();
 
+        $this->patch(route('admin.guessing.moderate', $post), ['status' => 'approved'])->assertRedirect();
         $this->get(route('community.show', $post->id))->assertOk()->assertSee('A community topic');
+
+        $this->post(route('admin.guessing.policy'), ['community_post_approval' => 'automatic'])->assertRedirect();
+        $this->assertDatabaseHas('settings', ['option' => 'community_post_approval', 'value' => 'automatic']);
     }
 
     public function test_automatic_approval_publishes_posts_and_authenticated_replies_are_saved(): void
@@ -116,7 +121,11 @@ class GuessingAndYearlyChartTest extends TestCase
         app(AppSettingsService::class)->forgetCache();
 
         $this->actingAs($member, 'web')
-            ->post(route('community.store'), ['game_id' => $game->id, 'title' => 'Published discussion', 'body' => 'This content should be published automatically.'])
+            ->from(route('community.create'))
+            ->post(route('community.store'), ['game_id' => 999999, 'title' => 'Published discussion', 'body' => 'This content should be published automatically.'])
+            ->assertSessionHasErrors('game_id');
+
+        $this->post(route('community.store'), ['game_id' => $game->id, 'title' => 'Published discussion', 'body' => 'This content should be published automatically.'])
             ->assertRedirect();
 
         $post = CommunityPost::query()->firstOrFail();
