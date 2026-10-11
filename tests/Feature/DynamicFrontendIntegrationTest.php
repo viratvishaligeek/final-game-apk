@@ -457,7 +457,18 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->assertStringNotContainsString('Second Market', $boardHtml);
         $this->assertStringContainsString('First Market', $boardHtml);
         $this->assertStringContainsString('Third Market', $boardHtml);
+        $this->assertStringContainsString('href="' . route('frontend.market', ['slug' => 'first-market']) . '"', $boardHtml);
+        $this->assertStringContainsString('href="' . route('frontend.market', ['slug' => 'third-market']) . '"', $boardHtml);
+        $this->assertStringNotContainsString('href="' . route('frontend.market', ['slug' => 'second-market']) . '"', $boardHtml);
         $this->assertTrue(strpos($boardHtml, 'First Market') < strpos($boardHtml, 'Third Market'), 'Daily result cards must retain serial order.');
+
+        preg_match('/<table class="quick-record-table homepage-results-table">(.*?)<\/table>/s', $html, $matrix);
+        $matrixHtml = $matrix[1] ?? '';
+        foreach ([$first, $second, $third] as $game) {
+            $this->assertStringContainsString('href="' . route('frontend.market', ['slug' => $game->slug]) . '"', $matrixHtml);
+        }
+        $this->assertTrue(strpos($matrixHtml, 'First Market') < strpos($matrixHtml, 'Second Market'));
+        $this->assertTrue(strpos($matrixHtml, 'Second Market') < strpos($matrixHtml, 'Third Market'));
 
         preg_match('/<div class="market-grid" id="market-grid">(.*?)<\/div>\s*<p class="empty-state" id="no-markets"/s', $html, $marketGrid);
         $marketHtml = $marketGrid[1] ?? '';
