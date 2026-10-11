@@ -88,13 +88,10 @@ $buildPublicSitemapEntries = function (): array {
 
     CommunityPost::query()
         ->where('status', 'approved')
-        ->with('game:id,status')
         ->orderByDesc('created_at')
-        ->get(['id', 'game_id', 'updated_at'])
+        ->get(['id', 'updated_at'])
         ->each(function (CommunityPost $post) use (&$entries, $base) {
-            if ($post->game && $post->game->status === 'active') {
-                $entries[$base . '/guessing/' . $post->id] = $post->updated_at;
-            }
+            $entries[$base . '/guessing/' . $post->id] = $post->updated_at;
         });
 
     if (CommunityPost::query()->where('status', 'approved')->exists()) {
