@@ -178,7 +178,6 @@ class MainController extends Controller
             abort_if($saved->isEmpty(), 404);
         }
 
-        $daysInYear = $start->isLeapYear() ? 29 : 28;
         $maxDays = 31;
         $yearRows = collect(range(1, $maxDays))->map(function (int $day) use ($year, $saved) {
             $cells = [];
