@@ -108,7 +108,7 @@ class MainController extends Controller
         $availableMonths = $charts->availableMonths($game->id);
         $availableYears = array_map('intval', array_keys($availableMonths));
         $availableYears[] = $currentYear;
-        $availableYears = array_values(array_unique($availableYears));
+        $availableYears = array_values(array_unique(array_filter($availableYears, fn (int $availableYear) => $availableYear >= 2000 && $availableYear <= $currentYear)));
         rsort($availableYears);
         $canonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/')
             . '/result/' . $game->slug;
