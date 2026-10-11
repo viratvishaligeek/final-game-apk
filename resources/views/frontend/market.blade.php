@@ -133,7 +133,14 @@
         }
     }
 
-    yearSelect.addEventListener('change', loadResults);
+    yearSelect.addEventListener('change', function () {
+        const currentYear = @json($currentYear);
+        const currentMonth = @json($currentMonth);
+        if (Number(yearSelect.value) === currentYear && Number(monthSelect.value) > currentMonth) {
+            monthSelect.value = String(currentMonth);
+        }
+        loadResults();
+    });
     monthSelect.addEventListener('change', loadResults);
     form.addEventListener('submit', function (event) {
         event.preventDefault();
