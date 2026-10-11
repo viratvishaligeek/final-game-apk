@@ -32,7 +32,7 @@
 <section class="page-banner page-banner--blue">
     <div class="wrap">
         <div class="breadcrumbs">
-            <a href="{{ route('index') }}">Home</a><span>/</span><a href="{{ route('index', ['year' => $year, 'month' => $month]) }}#markets">Markets</a><span>/</span><b>{{ $game->name }} · {{ $monthLabel }}</b>
+            <a href="{{ route('index') }}">Home</a><span>/</span><a href="{{ route('index') }}#markets">Markets</a><span>/</span><b>{{ $game->name }} · {{ $monthLabel }}</b>
         </div>
         <p class="eyebrow">MONTHLY RESULT CHART</p>
         <h1>{{ $game->name }} <span>{{ $monthLabel }}</span></h1>
@@ -46,7 +46,7 @@
                 <span class="archive-symbol">▦</span>
                 <p class="eyebrow">CHOOSE A PERIOD</p>
                 <h2>{{ $game->name }}</h2>
-                <form method="GET" action="{{ route('frontend.chart', ['slug' => $game->slug]) }}" class="monthly-chart-filter" data-month-filter>
+                <form method="GET" action="{{ route('frontend.market', ['slug' => $game->slug]) }}" class="monthly-chart-filter" data-month-filter>
                     <label for="game-chart-year">Year</label>
                     <select class="form-select" id="game-chart-year" name="year" data-chart-year>
                         @foreach ($availableYears as $yearOption)
@@ -69,10 +69,10 @@
                     <div class="archive-years-head"><b>{{ $yearOption }}</b></div>
                     <div class="year-links month-links">
                         @foreach (($availableMonths[$yearOption] ?? []) as $monthOption)
-                            <a class="{{ (int) $yearOption === (int) $year && (int) $monthOption === (int) $month ? 'is-current' : '' }}" href="{{ route('frontend.chart', ['slug' => $game->slug, 'year' => $yearOption, 'month' => $monthOption]) }}">{{ \Carbon\Carbon::createFromDate($yearOption, $monthOption, 1, config('app.timezone'))->translatedFormat('F') }}</a>
+                            <a class="{{ (int) $yearOption === (int) $year && (int) $monthOption === (int) $month ? 'is-current' : '' }}" href="{{ route('frontend.market', ['slug' => $game->slug, 'year' => $yearOption, 'month' => $monthOption]) }}">{{ \Carbon\Carbon::createFromDate($yearOption, $monthOption, 1, config('app.timezone'))->translatedFormat('F') }}</a>
                         @endforeach
                         @if ((int) $yearOption === (int) $year && !in_array((int) $month, $availableMonths[$yearOption] ?? [], true))
-                            <a class="is-current" href="{{ route('frontend.chart', ['slug' => $game->slug, 'year' => $year, 'month' => $month]) }}">{{ $monthLabel }} · no results</a>
+                            <a class="is-current" href="{{ route('frontend.market', ['slug' => $game->slug, 'year' => $year, 'month' => $month]) }}">{{ $monthLabel }} · no results</a>
                         @endif
                     </div>
                 @empty
@@ -83,7 +83,7 @@
 
         <div class="page-toolbar">
             <h2>{{ $game->name }} · {{ $monthLabel }}</h2>
-            <a class="button button-dark" href="{{ route('index', ['year' => $year, 'month' => $month]) }}#market-charts">All-market monthly chart ↗</a>
+            <a class="button button-dark" href="{{ route('index') }}#market-charts">All-market monthly chart ↗</a>
         </div>
         @if (!$hasPublishedResults)
             <div class="empty-state">
