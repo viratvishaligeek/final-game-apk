@@ -2,7 +2,7 @@
 @section('title', $game->name . ' ' . $monthLabel . ' Satta King Result Chart | ' . setting('title', 'Play Online Khaiwal'))
 @section('meta_description', 'Browse the ' . $monthLabel . ' Satta King result chart for ' . $game->name . ' on Play Online Khaiwal. Review saved date-wise records; unavailable results are marked pending.')
 @section('meta_keywords', $game->name . ', ' . $monthLabel . ' result chart, Satta King monthly chart, Satta Result Chart')
-@section('robots_content', $hasPublishedResults ? setting('robots_default', 'index,follow') : 'noindex,follow')
+@section('robots_content', $hasPublishedResults && (int) request()->query('page', 1) <= 1 ? setting('robots_default', 'index,follow') : 'noindex,follow')
 @section('structured_data')
     @php
         $chartCanonical = rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/charts/' . $game->slug . '/' . $year . '/' . $month;
@@ -90,8 +90,8 @@
                 <b>No published results for {{ $monthLabel }}.</b>
                 <p>Select another available month above to browse this market's stored records.</p>
             </div>
-        @else
-            <div class="table-shell light-table"><div class="table-scroll">
+        @endif
+        <div class="table-shell light-table"><div class="table-scroll">
                 <table class="quick-record-table monthly-result-table">
                     <thead><tr><th>Game</th><th>Date</th><th>Result</th><th>Status</th></tr></thead>
                     <tbody>
@@ -109,7 +109,6 @@
                 </table>
             </div></div>
             <nav class="mt-3" aria-label="Monthly game chart pagination">{{ $results->links() }}</nav>
-        @endif
     </div>
 </section>
 @endsection

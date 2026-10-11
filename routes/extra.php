@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Game;
+use App\Models\CommunityPost;
 use App\Models\Result;
 use App\Models\Page;
 use App\Services\MonthlyChartService;
@@ -61,21 +62,24 @@ Route::get('/storage-link', function () {
 Route::get('/sitemap.xml', function () {
     $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/');
     $urls = [$base . '/'];
+    if (CommunityPost::query()->where('status', 'approved')->exists()) {
+        $urls[] = $base . '/guessing';
+        foreach (CommunityPost::query()->where('status', 'approved')->latest('created_at')->limit(5000)->get(['id']) as $post) {
+            $urls[] = $base . '/guessing/' . $post->id;
+        }
+    }
 
     foreach (['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'] as $page) {
         $urls[] = $base . '/info/' . $page;
     }
 
     $charts = app(MonthlyChartService::class);
-    foreach ($charts->availableMonths() as $year => $months) {
-        foreach ($months as $month) {
-            $urls[] = $base . '/?year=' . (int) $year . '&month=' . (int) $month;
-        }
-    }
-
     $games = Game::query()->where('status', 'active')->orderBy('serial')->get(['id', 'slug']);
     foreach ($games as $game) {
         $monthsByYear = $charts->availableMonths($game->id);
+        foreach (array_keys($monthsByYear) as $year) {
+            $urls[] = $base . '/charts/' . rawurlencode($game->slug) . '/year/' . (int) $year;
+        }
         foreach ($monthsByYear as $year => $months) {
             foreach ($months as $month) {
                 $urls[] = $base . '/charts/' . rawurlencode($game->slug) . '/' . (int) $year . '/' . (int) $month;

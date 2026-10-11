@@ -73,7 +73,7 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertSee('Managed section body')
             ->assertSee('October 2026')
             ->assertSee('Download App')
-            ->assertSee('<th>Game</th><th>Date</th><th>Result</th><th>Status</th>', false)
+            ->assertSee('<th>Game</th><th>Date</th><th>Result</th><th>Status</th><th>Full-year chart</th>', false)
             ->assertSee('07')
             ->assertSee('1 entries per page')
             ->assertSee('Next')
