@@ -19,46 +19,11 @@ class MainController extends Controller
 {
     public function index(Request $request, MonthlyChartService $charts)
     {
+        // The homepage always shows the current calendar month in the configured
+        // application timezone. Historical browsing belongs on each game's chart.
         $now = now()->timezone(config('app.timezone'));
-        $availableMonths = $charts->availableMonths();
-        $availableYears = array_map('intval', array_keys($availableMonths));
-        $availableYears[] = (int) $now->format('Y');
-        if ($request->filled('year') && filter_var($request->query('year'), FILTER_VALIDATE_INT)) {
-            $requestedYear = (int) $request->query('year');
-            if ($requestedYear >= 2000 && $requestedYear <= (int) $now->format('Y')) {
-                $availableYears[] = $requestedYear;
-            }
-        }
-        $availableYears = array_values(array_unique($availableYears));
-        rsort($availableYears);
-
-        $selectedYear = $request->filled('year') && filter_var($request->query('year'), FILTER_VALIDATE_INT)
-            ? (int) $request->query('year')
-            : (int) $now->format('Y');
-        if ($selectedYear < 2000 || $selectedYear > (int) $now->format('Y')) {
-            $selectedYear = (int) $now->format('Y');
-        }
-
-        if ($request->filled('month') && filter_var($request->query('month'), FILTER_VALIDATE_INT)) {
-            $selectedMonth = (int) $request->query('month');
-            if ($selectedMonth < 1 || $selectedMonth > 12) {
-                $selectedMonth = (int) $now->format('n');
-            }
-        } elseif ($request->filled('year')) {
-            $selectedMonth = ($availableMonths[$selectedYear][0] ?? null)
-                ?: ($selectedYear === (int) $now->format('Y') ? (int) $now->format('n') : 1);
-        } else {
-            $selectedMonth = (int) $now->format('n');
-        }
-
-        $monthOptions = $availableMonths[$selectedYear] ?? [];
-        if ($selectedYear === (int) $now->format('Y')) {
-            $monthOptions[] = (int) $now->format('n');
-        }
-        $monthOptions[] = $selectedMonth;
-        $monthOptions = array_values(array_unique($monthOptions));
-        rsort($monthOptions);
-
+        $selectedYear = (int) $now->format('Y');
+        $selectedMonth = (int) $now->format('n');
         [$monthStart, $monthEnd, $monthDays] = $charts->monthDates($selectedYear, $selectedMonth);
         $games = Game::query()
             ->where('status', 'active')
@@ -70,7 +35,7 @@ class MainController extends Controller
         $marketResults = collect($frontendResults)->map(fn (array $game) => collect($game)->only([
             'id', 'name', 'slug', 'time', 'today', 'yesterday',
         ])->all())->all();
-        $recordYears = array_map('intval', array_keys($availableMonths));
+        $recordYears = [$selectedYear];
         $homepageSections = HomePage::query()->where('status', 'active')->orderBy('id')->get();
         $faqs = Faq::query()->latest('id')->get();
         $chunkSize = $charts->chunkSize();
@@ -79,27 +44,12 @@ class MainController extends Controller
         $monthlyEntries = $charts->paginate($monthlyRows, $request, $chunkSize);
         $monthLabel = $charts->monthLabel($selectedYear, $selectedMonth);
 
-        $homeCanonicalBase = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/');
-        $homeCanonical = $homeCanonicalBase . '/';
-        $homeCanonicalParams = [];
-        if ($request->filled('year') || $request->filled('month') || (int) $request->query('page', 1) > 1) {
-            $homeCanonicalParams = ['year' => $selectedYear, 'month' => $selectedMonth];
-        }
-        if ((int) $request->query('page', 1) > 1) {
-            $homeCanonicalParams['page'] = (int) $request->query('page');
-        }
-        if ($homeCanonicalParams !== []) {
-            $homeCanonical .= '?' . http_build_query($homeCanonicalParams);
-        }
+        $homeCanonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/';
         $homeGraph = [[
             '@type' => 'WebPage',
-            'name' => $request->filled('year') || $request->filled('month')
-                ? $monthLabel . ' Satta King Result Chart | Play Online Khaiwal'
-                : 'Play Online Khaiwal | Satta King Results & Monthly Charts',
+            'name' => 'Play Online Khaiwal | Satta King Results & Monthly Charts',
             'url' => $homeCanonical,
-            'description' => $request->filled('year') || $request->filled('month')
-                ? 'Monthly result chart for ' . $monthLabel . ', using saved market records.'
-                : app(AppSettingsService::class)->value('meta_description', 'Satta King result records and monthly charts on Play Online Khaiwal.'),
+            'description' => app(AppSettingsService::class)->value('meta_description', 'Satta King result records and monthly charts on Play Online Khaiwal.'),
         ]];
         if ($faqs->isNotEmpty()) {
             $homeGraph[] = [
@@ -107,17 +57,12 @@ class MainController extends Controller
                 'mainEntity' => $faqs->map(fn ($faq) => [
                     '@type' => 'Question',
                     'name' => strip_tags((string) $faq->question),
-                    'acceptedAnswer' => [
-                        '@type' => 'Answer',
-                        'text' => strip_tags((string) $faq->answer),
-                    ],
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags((string) $faq->answer)],
                 ])->values()->all(),
             ];
         }
         $homeSchema = ['@context' => 'https://schema.org', '@graph' => $homeGraph];
 
-        // Public winner display is opt-in: names are never taken from private user
-        // profile fields, and no amount or unverified claim is published.
         $topWinners = Winner::query()
             ->where('is_public', true)
             ->whereNotNull('public_display_name')
@@ -129,22 +74,9 @@ class MainController extends Controller
             ->get(['id', 'game_id', 'public_display_name', 'number', 'type', 'game_date']);
 
         return view('frontend.index', compact(
-            'frontendResults',
-            'marketResults',
-            'recordYears',
-            'homepageSections',
-            'faqs',
-            'topWinners',
-            'monthlyEntries',
-            'hasMonthlyResults',
-            'monthLabel',
-            'chunkSize',
-            'availableMonths',
-            'availableYears',
-            'selectedYear',
-            'selectedMonth',
-            'monthOptions',
-            'homeSchema'
+            'frontendResults', 'marketResults', 'recordYears', 'homepageSections',
+            'faqs', 'topWinners', 'monthlyEntries', 'hasMonthlyResults',
+            'monthLabel', 'chunkSize', 'selectedYear', 'selectedMonth', 'homeSchema'
         ));
     }
 
@@ -169,35 +101,35 @@ class MainController extends Controller
         $charts = app(MonthlyChartService::class);
         $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
         $now = now()->timezone(config('app.timezone'));
-        $availableMonths = $charts->availableMonths($game->id);
 
-        if ($year === null && request()->filled('year') && filter_var(request()->query('year'), FILTER_VALIDATE_INT)) {
-            $year = (int) request()->query('year');
+        if ($year === null && $request->filled('year') && filter_var($request->query('year'), FILTER_VALIDATE_INT)) {
+            $year = (int) $request->query('year');
         }
-        if ($month === null && request()->filled('month') && filter_var(request()->query('month'), FILTER_VALIDATE_INT)) {
-            $month = (int) request()->query('month');
+        if ($month === null && $request->filled('month') && filter_var($request->query('month'), FILTER_VALIDATE_INT)) {
+            $month = (int) $request->query('month');
         }
 
         $year ??= (int) $now->format('Y');
         abort_if($year < 2000 || $year > (int) $now->format('Y'), 404);
-
-        if ($month === null) {
-            $month = $year === (int) $now->format('Y')
-                ? (int) $now->format('n')
-                : (int) (($availableMonths[$year][0] ?? 1));
-        }
+        $month ??= $year === (int) $now->format('Y')
+            ? (int) $now->format('n')
+            : (int) ($charts->availableMonths($game->id)[$year][0] ?? 0);
         abort_if($month < 1 || $month > 12, 404);
+        abort_if($year === (int) $now->format('Y') && $month > (int) $now->format('n'), 404);
 
-        // Canonical monthly URLs always include both year and month. Legacy
-        // /charts/{slug} and /charts/{slug}/{year} links remain valid.
-        if (request()->route('year') === null || request()->route('month') === null) {
-            return redirect()->route('frontend.chart', [
-                'slug' => $game->slug,
-                'year' => $year,
-                'month' => $month,
-            ]);
+        // A legitimate older month must contain stored records. Do not publish
+        // indexable empty archive URLs merely because the route parameters parse.
+        if ($year < (int) $now->format('Y') || $month < (int) $now->format('n')) {
+            abort_unless(Result::query()->where('game_id', $game->id)->where('type', 'jodi')
+                ->whereBetween('game_date', [sprintf('%04d-%02d-01', $year, $month), $now->copy()->setDate($year, $month, 1)->endOfMonth()->toDateString()])
+                ->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
         }
 
+        if ($request->route('year') === null || $request->route('month') === null) {
+            return redirect()->route('frontend.chart', ['slug' => $game->slug, 'year' => $year, 'month' => $month], 301);
+        }
+
+        $availableMonths = $charts->availableMonths($game->id);
         $availableYears = array_map('intval', array_keys($availableMonths));
         $availableYears[] = $year;
         $availableYears[] = (int) $now->format('Y');
@@ -211,24 +143,65 @@ class MainController extends Controller
 
         [$monthStart, $monthEnd, $monthDays] = $charts->monthDates($year, $month);
         $allRows = $charts->gameRows($game, $monthStart, $monthEnd, $monthDays);
-        $hasPublishedResults = $allRows->isNotEmpty();
+        $hasPublishedResults = $allRows->contains(fn (array $row) => $row['status'] === 'published');
         $results = $charts->paginate($allRows, $request, $charts->chunkSize());
         $monthLabel = $charts->monthLabel($year, $month);
         $chunkSize = $charts->chunkSize();
 
         return view('frontend.chart', compact(
-            'game',
-            'year',
-            'month',
-            'monthLabel',
-            'monthDays',
-            'results',
-            'availableMonths',
-            'availableYears',
-            'monthOptions',
-            'hasPublishedResults',
-            'chunkSize'
+            'game', 'year', 'month', 'monthLabel', 'monthDays', 'results',
+            'availableMonths', 'availableYears', 'monthOptions', 'hasPublishedResults', 'chunkSize'
         ));
+    }
+
+    /**
+     * Full-year view for a single game. Only the selected year's saved result
+     * rows are loaded; all twelve month columns are generated in memory.
+     */
+    public function yearChart(string $slug, int $year)
+    {
+        $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+        $now = now()->timezone(config('app.timezone'));
+        abort_if($year < 2000 || $year > (int) $now->format('Y'), 404);
+
+        $start = Carbon::createFromDate($year, 1, 1, config('app.timezone'))->startOfYear();
+        $end = $year === (int) $now->format('Y')
+            ? $now->copy()->endOfDay()
+            : $start->copy()->endOfYear();
+        $saved = Result::query()->where('game_id', $game->id)->where('type', 'jodi')
+            ->whereBetween('game_date', [$start->toDateString(), $end->toDateString()])
+            ->whereNotNull('number')->where('number', '<>', '')
+            ->get(['game_date', 'number'])
+            ->keyBy(fn (Result $result) => Carbon::parse($result->game_date, config('app.timezone'))->format('n-j'));
+
+        if ($year < (int) $now->format('Y')) {
+            abort_if($saved->isEmpty(), 404);
+        }
+
+        $daysInYear = $start->isLeapYear() ? 29 : 28;
+        $maxDays = 31;
+        $yearRows = collect(range(1, $maxDays))->map(function (int $day) use ($year, $saved) {
+            $cells = [];
+            for ($month = 1; $month <= 12; $month++) {
+                $daysInMonth = Carbon::createFromDate($year, $month, 1, config('app.timezone'))->daysInMonth;
+                $cells[$month] = $day <= $daysInMonth
+                    ? optional($saved->get($month . '-' . $day))->number
+                    : null;
+            }
+
+            return ['day' => $day, 'cells' => $cells];
+        });
+
+        $canonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/')
+            . '/charts/' . $game->slug . '/year/' . $year;
+
+        return view('frontend.year-chart', [
+            'game' => $game,
+            'year' => $year,
+            'yearRows' => $yearRows,
+            'hasPublishedResults' => $saved->isNotEmpty(),
+            'canonical' => $canonical,
+        ]);
     }
 
     public function information(string $page)
