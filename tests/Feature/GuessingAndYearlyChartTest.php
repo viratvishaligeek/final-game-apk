@@ -51,23 +51,17 @@ class GuessingAndYearlyChartTest extends TestCase
             ->assertSee(now()->timezone(config('app.timezone'))->format('F Y'))
             ->assertDontSee('homepage-chart-year')
             ->assertDontSee('homepage-chart-month')
-            ->assertSee(route('frontend.year-chart', ['slug' => $game->slug, 'year' => now()->timezone(config('app.timezone'))->year]));
+            ->assertSee(route('frontend.market', ['slug' => $game->slug]));
     }
 
-    public function test_year_chart_has_twelve_month_columns_and_only_saved_values(): void
+    public function test_legacy_year_chart_redirects_to_slug_only_result_page(): void
     {
         $game = $this->game();
         Result::create(['game_id' => $game->id, 'game_date' => '2024-02-29', 'type' => 'jodi', 'number' => '09']);
-        Result::create(['game_id' => $game->id, 'game_date' => '2024-10-05', 'type' => 'jodi', 'number' => '41']);
 
-        $response = $this->get(route('frontend.year-chart', ['slug' => $game->slug, 'year' => 2024]));
-        $response->assertOk()
-            ->assertSee('Jan')->assertSee('Feb')->assertSee('Mar')->assertSee('Apr')
-            ->assertSee('May')->assertSee('Jun')->assertSee('Jul')->assertSee('Aug')
-            ->assertSee('Sep')->assertSee('Oct')->assertSee('Nov')->assertSee('Dec')
-            ->assertSee('09')->assertSee('41')
-            ->assertSee('yearly-result-table', false);
-        $this->assertDatabaseCount('results', 2);
+        $this->get(route('frontend.year-chart', ['slug' => $game->slug, 'year' => 2024]))
+            ->assertRedirect(route('frontend.market', ['slug' => $game->slug, 'year' => 2024, 'month' => 2]));
+        $this->assertDatabaseCount('results', 1);
     }
 
     public function test_legacy_chart_url_redirects_only_when_replacement_has_records(): void
@@ -76,7 +70,7 @@ class GuessingAndYearlyChartTest extends TestCase
         Result::create(['game_id' => $game->id, 'game_date' => '2025-05-12', 'type' => 'jodi', 'number' => '18']);
 
         $this->get('/chart/2025/5/gali')
-            ->assertRedirect(route('frontend.chart', ['slug' => $game->slug, 'year' => 2025, 'month' => 5]));
+            ->assertRedirect(route('frontend.market', ['slug' => $game->slug, 'year' => 2025, 'month' => 5]));
         $this->get('/chart/2025/13/gali')->assertNotFound();
         $this->get('/charts/not-a-real-game/2025/5')->assertNotFound();
         $this->get('/charts/gali/2027/1')->assertNotFound();

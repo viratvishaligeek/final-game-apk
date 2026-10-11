@@ -216,34 +216,37 @@
         <div class="wrap">
             @include('frontend.partial.section-heading', [
                 'eyebrow' => 'CURRENT MONTH · ' . strtoupper($monthLabel),
-                'title' => 'Monthly <span>market chart</span>',
-                'description' => 'This section always shows the current calendar month in the website timezone. Open any market to view its full-year chart. Missing results remain pending.',
+                'title' => 'Monthly <span>market results</span>',
+                'description' => 'Saved results for each active market and calendar date in ' . $monthLabel . '. Missing values are shown as a dash.',
             ])
-            <div class="page-toolbar">
-                <h2>{{ $monthLabel }} · {{ $monthlyEntries->total() }} market-date entries</h2>
-                <span class="small-note">{{ $chunkSize }} entries per page</span>
-            </div>
-            <div class="table-shell light-table">
-                <div class="table-scroll">
-                    <table class="quick-record-table monthly-result-table">
-                        <thead><tr><th>Game</th><th>Date</th><th>Result</th><th>Status</th><th>Full-year chart</th></tr></thead>
-                        <tbody>
-                            @forelse ($monthlyEntries as $entry)
+            @forelse ($monthlyTables as $tableIndex => $table)
+                <div class="table-shell light-table homepage-results-shell">
+                    <div class="table-scroll" role="region" aria-label="Market results table {{ $tableIndex + 1 }}" tabindex="0">
+                        <table class="quick-record-table homepage-results-table">
+                            <thead>
                                 <tr>
-                                    <th scope="row">{{ $entry['game']->name }}</th>
-                                    <td>{{ $entry['date']->format('d M Y') }}</td>
-                                    <td><span class="table-result {{ $entry['status'] === 'published' ? 'is-published' : ($entry['status'] === 'upcoming' ? 'is-upcoming' : 'is-pending') }}">{{ $entry['number'] ?? '—' }}</span></td>
-                                    <td>{{ $entry['status'] === 'published' ? 'Published' : ($entry['status'] === 'upcoming' ? 'Not due yet' : 'Pending') }}</td>
-                                    <td><a class="table-link" href="{{ route('frontend.year-chart', ['slug' => $entry['game']->slug, 'year' => $selectedYear]) }}">Open chart ↗</a></td>
+                                    <th scope="col">Date</th>
+                                    @foreach ($table['games'] as $game)
+                                        <th scope="col"><a href="{{ route('frontend.market', ['slug' => $game->slug]) }}">{{ $game->name }}</a></th>
+                                    @endforeach
                                 </tr>
-                            @empty
-                                <tr><td colspan="5" class="table-empty">No active markets are configured for this month's chart.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach ($table['dates'] as $date)
+                                    <tr>
+                                        <th scope="row">{{ $date->format('d') }}</th>
+                                        @foreach ($table['games'] as $game)
+                                            <td>{{ $table['results'][$game->id][$date->day] ?? '—' }}</td>
+                                        @endforeach
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <nav class="mt-3" aria-label="Current-month chart pagination">{{ $monthlyEntries->links() }}</nav>
+            @empty
+                <div class="empty-state"><b>No active markets are configured.</b><p>Activate a market in the admin panel to display its results.</p></div>
+            @endforelse
         </div>
     </section>
 
