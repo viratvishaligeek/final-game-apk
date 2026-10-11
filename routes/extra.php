@@ -64,15 +64,25 @@ $buildPublicSitemapEntries = function (): array {
         $entries[$base . '/' . $page] = null;
     }
 
+    $latestResultUpdates = Result::query()
+        ->where('type', 'jodi')
+        ->whereNotNull('number')
+        ->where('number', '<>', '')
+        ->whereDate('game_date', '<=', now()->timezone(config('app.timezone'))->toDateString())
+        ->select('game_id')
+        ->selectRaw('MAX(updated_at) as lastmod')
+        ->groupBy('game_id')
+        ->pluck('lastmod', 'game_id');
+
     Game::query()
         ->where('status', 'active')
         ->whereNotNull('slug')
         ->where('slug', '<>', '')
         ->orderBy('serial')
         ->orderBy('id')
-        ->get(['id', 'slug', 'updated_at'])
-        ->each(function (Game $game) use (&$entries, $base) {
-            $entries[$base . '/result/' . rawurlencode($game->slug)] = $game->updated_at;
+        ->get(['id', 'slug'])
+        ->each(function (Game $game) use (&$entries, $base, $latestResultUpdates) {
+            $entries[$base . '/result/' . rawurlencode($game->slug)] = $latestResultUpdates->get($game->id);
         });
 
     CommunityPost::query()
@@ -108,7 +118,7 @@ $renderSitemapUrlSet = function (array $entries) {
     foreach ($entries as $loc => $lastmod) {
         $xml .= '<url><loc>' . htmlspecialchars($loc, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc>';
         if ($lastmod) {
-            $xml .= '<lastmod>' . htmlspecialchars($lastmod->copy()->utc()->toAtomString(), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</lastmod>';
+            $xml .= '<lastmod>' . htmlspecialchars((is_string($lastmod) ? \Carbon\Carbon::parse($lastmod) : $lastmod)->copy()->utc()->toAtomString(), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</lastmod>';
         }
         $xml .= '</url>';
     }
