@@ -2,12 +2,9 @@
 
 use App\Models\Game;
 use App\Models\CommunityPost;
-use App\Models\Result;
 use App\Models\Page;
-use App\Services\MonthlyChartService;
 use App\Services\AppSettingsService;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/firebase-config.js', function () {
