@@ -46,6 +46,27 @@ Route::controller(MainController::class)->group(function () {
         return redirect()->route('frontend.market', ['slug' => $game->slug], 301);
     })->where('slug', '[A-Za-z0-9-]+')->name('frontend.legacy-market');
 
+    Route::get('/charts/{slug}', function (string $slug) {
+        $game = \App\Models\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+
+        return redirect()->route('frontend.market', ['slug' => $game->slug], 301);
+    })->where('slug', '[A-Za-z0-9-]+')->name('frontend.legacy-chart-root');
+
+    Route::get('/charts/{slug}/{year}', function (string $slug, string $year) {
+        $game = \App\Models\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+        $yearNumber = (int) $year;
+        $now = now()->timezone(config('app.timezone'));
+        abort_if($yearNumber < 2000 || $yearNumber > (int) $now->format('Y'), 404);
+        $months = app(\App\Services\MonthlyChartService::class)->availableMonths($game->id);
+        abort_unless(isset($months[$yearNumber]) && $months[$yearNumber] !== [], 404);
+
+        return redirect()->route('frontend.market', [
+            'slug' => $game->slug,
+            'year' => $yearNumber,
+            'month' => $months[$yearNumber][0],
+        ], 301);
+    })->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}'])->name('frontend.legacy-chart-year');
+
     Route::get('/charts/{slug}/year/{year}', function (string $slug, string $year) {
         $game = \App\Models\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
         abort_if((int) $year < 2000 || (int) $year > (int) now()->timezone(config('app.timezone'))->format('Y'), 404);
