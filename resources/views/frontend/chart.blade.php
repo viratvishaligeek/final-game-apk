@@ -2,7 +2,7 @@
 @section('title', $game->name . ' ' . $monthLabel . ' Satta King Result Chart | ' . setting('title', 'Play Online Khaiwal'))
 @section('meta_description', 'Browse the ' . $monthLabel . ' Satta King result chart for ' . $game->name . ' on Play Online Khaiwal. Review saved date-wise records; unavailable results are marked pending.')
 @section('meta_keywords', $game->name . ', ' . $monthLabel . ' result chart, Satta King monthly chart, Satta Result Chart')
-@section('robots_content', $hasPublishedResults ? setting('robots_default', 'index,follow') : 'noindex,follow')
+@section('robots_content', $hasPublishedResults && (int) request()->query('page', 1) <= 1 ? setting('robots_default', 'index,follow') : 'noindex,follow')
 @section('structured_data')
     @php
         $chartCanonical = rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/charts/' . $game->slug . '/' . $year . '/' . $month;
