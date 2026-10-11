@@ -457,6 +457,7 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->assertStringNotContainsString('Second Market', $boardHtml);
         $this->assertStringContainsString('First Market', $boardHtml);
         $this->assertStringContainsString('Third Market', $boardHtml);
+        $this->assertTrue(strpos($boardHtml, 'First Market') < strpos($boardHtml, 'Third Market'), 'Daily result cards must retain serial order.');
 
         preg_match('/<div class="market-grid" id="market-grid">(.*?)<\/div>\s*<p class="empty-state" id="no-markets"/s', $html, $marketGrid);
         $marketHtml = $marketGrid[1] ?? '';
@@ -464,6 +465,7 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->assertStringContainsString('href="/result/first-market"', $marketHtml);
         $this->assertStringContainsString('href="/result/third-market"', $marketHtml);
         $this->assertStringNotContainsString('href="/result/second-market"', $marketHtml);
+        $this->assertTrue(strpos($marketHtml, 'First Market') < strpos($marketHtml, 'Third Market'), 'Market cards must retain serial order.');
 
         preg_match_all('/href="#([^"]+)"/', $html, $fragmentLinks);
         preg_match_all('/\bid="([^"]+)"/', $html, $elementIds);
