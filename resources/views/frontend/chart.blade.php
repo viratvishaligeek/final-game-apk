@@ -90,6 +90,7 @@
                 <b>No published results for {{ $monthLabel }}.</b>
                 <p>Select another available month above to browse this market's stored records.</p>
             </div>
+        @endif
         <div class="table-shell light-table"><div class="table-scroll">
                 <table class="quick-record-table monthly-result-table">
                     <thead><tr><th>Game</th><th>Date</th><th>Result</th><th>Status</th></tr></thead>
