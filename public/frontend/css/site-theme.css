@@ -424,3 +424,14 @@ a,button,input,summary{-webkit-tap-highlight-color:transparent}
 .community-reply p { margin:0 0 8px; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.65; }
 .community-reply small { color:#44536b; }
 @media (max-width:640px) { .community-form, .community-post { padding:16px; } .yearly-result-table th, .yearly-result-table td { padding:9px 7px; font-size:12px; } }
+
+/* Consistent readable tables across frontend sections. */
+.quick-record-table th, .quick-record-table td { border-right: 1px solid #53647d; font-size: 13px; line-height: 1.5; }
+.quick-record-table thead th { font-size: 12px; font-weight: 900; color: #fff; background: #10264a; border-bottom: 2px solid #53647d; }
+.quick-record-table tbody th { color: #152641; font-weight: 800; }
+.light-table .quick-record-table thead th { background: #dce6f4; color: #132748; border-color: #8e9fb7; }
+.light-table .quick-record-table tbody td, .light-table .quick-record-table tbody th { color: #172945; border-color: #a9b7cb; }
+.light-table .quick-record-table tbody tr:nth-child(even) td { background: #eef3fa; }
+.light-table .quick-record-table tbody tr:nth-child(odd) td { background: #fff; }
+.light-table .quick-record-table .table-result { border: 1px solid #9bacc4; }
+.light-table .quick-record-table .table-empty { color: #344761 !important; }
