@@ -15,7 +15,7 @@
         <nav class="primary-nav" id="primary-nav" aria-label="Main navigation">
             <a href="{{ route('index') }}">Home</a>
             <a href="{{ route('index') }}#today-results">Results</a>
-            <a href="{{ route('index') }}#market-charts">Charts</a>
+            <a href="{{ route('index') }}#market-charts">Monthly charts</a>
             <a href="{{ route('community.index') }}">Guessing</a>
             <a href="{{ route('index') }}#records">Records</a>
             <a href="{{ route('information', ['page' => 'faq']) }}">Help / FAQ</a>
