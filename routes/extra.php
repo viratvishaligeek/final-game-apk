@@ -3,6 +3,7 @@
 use App\Models\Game;
 use App\Models\CommunityPost;
 use App\Models\Page;
+use App\Models\Result;
 use App\Services\AppSettingsService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
