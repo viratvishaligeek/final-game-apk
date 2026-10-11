@@ -60,7 +60,7 @@ class GuessingAndYearlyChartTest extends TestCase
         Result::create(['game_id' => $game->id, 'game_date' => '2024-02-29', 'type' => 'jodi', 'number' => '09']);
 
         $this->get(route('frontend.year-chart', ['slug' => $game->slug, 'year' => 2024]))
-            ->assertRedirect(route('frontend.market', ['slug' => $game->slug]));
+            ->assertRedirect(route('frontend.market', ['slug' => $game->slug, 'year' => 2024, 'month' => 2]));
         $this->assertDatabaseCount('results', 1);
     }
 
