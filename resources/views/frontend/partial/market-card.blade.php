@@ -1,4 +1,4 @@
-<article class="market-card market-card--{{ ($index ?? 0) % 6 }} {{ ($index ?? 0) === 0 ? 'market-card--featured' : '' }}">
+<article class="market-card market-card--{{ ($index ?? 0) % 6 }}">
     <div class="market-card-top"><span class="market-chip">MARKET {{ str_pad((string)($game['serial'] ?? (($index ?? 0)+1)),2,'0',STR_PAD_LEFT) }}</span><span class="market-time">◷ {{ $game['time'] }}</span></div>
     <h3>{{ $game['name'] }}</h3>
     <div class="market-result-pair"><div><small>YESTERDAY</small><strong>{{ $game['yesterday'] }}</strong></div><span class="result-arrow">→</span><div class="today-value"><small>TODAY</small><strong>{{ $game['today'] }}</strong></div></div>
