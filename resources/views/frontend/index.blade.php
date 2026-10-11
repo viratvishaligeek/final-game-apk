@@ -94,7 +94,7 @@
             ])
             <div class="result-board-grid">
                 @forelse($remainingFrontendResults as $index => $game)
-                    <article class="result-board-card {{ $index === 0 ? 'result-board-card--lead' : '' }}">
+                    <article class="result-board-card">
                         <div class="result-board-head">
                             <span class="market-index">{{ str_pad((string) ($game['serial'] ?? ($index + 1)), 2, '0', STR_PAD_LEFT) }}</span>
                             <span
