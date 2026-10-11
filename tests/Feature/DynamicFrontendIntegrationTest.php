@@ -436,7 +436,7 @@ class DynamicFrontendIntegrationTest extends TestCase
             'type' => 'jodi',
             'number' => '22',
             'created_at' => '2026-10-11 09:00:00',
-            'updated_at' => '2026-10-11 10:30:00',
+            'updated_at' => '2026-10-11 09:30:00',
         ]);
         Result::create([
             'game_id' => $third->id,
