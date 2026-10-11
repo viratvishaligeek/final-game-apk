@@ -32,7 +32,7 @@ class DynamicFrontendIntegrationTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_homepage_renders_saved_sections_and_paginated_current_month_results(): void
+    public function test_homepage_renders_current_month_results_as_date_by_game_tables(): void
     {
         Setting::updateOrCreate(['option' => 'chart_chunk_size'], ['value' => '1']);
         app(AppSettingsService::class)->forgetCache();
@@ -73,10 +73,12 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertSee('Managed section body')
             ->assertSee('October 2026')
             ->assertSee('Download App')
-            ->assertSee('<th>Game</th><th>Date</th><th>Result</th><th>Status</th><th>Full-year chart</th>', false)
+            ->assertSee('<th scope="col">Date</th>', false)
+            ->assertSee('First Market')
+            ->assertSee('Second Market')
             ->assertSee('07')
-            ->assertSee('1 entries per page')
-            ->assertSee('Next')
+            ->assertDontSee('entries per page')
+            ->assertDontSee('Current-month chart pagination')
             ->assertDontSee('99');
 
         $this->assertDatabaseMissing('results', ['game_id' => $second->id, 'type' => 'jodi']);
@@ -172,41 +174,63 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->get(route('frontend.page', ['slug' => 'hidden-page']))->assertNotFound();
     }
 
-    public function test_dedicated_game_chart_is_month_scoped_and_legacy_urls_redirect_to_monthly_urls(): void
+    public function test_slug_only_result_page_and_monthly_ajax_endpoint_return_only_selected_game_data(): void
     {
-        Setting::updateOrCreate(['option' => 'chart_chunk_size'], ['value' => '50']);
-        app(AppSettingsService::class)->forgetCache();
         $game = $this->createGame('First Market', 'first-market', 1);
+        $other = $this->createGame('Second Market', 'second-market', 2);
+        Result::create(['game_id' => $game->id, 'game_date' => '2026-10-05', 'type' => 'jodi', 'number' => '07']);
+        Result::create(['game_id' => $game->id, 'game_date' => '2026-09-30', 'type' => 'jodi', 'number' => '99']);
+        Result::create(['game_id' => $other->id, 'game_date' => '2026-10-05', 'type' => 'jodi', 'number' => '55']);
 
-        Result::create([
-            'game_id' => $game->id,
-            'game_date' => '2026-09-30',
-            'type' => 'jodi',
-            'number' => '99',
-        ]);
-        Result::create([
-            'game_id' => $game->id,
-            'game_date' => '2026-10-05',
-            'type' => 'jodi',
-            'number' => '07',
-        ]);
+        $this->get('/result/first-market')->assertOk()->assertSee('October 2026')->assertSee('First Market')->assertSee('07')->assertDontSee('55');
 
-        $this->get(route('frontend.chart', ['slug' => $game->slug, 'year' => 2026, 'month' => 10]))
-            ->assertOk()
-            ->assertSee('October 2026')
-            ->assertSee('First Market')
-            ->assertSee('07')
-            ->assertDontSee('99')
-            ->assertSee('<th>Game</th><th>Date</th><th>Result</th><th>Status</th>', false);
+        $this->postJson('/get_result', ['slug' => 'first-market', 'year' => '2026', 'month' => '10'])
+            ->assertOk()->assertJsonPath('game.slug', 'first-market')
+            ->assertJsonPath('month_label', 'October 2026')
+            ->assertJsonPath('days.4.result', '07')
+            ->assertJsonMissing(['result' => '55']);
 
-        $this->get(route('frontend.chart', ['slug' => $game->slug, 'year' => 2026, 'month' => 9]))
-            ->assertOk()
-            ->assertSee('September 2026')
-            ->assertSee('>99</span>', false)
-            ->assertDontSee('>07</span>', false);
+        $this->postJson('/get_result', ['slug' => 'first-market', 'year' => '2026', 'month' => '9'])
+            ->assertOk()->assertJsonPath('days.29.result', '99');
+        $this->postJson('/get_result', ['slug' => 'not-a-game', 'year' => '2026', 'month' => '10'])->assertNotFound();
+        $this->postJson('/get_result', ['slug' => 'first-market', 'year' => '2026', 'month' => '13'])->assertUnprocessable();
+        $this->postJson('/get_result', ['slug' => 'first-market', 'year' => '2027', 'month' => '1'])->assertNotFound();
+        $this->get('/about')->assertOk();
+        $this->get('/not-a-real-page')->assertNotFound();
+    }
 
-        $this->get(route('frontend.chart', ['slug' => $game->slug]))
-            ->assertRedirect(route('frontend.chart', ['slug' => $game->slug, 'year' => 2026, 'month' => 10]));
+    public function test_homepage_chunk_setting_distributes_games_evenly_without_pagination(): void
+    {
+        Setting::updateOrCreate(['option' => 'chart_chunk_size'], ['value' => '10']);
+        app(AppSettingsService::class)->forgetCache();
+        for ($i = 1; $i <= 22; $i++) {
+            $this->createGame('Market ' . $i, 'market-' . $i, $i);
+        }
+
+        $response = $this->get(route('index'))->assertOk();
+        preg_match_all('/<table class="quick-record-table homepage-results-table">(.*?)<\\/table>/s', $response->getContent(), $matches);
+        $this->assertCount(3, $matches[1]);
+        $sizes = [];
+        foreach ($matches[1] as $table) {
+            preg_match_all('/<th scope="col"><a href="/', $table, $headers);
+            $sizes[] = count($headers[0]);
+        }
+        $this->assertSame([8, 7, 7], $sizes);
+        $this->assertStringNotContainsString('pagination', strtolower($response->getContent()));
+    }
+
+    public function test_legacy_market_and_month_urls_redirect_to_the_slug_only_result_page(): void
+    {
+        $game = $this->createGame('First Market', 'first-market', 1);
+        Result::create(['game_id' => $game->id, 'game_date' => '2025-05-12', 'type' => 'jodi', 'number' => '18']);
+
+        $this->get('/markets/first-market')->assertRedirect(route('frontend.market', ['slug' => $game->slug]));
+        $this->get('/charts/first-market/2025/5')
+            ->assertRedirect(route('frontend.market', ['slug' => $game->slug, 'year' => 2025, 'month' => 5]));
+        $this->get('/charts/first-market/2025/13')->assertNotFound();
+        $this->get('/charts/not-a-real-game/2025/5')->assertNotFound();
+        $this->get('/chart/2025/5/first-market')
+            ->assertRedirect(route('frontend.market', ['slug' => $game->slug, 'year' => 2025, 'month' => 5]));
     }
 
     public function test_public_winners_require_an_explicit_approved_display_name(): void
@@ -331,7 +355,7 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->assertStringNotContainsString('91XXXXXXXXXX', $whatsappContent);
     }
 
-    public function test_canonical_brand_metadata_and_sitemap_use_monthly_urls(): void
+    public function test_canonical_brand_metadata_and_sitemap_use_slug_only_result_urls(): void
     {
         Setting::updateOrCreate(['option' => 'canonical_url'], ['value' => 'https://playonlinekhaiwal.com']);
         Setting::updateOrCreate(['option' => 'title'], ['value' => 'Play Online Khaiwal']);
@@ -362,9 +386,9 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->get(route('sitemap'))
             ->assertOk()
             ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
-            ->assertSee('https://playonlinekhaiwal.com/charts/first-market/2026/10')
-            ->assertSee('https://playonlinekhaiwal.com/charts/first-market/2026/9')
-            ->assertDontSee('https://playonlinekhaiwal.com/charts/first-market/2026</loc>');
+            ->assertSee('https://playonlinekhaiwal.com/result/first-market')
+            ->assertDontSee('https://playonlinekhaiwal.com/charts/first-market')
+            ->assertDontSee('https://playonlinekhaiwal.com/get_result');
     }
 
     private function createGame(string $name, string $slug, int $serial): Game
