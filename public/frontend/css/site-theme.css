@@ -384,3 +384,43 @@ a,button,input,summary{-webkit-tap-highlight-color:transparent}
 .monthly-result-table tbody th a:hover {
     text-decoration: underline;
 }
+
+
+/* Yearly result matrix and Guessing community: scoped, theme-compatible styles. */
+.yearly-chart-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+.yearly-result-table { min-width: 980px; table-layout: fixed; }
+.yearly-result-table th, .yearly-result-table td { padding: 10px 9px; border-right: 1px solid #52627a; border-bottom: 1px solid #52627a; text-align: center; font-size: 13px; line-height: 1.45; }
+.yearly-result-table thead th { position: sticky; top: 0; z-index: 2; background: #12284d; color: #fff; font-size: 12px; font-weight: 800; }
+.yearly-result-table .year-date-col { position: sticky; left: 0; z-index: 3; width: 66px; min-width: 66px; background: #e7edf7; color: #102344; font-weight: 900; border-right: 2px solid #52627a; }
+.yearly-result-table thead .year-date-col { background: #0b1d43; color: #fff; }
+.yearly-result-table tbody tr:nth-child(even) td { background: #f0f4fa; }
+.yearly-result-table tbody tr:nth-child(odd) td { background: #fff; }
+.yearly-result-table .table-result { min-width: 34px; padding: 4px 5px; font-size: 14px; border: 1px solid #b8c5d8; }
+.yearly-empty { color: #44536b; font-weight: 700; }
+.yearly-not-applicable { color: #8b98aa; }
+.community-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+.community-form-wrap { max-width: 880px; }
+.community-form { display:grid; gap:10px; padding:24px; margin:18px 0; border:1px solid #c6d1e1; border-radius:12px; background:#fff; color:#14213d; box-shadow:0 8px 24px #0b1d4310; }
+.community-form label { margin-top:8px; color:#14213d; font-weight:800; font-size:14px; }
+.community-form input:not([type=checkbox]), .community-form select, .community-form textarea { width:100%; min-height:44px; padding:11px 12px; border:1px solid #9baac0; border-radius:7px; background:#fff; color:#14213d; font:inherit; }
+.community-form textarea { resize:vertical; line-height:1.6; }
+.community-form input:focus-visible, .community-form select:focus-visible, .community-form textarea:focus-visible { outline:3px solid #1e62dc55; outline-offset:2px; border-color:#1e62dc; }
+.community-form .button { justify-self:start; margin-top:12px; }
+.community-form p { margin:8px 0 0; color:#263752; }
+.community-form p a, .community-post h2 a { color:#174ed1; font-weight:800; }
+.community-checkbox { display:flex; align-items:center; gap:9px; }
+.community-error { color:#a51f2b; font-weight:700; }
+.community-notice { padding:14px 16px; margin:0 0 18px; border-left:4px solid #17844c; background:#e9f7ef; color:#155b37; font-weight:700; }
+.community-post { padding:22px; margin:0 0 18px; border:1px solid #bdc9da; border-radius:12px; background:#fff; color:#14213d; box-shadow:0 7px 22px #0b1d430d; }
+.community-post-meta, .community-post-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; color:#44536b; font-size:13px; }
+.community-topic { display:inline-block; padding:5px 9px; border-radius:6px; background:#e5edff; color:#123f9b; font-weight:900; }
+.community-post h2 { margin:13px 0 8px; font-size:clamp(20px, 2.5vw, 27px); line-height:1.3; }
+.community-post-body { margin:10px 0 16px; color:#253752; line-height:1.75; white-space:pre-wrap; overflow-wrap:anywhere; }
+.community-post-foot { border-top:1px solid #d5deea; padding-top:14px; }
+.community-post-foot a { color:#174ed1; font-weight:800; }
+.community-post-detail { margin-bottom:28px; }
+.community-replies-heading { margin:24px 0 14px; color:#14213d; }
+.community-reply { padding:16px; margin:10px 0; border:1px solid #c6d1e1; border-radius:9px; background:#f4f7fc; color:#14213d; }
+.community-reply p { margin:0 0 8px; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.65; }
+.community-reply small { color:#44536b; }
+@media (max-width:640px) { .community-form, .community-post { padding:16px; } .yearly-result-table th, .yearly-result-table td { padding:9px 7px; font-size:12px; } }
