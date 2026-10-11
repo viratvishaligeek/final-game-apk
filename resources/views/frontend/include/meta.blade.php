@@ -10,7 +10,7 @@
     $ogDescription = $useGlobalSocialDefaults && filled(setting('og_description')) ? trim(strip_tags((string) setting('og_description'))) : $sectionDescription;
     $metaImage = setting('og_image', setting('site_logo'));
     $canonicalPath = request()->getPathInfo();
-    $canonicalUrl = $canonicalBase . ($canonicalPath === '/' ? '' : $canonicalPath);
+    $canonicalUrl = $canonicalBase . ($canonicalPath === '/' ? '/' : $canonicalPath);
     if (request()->routeIs('index')) {
         // Query-string archive variants now resolve to the current-month homepage;
         // keep the root URL canonical and avoid creating duplicate indexable pages.
