@@ -150,6 +150,15 @@
                         </div>
                     @endforeach
                     <div class="col-lg-6 mb-3">
+                        <label class="small mb-1" for="community_post_approval">Community Post Approval</label>
+                        <select class="form-select" id="community_post_approval" name="community_post_approval">
+                            <option value="manual" {{ old('community_post_approval', optional($setting->firstWhere('option', 'community_post_approval'))->value ?? 'manual') === 'manual' ? 'selected' : '' }}>Manual Approval</option>
+                            <option value="automatic" {{ old('community_post_approval', optional($setting->firstWhere('option', 'community_post_approval'))->value ?? 'manual') === 'automatic' ? 'selected' : '' }}>Automatic Approval</option>
+                        </select>
+                        <small class="text-muted">Manual mode keeps new posts private until an administrator approves them. Changing the mode does not publish existing pending posts.</small>
+                        @error('community_post_approval')<small class="text-danger">{{ $message }}</small>@enderror
+                    </div>
+                    <div class="col-lg-6 mb-3">
                         <label class="small mb-1" for="chart_chunk_size">Monthly Chart Entries Per Page</label>
                         <input class="form-control" id="chart_chunk_size" name="chart_chunk_size" type="number" min="1" max="50"
                             value="{{ old('chart_chunk_size', optional($setting->firstWhere('option', 'chart_chunk_size'))->value ?? 10) }}">
