@@ -19,8 +19,6 @@ class MainController extends Controller
 {
     public function index(Request $request, MonthlyChartService $charts)
     {
-        // The homepage always shows the current calendar month in the configured
-        // application timezone. Historical browsing belongs on each game's chart.
         $now = now()->timezone(config('app.timezone'));
         $selectedYear = (int) $now->format('Y');
         $selectedMonth = (int) $now->format('n');
@@ -61,19 +59,9 @@ class MainController extends Controller
         }
         $homeSchema = ['@context' => 'https://schema.org', '@graph' => $homeGraph];
 
-        $topWinners = Winner::query()
-            ->where('is_public', true)
-            ->whereNotNull('public_display_name')
-            ->where('public_display_name', '<>', '')
-            ->with('game:id,name,slug')
-            ->orderByDesc('game_date')
-            ->orderByDesc('id')
-            ->limit(10)
-            ->get(['id', 'game_id', 'public_display_name', 'number', 'type', 'game_date']);
-
         return view('frontend.index', compact(
             'frontendResults', 'marketResults', 'recordYears', 'homepageSections',
-            'faqs', 'topWinners', 'monthlyTables', 'monthDays',
+            'faqs', 'monthlyEntries', 'hasMonthlyResults',
             'monthLabel', 'chunkSize', 'selectedYear', 'selectedMonth', 'homeSchema'
         ));
     }

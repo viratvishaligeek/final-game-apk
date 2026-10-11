@@ -26,7 +26,7 @@ class CommunityAuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:10'],
             'password' => ['required', 'string', 'max:200'],
         ]);
         $phone = preg_replace('/[\s-]/', '', trim($data['phone'])) ?? '';

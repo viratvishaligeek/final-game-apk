@@ -40,7 +40,7 @@ class AuthController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:200'],
-            'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/', 'unique:users,phone'],
+            'phone' => ['required', 'string', 'max:10', 'regex:/^\+?[0-9]{7,15}$/', 'unique:users,phone'],
             'password' => ['required', 'string', 'min:8'],
             'referral_code' => ['nullable', 'string', 'max:32', 'exists:users,referral_code'],
         ]);

@@ -110,40 +110,6 @@
         </div>
     </section>
 
-    <section class="section-block section-light" id="top-winners">
-        <div class="wrap">
-            @include('frontend.partial.section-heading', [
-                'eyebrow' => 'PUBLIC WINNER RECORDS',
-                'title' => 'Top 10 <span>Winners</span>',
-                'description' =>
-                    'Latest approved winner records appear first, up to 10 entries. Only administrator-approved display names are shown; private profile names and winning amounts are never published.',
-            ])
-            <div class="result-board-grid">
-                @forelse ($topWinners as $winner)
-                    <article class="result-board-card {{ $loop->first ? 'result-board-card--lead' : '' }}">
-                        <div class="result-board-head">
-                            <span
-                                class="market-index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
-                            <span class="result-state is-published"><i></i>PUBLIC RECORD</span>
-                        </div>
-                        <h3>{{ $winner->public_display_name }}</h3>
-                        <div class="result-big">{{ str_pad((string) $winner->number, 2, '0', STR_PAD_LEFT) }}</div>
-                        <div class="result-meta">
-                            <span>{{ $winner->game?->name ?? 'Market record' }}</span>
-                            <span>{{ \Carbon\Carbon::parse($winner->game_date)->format('d M Y') }}</span>
-                        </div>
-                    </article>
-                @empty
-                    <div class="empty-state">
-                        <b>Winner records will appear here when approved.</b>
-                        <p>No winner has been approved for public display yet. This section does not use demo names or
-                            invented winnings.</p>
-                    </div>
-                @endforelse
-            </div>
-        </div>
-    </section>
-
     @include('frontend.partial.homepage-sections', [
         'sections' => $homepageSections->where('location', 'second_place'),
     ])
