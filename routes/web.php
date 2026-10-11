@@ -37,21 +37,7 @@ Route::controller(MainController::class)->group(function () {
     Route::get('/charts/{slug}/year/{year}', 'yearChart')->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}'])->name('frontend.year-chart');
     Route::get('/charts/{slug}/{year?}/{month?}', 'chart')->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}', 'month' => '[0-9]{1,2}'])->name('frontend.chart');
 
-Route::get('/chart/{year}/{month}/{slug}', function (string $year, string $month, string $slug) {
-    $now = now()->timezone(config('app.timezone'));
-    $yearNumber = (int) $year;
-    $monthNumber = (int) $month;
-    abort_if($yearNumber < 2000 || $yearNumber > (int) $now->format('Y') || $monthNumber < 1 || $monthNumber > 12, 404);
-    abort_if($yearNumber === (int) $now->format('Y') && $monthNumber > (int) $now->format('n'), 404);
-    $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
-    if ($yearNumber < (int) $now->format('Y') || $monthNumber < (int) $now->format('n')) {
-        $start = sprintf('%04d-%02d-01', $yearNumber, $monthNumber);
-        $end = \Carbon\Carbon::createFromDate($yearNumber, $monthNumber, 1, config('app.timezone'))->endOfMonth()->toDateString();
-        abort_unless(Result::query()->where('game_id', $game->id)->where('type', 'jodi')->whereBetween('game_date', [$start, $end])->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
-    }
-
-    return redirect()->route('frontend.chart', ['slug' => $game->slug, 'year' => $yearNumber, 'month' => $monthNumber], 301);
-})->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}', 'slug' => '[A-Za-z0-9-]+'])->name('frontend.legacy-chart');
+Route::get('/chart/{year}/{month}/{slug}', 'legacyChart')->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}', 'slug' => '[A-Za-z0-9-]+'])->name('frontend.legacy-chart');
     Route::get('/info/{page}', 'information')->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])->name('information');
     Route::get('/pages/{slug}', 'showPage')->where('slug', '[A-Za-z0-9-]+')->name('frontend.page');
 });
