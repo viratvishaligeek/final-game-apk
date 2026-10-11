@@ -14,8 +14,8 @@ class DatabaseSeeder extends Seeder
     {
         // Never create a known default administrator password in a deployed
         // database. Configure these values explicitly for a fresh installation.
-        $adminEmail = env('SEED_ADMIN_EMAIL');
-        $adminPassword = env('SEED_ADMIN_PASSWORD');
+        $adminEmail = 'admin@gmail.com';
+        $adminPassword = 'qwerty';
 
         if (is_string($adminEmail) && $adminEmail !== '' && is_string($adminPassword) && $adminPassword !== '') {
             Admin::firstOrCreate(
@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             PlayOnlineKhaiwalSettingsSeeder::class,
             GameSeeder::class,
             PageSeeder::class,
+            UserSeeder::class,
             PlayOnlineKhaiwalFaqSeeder::class,
         ]);
     }

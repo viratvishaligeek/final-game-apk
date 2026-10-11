@@ -1,7 +1,14 @@
 @extends('frontend.include.app')
-@section('title', request()->filled('year') || request()->filled('month') ? $monthLabel . ' Satta King Result Chart | ' . (filled(setting('title')) ? setting('title') : 'Play Online Khaiwal') : (filled(setting('meta_title')) ? setting('meta_title') : 'Play Online Khaiwal | Satta King Results & Monthly Charts'))
-@section('robots_content', (request()->filled('year') || request()->filled('month')) && !$hasMonthlyResults ? 'noindex,follow' : setting('robots_default', 'index,follow'))
-@section('meta_description', request()->filled('year') || request()->filled('month') ? 'Browse the ' . $monthLabel . ' Satta King monthly result chart across active markets on Play Online Khaiwal. Values reflect saved records; missing results are marked pending.' : (filled(setting('meta_description')) ? setting('meta_description') : (filled(setting('site_description')) ? setting('site_description') : 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on Play Online Khaiwal.')))
+@section('title', request()->filled('year') || request()->filled('month') ? $monthLabel . ' Satta King Result Chart | '
+    . (filled(setting('title')) ? setting('title') : 'Play Online Khaiwal') : (filled(setting('meta_title')) ?
+    setting('meta_title') : 'Play Online Khaiwal | Satta King Results & Monthly Charts'))
+@section('robots_content', (request()->filled('year') || request()->filled('month')) && !$hasMonthlyResults ?
+    'noindex,follow' : setting('robots_default', 'index,follow'))
+@section('meta_description', request()->filled('year') || request()->filled('month') ? 'Browse the ' . $monthLabel . '
+    Satta King monthly result chart across active markets on Play Online Khaiwal. Values reflect saved records; missing
+    results are marked pending.' : (filled(setting('meta_description')) ? setting('meta_description') :
+    (filled(setting('site_description')) ? setting('site_description') : 'Browse Satta King results, Satta Matka market
+    records, and game-wise monthly charts on Play Online Khaiwal.')))
 @section('content')
     <div class="freshness-bar">
         <div class="wrap freshness-inner"><span class="freshness-date"><b>DATE DESK</b>
@@ -10,15 +17,21 @@
                 href="{{ route('information', ['page' => 'disclaimer']) }}">Data & legal notice ↗</a></div>
     </div>
 
-    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'first_place')])
+    @include('frontend.partial.homepage-sections', [
+        'sections' => $homepageSections->where('location', 'first_place'),
+    ])
 
     <section class="hero-shell" id="home">
         <div class="hero-grid wrap">
             <div class="hero-copy">
                 <p class="hero-kicker"><span class="kicker-line"></span> THE RESULT & RECORD CENTER</p>
-                <h1>{{ setting('homepage_heading_line1', 'Every market.') }}<br><span>{{ setting('homepage_heading_line2', 'Every record.') }}</span><br><em>{{ setting('homepage_heading_line3', 'One clear board.') }}</em></h1>
-                <p class="hero-intro">{{ setting('homepage_intro', 'Find published results, compare recent records, and move straight into the chart you need. Clear status labels separate available results from pending records.') }}</p>
-                <div class="hero-actions"><a class="button button-gold" href="{{ route('frontend.app-download') }}">Download App
+                <h1>{{ setting('homepage_heading_line1', 'Every market.') }}<br><span>{{ setting('homepage_heading_line2', 'Every record.') }}</span><br><em>{{ setting('homepage_heading_line3', 'One clear board.') }}</em>
+                </h1>
+                <p class="hero-intro">
+                    {{ setting('homepage_intro', 'Find published results, compare recent records, and move straight into the chart you need. Clear status labels separate available results from pending records.') }}
+                </p>
+                <div class="hero-actions"><a class="button button-gold" href="{{ route('frontend.app-download') }}">Download
+                        App
                         <span>↓</span></a><a class="button button-outline" href="#records">Register Now
                         <span>↗</span></a></div>
                 <div class="hero-facts">
@@ -26,7 +39,8 @@
                     <div><strong>{{ count($recordYears) }}</strong><span>Record years</span></div>
                     <div>
                         <strong>{{ collect($frontendResults)->filter(fn($g) => $g['today'] !== '--')->count() }}</strong><span>Today's
-                            published</span></div>
+                            published</span>
+                    </div>
                 </div>
             </div>
             <div class="hero-spotlight">
@@ -38,7 +52,8 @@
                 @if ($featured)
                     <div class="spotlight-market">{{ $featured['name'] }}</div>
                     <div class="spotlight-date">{{ now()->timezone(config('app.timezone'))->format('d F Y') }}
-                        <span>•</span> Scheduled {{ $featured['time'] }}</div>
+                        <span>•</span> Scheduled {{ $featured['time'] }}
+                    </div>
                     <div class="spotlight-number">{{ $featured['today'] }}</div>
                     <div class="spotlight-caption">
                         {{ $featured['today'] === '--' ? 'NO RESULT PUBLISHED FOR CURRENT BUSINESS DATE' : 'PUBLISHED RESULT FOR CURRENT BUSINESS DATE' }}
@@ -56,7 +71,9 @@
         <div class="hero-decor hero-decor-two"></div>
     </section>
 
-    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'first_place_another')])
+    @include('frontend.partial.homepage-sections', [
+        'sections' => $homepageSections->where('location', 'first_place_another'),
+    ])
 
     <div class="quick-paths wrap"><a href="#today-results"><span class="path-icon path-red">01</span><span><b>Today's
                     board</b><small>Published and pending</small></span><strong>↗</strong></a><a href="#quick-record"><span
@@ -78,16 +95,20 @@
             <div class="result-board-grid">
                 @forelse($frontendResults as $index => $game)
                     <article class="result-board-card {{ $index === 0 ? 'result-board-card--lead' : '' }}">
-                        <div class="result-board-head"><span
-                                class="market-index">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span><span
+                        <div class="result-board-head">
+                            <span
+                                class="market-index">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                                <span
                                 class="result-state {{ $game['today'] === '--' ? 'is-pending' : 'is-published' }}"><i></i>{{ $game['today'] === '--' ? 'PENDING' : 'PUBLISHED' }}</span>
                         </div>
                         <h3>{{ $game['name'] }}</h3>
-                        <div class="result-big {{ $game['today'] === '--' ? 'result-big--pending' : '' }}">{{ $game['today'] }}
+                        <div class="result-big {{ $game['today'] === '--' ? 'result-big--pending' : '' }}">
+                            {{ $game['today'] }}
                         </div>
                         <div class="result-meta"><span>Scheduled {{ $game['time'] }}</span><span>Prev.
                                 {{ $game['yesterday'] }}</span></div><a
-                            href="{{ route('frontend.market', ['slug' => $game['slug']]) }}">Full result history <b>↗</b></a>
+                            href="{{ route('frontend.market', ['slug' => $game['slug']]) }}">Full result history
+                            <b>↗</b></a>
                 </article>@empty<div class="empty-state"><b>No active markets are configured.</b>
                         <p>Once a market is activated in the admin area, its published records will appear here.</p>
                     </div>
@@ -101,13 +122,15 @@
             @include('frontend.partial.section-heading', [
                 'eyebrow' => 'PUBLIC WINNER RECORDS',
                 'title' => 'Top 10 <span>Winners</span>',
-                'description' => 'Latest approved winner records appear first, up to 10 entries. Only administrator-approved display names are shown; private profile names and winning amounts are never published.',
+                'description' =>
+                    'Latest approved winner records appear first, up to 10 entries. Only administrator-approved display names are shown; private profile names and winning amounts are never published.',
             ])
             <div class="result-board-grid">
                 @forelse ($topWinners as $winner)
                     <article class="result-board-card {{ $loop->first ? 'result-board-card--lead' : '' }}">
                         <div class="result-board-head">
-                            <span class="market-index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                            <span
+                                class="market-index">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="result-state is-published"><i></i>PUBLIC RECORD</span>
                         </div>
                         <h3>{{ $winner->public_display_name }}</h3>
@@ -120,17 +143,22 @@
                 @empty
                     <div class="empty-state">
                         <b>Winner records will appear here when approved.</b>
-                        <p>No winner has been approved for public display yet. This section does not use demo names or invented winnings.</p>
+                        <p>No winner has been approved for public display yet. This section does not use demo names or
+                            invented winnings.</p>
                     </div>
                 @endforelse
             </div>
         </div>
     </section>
 
-    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'second_place')])
-    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'second_place_another')])
+    @include('frontend.partial.homepage-sections', [
+        'sections' => $homepageSections->where('location', 'second_place'),
+    ])
+    @include('frontend.partial.homepage-sections', [
+        'sections' => $homepageSections->where('location', 'second_place_another'),
+    ])
 
-   <section class="info-ribbon">
+    <section class="info-ribbon">
         <div class="wrap ribbon-inner">
             <div>
                 <p class="eyebrow">NEED A QUICK REFERENCE?</p>
@@ -139,7 +167,8 @@
                     never predicts missing results.</p>
             </div>
             <div class="ribbon-actions"><a class="button button-gold" href="#records">Go to record center ↗</a><a
-                    class="button button-light" href="{{ route('information', ['page' => 'faq']) }}">Read the guide</a></div>
+                    class="button button-light" href="{{ route('information', ['page' => 'faq']) }}">Read the guide</a>
+            </div>
             <div class="ribbon-stamp">RECORD<br><b>DESK</b><span>POK</span></div>
         </div>
     </section>
@@ -167,7 +196,9 @@
         </div>
     </section>
 
-    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'third_place')])
+    @include('frontend.partial.homepage-sections', [
+        'sections' => $homepageSections->where('location', 'third_place'),
+    ])
 
     <section class="info-ribbon">
         <div class="wrap ribbon-inner">
@@ -178,19 +209,23 @@
                     never predicts missing results.</p>
             </div>
             <div class="ribbon-actions"><a class="button button-gold" href="#records">Go to record center ↗</a><a
-                    class="button button-light" href="{{ route('information', ['page' => 'faq']) }}">Read the guide</a></div>
+                    class="button button-light" href="{{ route('information', ['page' => 'faq']) }}">Read the guide</a>
+            </div>
             <div class="ribbon-stamp">RECORD<br><b>DESK</b><span>POK</span></div>
         </div>
     </section>
 
-    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'third_place_another')])
+    @include('frontend.partial.homepage-sections', [
+        'sections' => $homepageSections->where('location', 'third_place_another'),
+    ])
 
     <section class="section-block section-light" id="market-charts">
         <div class="wrap">
             @include('frontend.partial.section-heading', [
                 'eyebrow' => 'MONTHLY RESULT CHART',
                 'title' => 'Monthly <span>market chart</span>',
-                'description' => 'Choose a year and month to browse saved Satta King results across all active markets. Missing results are labelled pending; future dates are not due yet.',
+                'description' =>
+                    'Choose a year and month to browse saved Satta King results across all active markets. Missing results are labelled pending; future dates are not due yet.',
             ])
             <div class="archive-overview">
                 <div class="archive-feature">
@@ -202,55 +237,85 @@
                         <label for="homepage-chart-year">Year</label>
                         <select class="form-select" id="homepage-chart-year" name="year" data-chart-year>
                             @foreach ($availableYears as $yearOption)
-                                <option value="{{ $yearOption }}" {{ (int) $yearOption === (int) $selectedYear ? 'selected' : '' }}>{{ $yearOption }}</option>
+                                <option value="{{ $yearOption }}"
+                                    {{ (int) $yearOption === (int) $selectedYear ? 'selected' : '' }}>{{ $yearOption }}
+                                </option>
                             @endforeach
                         </select>
                         <label for="homepage-chart-month">Month</label>
                         <select class="form-select" id="homepage-chart-month" name="month" data-chart-month>
                             @foreach ($monthOptions as $monthOption)
-                                <option value="{{ $monthOption }}" {{ (int) $monthOption === (int) $selectedMonth ? 'selected' : '' }}>{{ \Carbon\Carbon::createFromDate($selectedYear, $monthOption, 1, config('app.timezone'))->translatedFormat('F') }}</option>
+                                <option value="{{ $monthOption }}"
+                                    {{ (int) $monthOption === (int) $selectedMonth ? 'selected' : '' }}>
+                                    {{ \Carbon\Carbon::createFromDate($selectedYear, $monthOption, 1, config('app.timezone'))->translatedFormat('F') }}
+                                </option>
                             @endforeach
                         </select>
                         <button class="button button-dark" type="submit">View chart ↗</button>
                     </form>
                 </div>
                 <div class="archive-years">
-                    <div class="archive-years-head"><b>AVAILABLE YEARS</b><span>{{ count($availableYears) }} year{{ count($availableYears) === 1 ? '' : 's' }}</span></div>
+                    <div class="archive-years-head"><b>AVAILABLE YEARS</b><span>{{ count($availableYears) }}
+                            year{{ count($availableYears) === 1 ? '' : 's' }}</span></div>
                     @foreach ($availableYears as $yearOption)
-                        <a href="{{ route('index', ['year' => $yearOption]) }}" class="year-tile {{ (int) $yearOption === (int) $selectedYear ? 'is-current' : '' }}">
-                            <span>{{ $yearOption }}</span><small>{{ count($availableMonths[$yearOption] ?? []) }} available month{{ count($availableMonths[$yearOption] ?? []) === 1 ? '' : 's' }}</small><b>↗</b>
+                        <a href="{{ route('index', ['year' => $yearOption]) }}"
+                            class="year-tile {{ (int) $yearOption === (int) $selectedYear ? 'is-current' : '' }}">
+                            <span>{{ $yearOption }}</span><small>{{ count($availableMonths[$yearOption] ?? []) }}
+                                available
+                                month{{ count($availableMonths[$yearOption] ?? []) === 1 ? '' : 's' }}</small><b>↗</b>
                         </a>
                     @endforeach
-                    <div class="archive-years-head"><b>MONTHS · {{ $selectedYear }}</b><span>{{ count($monthOptions) }} shown</span></div>
+                    <div class="archive-years-head"><b>MONTHS · {{ $selectedYear }}</b><span>{{ count($monthOptions) }}
+                            shown</span></div>
                     <div class="year-links month-links">
                         @foreach ($monthOptions as $monthOption)
-                            <a class="{{ (int) $monthOption === (int) $selectedMonth ? 'is-current' : '' }}" href="{{ route('index', ['year' => $selectedYear, 'month' => $monthOption]) }}">{{ \Carbon\Carbon::createFromDate($selectedYear, $monthOption, 1, config('app.timezone'))->translatedFormat('F') }}</a>
+                            <a class="{{ (int) $monthOption === (int) $selectedMonth ? 'is-current' : '' }}"
+                                href="{{ route('index', ['year' => $selectedYear, 'month' => $monthOption]) }}">{{ \Carbon\Carbon::createFromDate($selectedYear, $monthOption, 1, config('app.timezone'))->translatedFormat('F') }}</a>
                         @endforeach
                     </div>
                 </div>
             </div>
-            <div class="table-shell light-table"><div class="table-scroll">
-                <table class="quick-record-table monthly-result-table">
-                    <thead><tr><th>Game</th><th>Date</th><th>Result</th><th>Status</th></tr></thead>
-                    <tbody>
-                    @forelse ($monthlyEntries as $entry)
-                        <tr>
-                            <th scope="row"><a href="{{ route('frontend.chart', ['slug' => $entry['game']->slug, 'year' => $selectedYear, 'month' => $selectedMonth]) }}">{{ $entry['game']->name }}</a></th>
-                            <td>{{ $entry['date']->format('d M Y') }}</td>
-                            <td><span class="table-result {{ $entry['status'] === 'published' ? 'is-published' : ($entry['status'] === 'upcoming' ? 'is-upcoming' : 'is-pending') }}">{{ $entry['number'] ?? '—' }}</span></td>
-                            <td>{{ $entry['status'] === 'published' ? 'Published' : ($entry['status'] === 'upcoming' ? 'Not due yet' : 'Pending') }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="4" class="table-empty">No active markets are configured for this monthly chart.</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div></div>
+            <div class="table-shell light-table">
+                <div class="table-scroll">
+                    <table class="quick-record-table monthly-result-table">
+                        <thead>
+                            <tr>
+                                <th>Game</th>
+                                <th>Date</th>
+                                <th>Result</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($monthlyEntries as $entry)
+                                <tr>
+                                    <th scope="row"><a
+                                            href="{{ route('frontend.chart', ['slug' => $entry['game']->slug, 'year' => $selectedYear, 'month' => $selectedMonth]) }}">{{ $entry['game']->name }}</a>
+                                    </th>
+                                    <td>{{ $entry['date']->format('d M Y') }}</td>
+                                    <td><span
+                                            class="table-result {{ $entry['status'] === 'published' ? 'is-published' : ($entry['status'] === 'upcoming' ? 'is-upcoming' : 'is-pending') }}">{{ $entry['number'] ?? '—' }}</span>
+                                    </td>
+                                    <td>{{ $entry['status'] === 'published' ? 'Published' : ($entry['status'] === 'upcoming' ? 'Not due yet' : 'Pending') }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="table-empty">No active markets are configured for this
+                                        monthly chart.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <nav class="mt-3" aria-label="Monthly result chart pagination">{{ $monthlyEntries->links() }}</nav>
         </div>
     </section>
 
-    @include('frontend.partial.homepage-sections', ['sections' => $homepageSections->where('location', 'before_footer')])
+    @include('frontend.partial.homepage-sections', [
+        'sections' => $homepageSections->where('location', 'before_footer'),
+    ])
 
     <section class="section-block section-light" id="records">
         <div class="wrap">
@@ -371,8 +436,10 @@
             <div>
                 <p class="eyebrow">IMPORTANT INFORMATION</p>
                 <h2>Records are information — <span>not promises.</span></h2>
-                <p>{{ setting('disclaimer_content', 'This website presents stored result information for reference. It does not guarantee accuracy, predict future outcomes, or promise financial gains. Follow applicable local laws and make responsible decisions.') }}</p>
-            </div><a class="button button-dark" href="{{ route('information', ['page' => 'disclaimer']) }}">Full disclaimer
+                <p>{{ setting('disclaimer_content', 'This website presents stored result information for reference. It does not guarantee accuracy, predict future outcomes, or promise financial gains. Follow applicable local laws and make responsible decisions.') }}
+                </p>
+            </div><a class="button button-dark" href="{{ route('information', ['page' => 'disclaimer']) }}">Full
+                disclaimer
                 ↗</a>
         </div>
     </section>
@@ -389,19 +456,19 @@
 
 
 @section('script')
-<script>
-document.querySelectorAll('[data-month-filter]').forEach(function (form) {
-    const year = form.querySelector('[data-chart-year]');
-    const month = form.querySelector('[data-chart-month]');
-    if (year && month) {
-        year.addEventListener('change', function () {
-            month.value = '';
-            form.submit();
+    <script>
+        document.querySelectorAll('[data-month-filter]').forEach(function(form) {
+            const year = form.querySelector('[data-chart-year]');
+            const month = form.querySelector('[data-chart-month]');
+            if (year && month) {
+                year.addEventListener('change', function() {
+                    month.value = '';
+                    form.submit();
+                });
+                month.addEventListener('change', function() {
+                    form.submit();
+                });
+            }
         });
-        month.addEventListener('change', function () {
-            form.submit();
-        });
-    }
-});
-</script>
+    </script>
 @endsection

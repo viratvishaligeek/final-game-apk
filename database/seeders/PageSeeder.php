@@ -77,6 +77,68 @@ HTML,
 HTML,
                 'status' => 'active',
             ],
+            [
+                'name' => 'How to Play',
+                'slug' => 'how-to-play',
+                'content' => <<<'HTML'
+<h2>How to Use Play Online Khaiwal</h2>
+
+<p>Play Online Khaiwal provides access to available historical Satta King and Satta Matka market result records and monthly charts.</p>
+
+<h3>Browse Market Results</h3>
+<p>Visit the relevant market section to view available result records. Check the market name and date carefully before reviewing an entry.</p>
+
+<h3>View Monthly Charts</h3>
+<p>Select the available year and month to browse historical records for a particular market.</p>
+
+<h3>Understand Pending Results</h3>
+<p>A pending or unavailable entry means that a result is not currently available in the website database. It should not be treated as a confirmed result.</p>
+
+<h3>Important Information</h3>
+<p>Historical charts are provided for informational reference only. They do not predict or guarantee future outcomes. Always comply with applicable local laws.</p>
+HTML,
+                'status' => 'active',
+            ],
+
+            [
+                'name' => 'Game Rates',
+                'slug' => 'game-rates',
+                'content' => <<<'HTML'
+<h2>Game Rates</h2>
+
+<p>This page provides general information about game rates associated with the markets listed on Play Online Khaiwal.</p>
+
+<h3>Market Information</h3>
+<p>Available market information and any published rates should be checked against the relevant official source. Rates and rules may differ between markets and operators.</p>
+
+<h3>Accuracy and Updates</h3>
+<p>Information may change or become outdated. Please verify current details independently before relying on them.</p>
+
+<h3>Disclaimer</h3>
+<p>Play Online Khaiwal does not guarantee the accuracy of third-party rate information or any outcome. Visitors are responsible for complying with applicable laws.</p>
+HTML,
+                'status' => 'active',
+            ],
+
+            [
+                'name' => 'Offers',
+                'slug' => 'offers',
+                'content' => <<<'HTML'
+<h2>Offers and Announcements</h2>
+
+<p>This page is reserved for official website announcements and offers published by the Play Online Khaiwal administrator.</p>
+
+<h3>Current Offers</h3>
+<p>No offer is confirmed unless it is explicitly published and verified by the website administrator.</p>
+
+<h3>Stay Informed</h3>
+<p>Check this page for updates when official announcements become available.</p>
+
+<h3>Important Notice</h3>
+<p>Be cautious of unofficial messages claiming to represent this website. Do not share passwords, payment details, or sensitive personal information with unverified sources.</p>
+HTML,
+                'status' => 'active',
+            ],
         ];
 
         foreach ($pages as $page) {
@@ -95,6 +157,10 @@ HTML,
                         'privacy-policy' => 'Read the privacy information for Play Online Khaiwal and its public result-reference pages.',
                         'terms-conditions' => 'Read the terms for using Play Online Khaiwal result records and monthly charts.',
                         'whatsapp' => 'Contact Play Online Khaiwal about website questions or corrections to displayed records.',
+                        'how-to-play' => 'Learn how to browse market results and historical monthly charts on Play Online Khaiwal.',
+                        'game-rates' => 'Read general information about market rates and published game information on Play Online Khaiwal.',
+                        'offers' => 'View official announcements and verified offers published by Play Online Khaiwal.',
+
                         default => 'Information about Play Online Khaiwal and its monthly result charts.',
                     },
                     'meta_keywords' => 'Play Online Khaiwal, Satta King result chart, monthly result records',
@@ -132,8 +198,6 @@ HTML,
                 ]);
         }
 
-        // Keep obsolete seeded play/rates/offers records for data preservation,
-        // but hide their known generic boilerplate from public navigation/indexing.
         $obsoleteDefaults = [
             'how-to-play' => '%Follow the steps below to start playing%',
             'game-rates' => '%Game rates may vary depending on the game type%',
