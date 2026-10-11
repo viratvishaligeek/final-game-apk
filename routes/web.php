@@ -41,15 +41,15 @@ Route::controller(MainController::class)->group(function () {
     // Backward-compatible redirects for established URLs; month/year are preserved
     // as noncanonical query parameters on the new game page where applicable.
     Route::get('/markets/{slug}', function (string $slug) {
-        $game = \\App\\Models\\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+        $game = \App\Models\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
 
         return redirect()->route('frontend.market', ['slug' => $game->slug], 301);
     })->where('slug', '[A-Za-z0-9-]+')->name('frontend.legacy-market');
 
     Route::get('/charts/{slug}/year/{year}', function (string $slug, string $year) {
-        $game = \\App\\Models\\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+        $game = \App\Models\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
         abort_if((int) $year < 2000 || (int) $year > (int) now()->timezone(config('app.timezone'))->format('Y'), 404);
-        abort_unless(\\App\\Models\\Result::query()->where('game_id', $game->id)->where('type', 'jodi')
+        abort_unless(\App\Models\Result::query()->where('game_id', $game->id)->where('type', 'jodi')
             ->whereBetween('game_date', [$year . '-01-01', $year . '-12-31'])
             ->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
 
@@ -57,14 +57,14 @@ Route::controller(MainController::class)->group(function () {
     })->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}'])->name('frontend.year-chart');
 
     Route::get('/charts/{slug}/{year}/{month}', function (string $slug, string $year, string $month) {
-        $game = \\App\\Models\\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+        $game = \App\Models\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
         $now = now()->timezone(config('app.timezone'));
         $yearNumber = (int) $year;
         $monthNumber = (int) $month;
         abort_if($yearNumber < 2000 || $yearNumber > (int) $now->format('Y') || $monthNumber < 1 || $monthNumber > 12, 404);
         abort_if($yearNumber === (int) $now->format('Y') && $monthNumber > (int) $now->format('n'), 404);
-        abort_unless(\\App\\Models\\Result::query()->where('game_id', $game->id)->where('type', 'jodi')
-            ->whereBetween('game_date', [sprintf('%04d-%02d-01', $yearNumber, $monthNumber), \\Carbon\\Carbon::createFromDate($yearNumber, $monthNumber, 1, config('app.timezone'))->endOfMonth()->toDateString()])
+        abort_unless(\App\Models\Result::query()->where('game_id', $game->id)->where('type', 'jodi')
+            ->whereBetween('game_date', [sprintf('%04d-%02d-01', $yearNumber, $monthNumber), \Carbon\Carbon::createFromDate($yearNumber, $monthNumber, 1, config('app.timezone'))->endOfMonth()->toDateString()])
             ->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
 
         return redirect()->route('frontend.market', ['slug' => $game->slug, 'year' => $yearNumber, 'month' => $monthNumber], 301);
