@@ -397,7 +397,7 @@ class DynamicFrontendIntegrationTest extends TestCase
 
         $this->get(route('index'))
             ->assertOk()
-            ->assertSee('<link rel="canonical" href="https://playonlinekhaiwal.com">', false)
+            ->assertSee('<link rel="canonical" href="https://playonlinekhaiwal.com/">', false)
             ->assertSee('Play Online Khaiwal')
             ->assertSee('"@type":"Organization"', false)
             ->assertSee('Download App')
