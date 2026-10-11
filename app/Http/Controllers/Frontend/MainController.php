@@ -39,9 +39,7 @@ class MainController extends Controller
         $homepageSections = HomePage::query()->where('status', 'active')->orderBy('id')->get();
         $faqs = Faq::query()->latest('id')->get();
         $chunkSize = $charts->chunkSize();
-        $monthlyRows = $charts->homepageRows($games, $monthStart, $monthEnd, $monthDays);
-        $hasMonthlyResults = $monthlyRows->contains(fn (array $row) => $row['status'] === 'published');
-        $monthlyEntries = $charts->paginate($monthlyRows, $request, $chunkSize);
+        $monthlyTables = $charts->homepageTables($games, $monthStart, $monthEnd, $monthDays, $chunkSize);
         $monthLabel = $charts->monthLabel($selectedYear, $selectedMonth);
 
         $homeCanonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/';
@@ -75,83 +73,79 @@ class MainController extends Controller
 
         return view('frontend.index', compact(
             'frontendResults', 'marketResults', 'recordYears', 'homepageSections',
-            'faqs', 'topWinners', 'monthlyEntries', 'hasMonthlyResults',
+            'faqs', 'topWinners', 'monthlyTables', 'monthDays',
             'monthLabel', 'chunkSize', 'selectedYear', 'selectedMonth', 'homeSchema'
         ));
     }
 
     /**
-     * Keep the established market URL working, but send visitors to the
-     * monthly-only chart for the current application-timezone month.
+     * Public game result page. The path is stable and contains only the game slug;
+     * legacy query parameters are accepted only for compatibility with old links.
      */
-    public function market(string $slug)
+    public function market(Request $request, string $slug, MonthlyChartService $charts)
     {
         $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
         $now = now()->timezone(config('app.timezone'));
+        $year = (int) $now->format('Y');
+        $month = (int) $now->format('n');
 
-        return redirect()->route('frontend.chart', [
-            'slug' => $game->slug,
-            'year' => (int) $now->format('Y'),
-            'month' => (int) $now->format('n'),
-        ]);
-    }
-
-    public function chart(Request $request, string $slug, ?int $year = null, ?int $month = null)
-    {
-        $charts = app(MonthlyChartService::class);
-        $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
-        $now = now()->timezone(config('app.timezone'));
-
-        if ($year === null && $request->filled('year') && filter_var($request->query('year'), FILTER_VALIDATE_INT)) {
-            $year = (int) $request->query('year');
+        if ($request->query('year') !== null || $request->query('month') !== null) {
+            $queryData = $request->validate([
+                'year' => ['sometimes', 'required', 'regex:/^[0-9]{4}$/'],
+                'month' => ['sometimes', 'required', 'integer', 'between:1,12'],
+            ]);
+            $year = (int) ($queryData['year'] ?? $year);
+            $month = (int) ($queryData['month'] ?? $month);
+            abort_if($year < 2000 || $year > (int) $now->format('Y'), 404);
+            abort_if($year === (int) $now->format('Y') && $month > (int) $now->format('n'), 404);
         }
-        if ($month === null && $request->filled('month') && filter_var($request->query('month'), FILTER_VALIDATE_INT)) {
-            $month = (int) $request->query('month');
-        }
-
-        $year ??= (int) $now->format('Y');
-        abort_if($year < 2000 || $year > (int) $now->format('Y'), 404);
-        $month ??= $year === (int) $now->format('Y')
-            ? (int) $now->format('n')
-            : (int) ($charts->availableMonths($game->id)[$year][0] ?? 0);
-        abort_if($month < 1 || $month > 12, 404);
-        abort_if($year === (int) $now->format('Y') && $month > (int) $now->format('n'), 404);
-
-        // A legitimate older month must contain stored records. Do not publish
-        // indexable empty archive URLs merely because the route parameters parse.
-        if ($year < (int) $now->format('Y') || $month < (int) $now->format('n')) {
-            abort_unless(Result::query()->where('game_id', $game->id)->where('type', 'jodi')
-                ->whereBetween('game_date', [sprintf('%04d-%02d-01', $year, $month), $now->copy()->setDate($year, $month, 1)->endOfMonth()->toDateString()])
-                ->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
-        }
-
-        if ($request->route('year') === null || $request->route('month') === null) {
-            return redirect()->route('frontend.chart', ['slug' => $game->slug, 'year' => $year, 'month' => $month], 301);
-        }
-
-        $availableMonths = $charts->availableMonths($game->id);
-        $availableYears = array_map('intval', array_keys($availableMonths));
-        $availableYears[] = $year;
-        $availableYears[] = (int) $now->format('Y');
-        $availableYears = array_values(array_unique($availableYears));
-        rsort($availableYears);
-
-        $monthOptions = $availableMonths[$year] ?? [];
-        $monthOptions[] = $month;
-        $monthOptions = array_values(array_unique($monthOptions));
-        rsort($monthOptions);
 
         [$monthStart, $monthEnd, $monthDays] = $charts->monthDates($year, $month);
-        $allRows = $charts->gameRows($game, $monthStart, $monthEnd, $monthDays);
-        $hasPublishedResults = $allRows->contains(fn (array $row) => $row['status'] === 'published');
-        $results = $charts->paginate($allRows, $request, $charts->chunkSize());
+        $results = $charts->gameRows($game, $monthStart, $monthEnd, $monthDays);
         $monthLabel = $charts->monthLabel($year, $month);
-        $chunkSize = $charts->chunkSize();
+        $currentYear = (int) $now->format('Y');
+        $currentMonth = (int) $now->format('n');
+        $canonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/')
+            . '/result/' . $game->slug;
 
-        return view('frontend.chart', compact(
-            'game', 'year', 'month', 'monthLabel', 'monthDays', 'results',
-            'availableMonths', 'availableYears', 'monthOptions', 'hasPublishedResults', 'chunkSize'
-        ));
+        return response()
+            ->view('frontend.market', compact('game', 'year', 'month', 'monthLabel', 'results', 'canonical', 'currentYear', 'currentMonth'))
+            ->header('X-Robots-Tag', $request->query->count() > 0 ? 'noindex, follow' : 'index, follow');
+    }
+
+    /**
+     * AJAX endpoint for monthly results. It deliberately returns only the
+     * requested active game's date/result pairs and never renders an indexable page.
+     */
+    public function chart(Request $request, MonthlyChartService $charts)
+    {
+        $data = $request->validate([
+            'slug' => ['required', 'string', 'regex:/^[A-Za-z0-9-]+$/'],
+            'year' => ['required', 'regex:/^[0-9]{4}$/'],
+            'month' => ['required', 'integer', 'between:1,12'],
+        ]);
+
+        $game = Game::query()->where('status', 'active')->where('slug', $data['slug'])->firstOrFail();
+        $now = now()->timezone(config('app.timezone'));
+        $year = (int) $data['year'];
+        $month = (int) $data['month'];
+        abort_if($year < 2000 || $year > (int) $now->format('Y'), 404);
+        abort_if($year === (int) $now->format('Y') && $month > (int) $now->format('n'), 404);
+
+        [$monthStart, $monthEnd, $monthDays] = $charts->monthDates($year, $month);
+        $results = $charts->gameRows($game, $monthStart, $monthEnd, $monthDays);
+
+        return response()->json([
+            'game' => ['name' => $game->name, 'slug' => $game->slug],
+            'year' => $year,
+            'month' => $month,
+            'month_label' => $charts->monthLabel($year, $month),
+            'days' => $results->map(fn (array $row) => [
+                'day' => $row['date']->day,
+                'result' => $row['number'],
+                'status' => $row['status'],
+            ])->values(),
+        ])->header('Cache-Control', 'no-store');
     }
 
     /**
