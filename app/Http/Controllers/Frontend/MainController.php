@@ -167,6 +167,16 @@ class MainController extends Controller
         ])->header('Cache-Control', 'no-store');
     }
 
+    /**
+     * Render an active administrator-managed CMS page linked from the homepage navigation.
+     */
+    public function page(string $slug)
+    {
+        $page = Page::query()->where('slug', $slug)->where('status', 'active')->firstOrFail();
+
+        return view('frontend.page', compact('page'));
+    }
+
     public function information(string $page)
     {
         $pageAliases = [
