@@ -33,12 +33,50 @@ Route::middleware(EnsureCommunityUser::class)->group(function () {
 
 Route::controller(MainController::class)->group(function () {
     Route::get('/', 'index')->name('index');
-    Route::get('/markets/{slug}', 'market')->where('slug', '[A-Za-z0-9-]+')->name('frontend.market');
-    Route::get('/charts/{slug}/year/{year}', 'yearChart')->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}'])->name('frontend.year-chart');
-    Route::get('/charts/{slug}/{year?}/{month?}', 'chart')->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}', 'month' => '[0-9]{1,2}'])->name('frontend.chart');
 
-Route::get('/chart/{year}/{month}/{slug}', 'legacyChart')->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}', 'slug' => '[A-Za-z0-9-]+'])->name('frontend.legacy-chart');
-    Route::get('/info/{page}', 'information')->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])->name('information');
+    // New stable, slug-only public game URL and the CSRF-protected AJAX endpoint.
+    Route::get('/result/{slug}', 'market')->where('slug', '[A-Za-z0-9-]+')->name('frontend.market');
+    Route::post('/get_result', 'chart')->middleware('throttle:60,1')->name('frontend.chart');
+
+    // Backward-compatible redirects for established URLs; month/year are preserved
+    // as noncanonical query parameters on the new game page where applicable.
+    Route::get('/markets/{slug}', function (string $slug) {
+        return redirect()->route('frontend.market', ['slug' => $slug], 301);
+    })->where('slug', '[A-Za-z0-9-]+')->name('frontend.legacy-market');
+
+    Route::get('/charts/{slug}/year/{year}', function (string $slug, string $year) {
+        $game = \\App\\Models\\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+        abort_if((int) $year < 2000 || (int) $year > (int) now()->timezone(config('app.timezone'))->format('Y'), 404);
+        abort_unless(\\App\\Models\\Result::query()->where('game_id', $game->id)->where('type', 'jodi')
+            ->whereBetween('game_date', [$year . '-01-01', $year . '-12-31'])
+            ->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
+
+        return redirect()->route('frontend.market', ['slug' => $game->slug], 301);
+    })->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}'])->name('frontend.legacy-year-chart');
+
+    Route::get('/charts/{slug}/{year}/{month}', function (string $slug, string $year, string $month) {
+        $game = \\App\\Models\\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+        $now = now()->timezone(config('app.timezone'));
+        $yearNumber = (int) $year;
+        $monthNumber = (int) $month;
+        abort_if($yearNumber < 2000 || $yearNumber > (int) $now->format('Y') || $monthNumber < 1 || $monthNumber > 12, 404);
+        abort_if($yearNumber === (int) $now->format('Y') && $monthNumber > (int) $now->format('n'), 404);
+        abort_unless(\\App\\Models\\Result::query()->where('game_id', $game->id)->where('type', 'jodi')
+            ->whereBetween('game_date', [sprintf('%04d-%02d-01', $yearNumber, $monthNumber), \\Carbon\\Carbon::createFromDate($yearNumber, $monthNumber, 1, config('app.timezone'))->endOfMonth()->toDateString()])
+            ->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
+
+        return redirect()->route('frontend.market', ['slug' => $game->slug, 'year' => $yearNumber, 'month' => $monthNumber], 301);
+    })->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}', 'month' => '[0-9]{1,2}'])->name('frontend.legacy-chart');
+
+    Route::get('/chart/{year}/{month}/{slug}', 'legacyChart')
+        ->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}', 'slug' => '[A-Za-z0-9-]+'])
+        ->name('frontend.legacy-chart-old');
+
+    Route::get('/{page}', 'information')
+        ->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])
+        ->name('information');
+
+    // Keep additional CMS pages available without allowing arbitrary one-segment URLs.
     Route::get('/pages/{slug}', 'showPage')->where('slug', '[A-Za-z0-9-]+')->name('frontend.page');
 });
 
