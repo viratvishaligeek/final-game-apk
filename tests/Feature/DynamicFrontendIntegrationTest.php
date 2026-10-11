@@ -212,7 +212,7 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->assertCount(3, $matches[1]);
         $sizes = [];
         foreach ($matches[1] as $table) {
-            preg_match_all('/<th scope="col"><a href="/', $table, $headers);
+            preg_match_all('/<th scope="col"><a href="[^"]+"/', $table, $headers);
             $sizes[] = count($headers[0]);
         }
         $this->assertSame([8, 7, 7], $sizes);
