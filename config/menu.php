@@ -42,6 +42,11 @@ return [
         'route' => 'admin.results.index'
     ],
     [
+        'text' => 'Guessing Community',
+        'icon' => 'message-circle',
+        'route' => 'admin.guessing.index',
+    ],
+    [
         'text' => 'Push Notifications',
         'icon' => 'bell',
         'route' => 'admin.push-notifications.index',
