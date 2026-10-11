@@ -35,7 +35,7 @@
                         <span>↓</span></a><a class="button button-outline" href="{{ route('community.register') }}">Register Now
                         <span>↗</span></a></div>
                 <div class="hero-facts">
-                    <div><strong>{{ count($marketResults) }}</strong><span>Active markets</span></div>
+                    <div><strong>{{ count($frontendResults) }}</strong><span>Active markets</span></div>
                     <div><strong>{{ count($recordYears) }}</strong><span>Record years</span></div>
                     <div>
                         <strong>{{ collect($frontendResults)->filter(fn($g) => $g['today'] !== '--')->count() }}</strong><span>Today's
@@ -48,7 +48,7 @@
                 <div class="spotlight-orbit orbit-b"></div>
                 <div class="spotlight-top"><span class="spotlight-label">FEATURED MARKET</span><span
                         class="status-badge"><i></i> DATABASE STATUS</span></div>
-                @php($featured = $frontendResults[0] ?? null)
+                @php($featured = $featuredGame)
                 @if ($featured)
                     <div class="spotlight-market">{{ $featured['name'] }}</div>
                     <div class="spotlight-date">{{ now()->timezone(config('app.timezone'))->format('d F Y') }}
@@ -76,7 +76,7 @@
     ])
 
     <div class="quick-paths wrap"><a href="#today-results"><span class="path-icon path-red">01</span><span><b>Today's
-                    board</b><small>Published and pending</small></span><strong>↗</strong></a><a href="#quick-record"><span
+                    board</b><small>Published and pending</small></span><strong>↗</strong></a><a href="#today-results"><span
                 class="path-icon path-cyan">02</span><span><b>Compare records</b><small>Yesterday vs
                     today</small></span><strong>↗</strong></a><a href="#records"><span
                 class="path-icon path-gold">03</span><span><b>Archive vault</b><small>Years and
@@ -93,10 +93,10 @@
                     'Values are taken from stored records for each market’s current business date. A dash means no result is published for that date.',
             ])
             <div class="result-board-grid">
-                @forelse($frontendResults as $index => $game)
-                    <article class="result-board-card {{ $index === 0 ? 'result-board-card--lead' : '' }}">
+                @forelse($remainingFrontendResults as $index => $game)
+                    <article class="result-board-card">
                         <div class="result-board-head">
-                            <span class="market-index">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                            <span class="market-index">{{ str_pad((string) ($game['serial'] ?? ($index + 1)), 2, '0', STR_PAD_LEFT) }}</span>
                             <span
                                 class="result-state {{ $game['today'] === '--' ? 'is-pending' : 'is-published' }}"><i></i>{{ $game['today'] === '--' ? 'PENDING' : 'PUBLISHED' }}</span>
                         </div>
@@ -348,7 +348,7 @@
     </section>
     <div class="jump-bar">
         <div class="wrap"><span>QUICK JUMP</span><a href="#today-results">Today's results</a><a
-                href="#markets">Markets</a><a href="#quick-record">Comparison</a><a href="#records">Archives</a><a
+                href="#markets">Markets</a><a href="#today-results">Comparison</a><a href="#records">Archives</a><a
                 href="#market-charts">Charts</a><a href="#faq">FAQs</a><a href="#disclaimer">Disclaimer</a></div>
     </div>
 @endsection

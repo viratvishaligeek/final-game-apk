@@ -21,7 +21,7 @@
                 @endforeach
             </div>
         </div>
-        <div><h3>Explore</h3><a href="{{ route('index') }}#today-results">Today's results</a><a href="{{ route('index') }}#markets">Market board</a><a href="{{ route('index') }}#records">Old records</a><a href="{{ route('index') }}#market-charts">Year-wise charts</a></div>
+        <div><h3>Explore</h3><a href="{{ route('index') }}#today-results">Today's results</a><a href="{{ route('index') }}#markets">Market board</a><a href="{{ route('index') }}#records">Old records</a><a href="{{ route('index') }}#market-charts">Monthly charts</a></div>
         <div><h3>Information</h3><a href="{{ route('information',['page'=>'about']) }}">About</a><a href="{{ route('information',['page'=>'faq']) }}">FAQ</a><a href="{{ route('information',['page'=>'contact']) }}">Contact</a><a href="{{ route('information',['page'=>'privacy-policy']) }}">Privacy policy</a>
             @foreach (($navPages ?? collect()) as $navPage)<a href="{{ route('frontend.page', ['slug' => $navPage->slug]) }}">{{ $navPage->name }}</a>@endforeach
         </div>
