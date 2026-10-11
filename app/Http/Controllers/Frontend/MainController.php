@@ -158,6 +158,27 @@ class MainController extends Controller
      * Full-year view for a single game. Only the selected year's saved result
      * rows are loaded; all twelve month columns are generated in memory.
      */
+    public function legacyChart(string $year, string $month, string $slug)
+    {
+        $now = now()->timezone(config('app.timezone'));
+        $yearNumber = (int) $year;
+        $monthNumber = (int) $month;
+        abort_if($yearNumber < 2000 || $yearNumber > (int) $now->format('Y') || $monthNumber < 1 || $monthNumber > 12, 404);
+        abort_if($yearNumber === (int) $now->format('Y') && $monthNumber > (int) $now->format('n'), 404);
+
+        $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+        if ($yearNumber < (int) $now->format('Y') || $monthNumber < (int) $now->format('n')) {
+            $start = sprintf('%04d-%02d-01', $yearNumber, $monthNumber);
+            $end = Carbon::createFromDate($yearNumber, $monthNumber, 1, config('app.timezone'))->endOfMonth()->toDateString();
+            abort_unless(Result::query()->where('game_id', $game->id)->where('type', 'jodi')
+                ->whereBetween('game_date', [$start, $end])->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
+        }
+
+        return redirect()->route('frontend.chart', [
+            'slug' => $game->slug, 'year' => $yearNumber, 'month' => $monthNumber,
+        ], 301);
+    }
+
     public function yearChart(string $slug, int $year)
     {
         $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
