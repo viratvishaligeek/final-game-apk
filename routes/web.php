@@ -105,11 +105,12 @@ Route::controller(MainController::class)->group(function () {
         return redirect()->route('information', ['page' => $page], 301);
     })->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])->name('frontend.legacy-information');
 
+    // Keep additional CMS pages available without allowing arbitrary one-segment URLs.
+    Route::get('/pages/{slug}', 'showPage')->where('slug', '[A-Za-z0-9-]+')->name('frontend.page');
+
     Route::get('/{page}', 'information')
         ->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])
         ->name('information');
 
-    // Keep additional CMS pages available without allowing arbitrary one-segment URLs.
-    Route::get('/pages/{slug}', 'showPage')->where('slug', '[A-Za-z0-9-]+')->name('frontend.page');
 });
 
