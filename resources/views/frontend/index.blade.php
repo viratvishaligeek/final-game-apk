@@ -1,7 +1,18 @@
 @extends('frontend.include.app')
-@section('title', filled(setting('meta_title')) ? setting('meta_title') : 'Play Online Khaiwal | Satta King Results & Monthly Charts')
-@section('robots_content', request()->hasAny(['year', 'month']) || (int) request()->query('page', 1) > 1 ? 'noindex,follow' : setting('robots_default', 'index,follow'))
-@section('meta_description', filled(setting('meta_description')) ? setting('meta_description') : (filled(setting('site_description')) ? setting('site_description') : 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on Play Online Khaiwal.'))
+@section('title',
+    filled(setting('meta_title'))
+    ? setting('meta_title')
+    : 'Play Online Khaiwal | Satta King Results &
+    Monthly Charts')
+@section('robots_content', request()->hasAny(['year', 'month']) || (int) request()->query('page', 1) > 1 ?
+    'noindex,follow' : setting('robots_default', 'index,follow'))
+@section('meta_description',
+    filled(setting('meta_description'))
+    ? setting('meta_description')
+    : (filled(setting('site_description'))
+    ? setting('site_description')
+    : 'Browse Satta King results, Satta Matka market
+    records, and game-wise monthly charts on Play Online Khaiwal.'))
 @section('content')
     <div class="freshness-bar">
         <div class="wrap freshness-inner"><span class="freshness-date"><b>DATE DESK</b>
@@ -9,10 +20,6 @@
                 {{ setting('announcement_text', "Records shown are read from the site's published result database") }}</span><a
                 href="{{ route('information', ['page' => 'disclaimer']) }}">Data & legal notice ↗</a></div>
     </div>
-
-    @include('frontend.partial.homepage-sections', [
-        'sections' => $homepageSections->where('location', 'first_place'),
-    ])
 
     <section class="hero-shell" id="home">
         <div class="hero-grid wrap">
@@ -25,7 +32,7 @@
                 </p>
                 <div class="hero-actions"><a class="button button-gold" href="{{ route('frontend.app-download') }}">Download
                         App
-                        <span>↓</span></a><a class="button button-outline" href="#records">Register Now
+                        <span>↓</span></a><a class="button button-outline" href="{{ route('community.register') }}">Register Now
                         <span>↗</span></a></div>
                 <div class="hero-facts">
                     <div><strong>{{ count($marketResults) }}</strong><span>Active markets</span></div>
@@ -65,7 +72,7 @@
     </section>
 
     @include('frontend.partial.homepage-sections', [
-        'sections' => $homepageSections->where('location', 'first_place_another'),
+        'sections' => $homepageSections->where('location', 'first_place'),
     ])
 
     <div class="quick-paths wrap"><a href="#today-results"><span class="path-icon path-red">01</span><span><b>Today's
@@ -89,9 +96,8 @@
                 @forelse($frontendResults as $index => $game)
                     <article class="result-board-card {{ $index === 0 ? 'result-board-card--lead' : '' }}">
                         <div class="result-board-head">
+                            <span class="market-index">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <span
-                                class="market-index">{{ str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                                <span
                                 class="result-state {{ $game['today'] === '--' ? 'is-pending' : 'is-published' }}"><i></i>{{ $game['today'] === '--' ? 'PENDING' : 'PUBLISHED' }}</span>
                         </div>
                         <h3>{{ $game['name'] }}</h3>
@@ -183,17 +189,23 @@
             @include('frontend.partial.section-heading', [
                 'eyebrow' => 'CURRENT MONTH · ' . strtoupper($monthLabel),
                 'title' => 'Monthly <span>market results</span>',
-                'description' => 'Saved results for each active market and calendar date in ' . $monthLabel . '. Missing values are shown as a dash.',
+                'description' =>
+                    'Saved results for each active market and calendar date in ' .
+                    $monthLabel .
+                    '. Missing values are shown as a dash.',
             ])
             @forelse ($monthlyTables as $tableIndex => $table)
                 <div class="table-shell light-table homepage-results-shell">
-                    <div class="table-scroll" role="region" aria-label="Market results table {{ $tableIndex + 1 }}" tabindex="0">
+                    <div class="table-scroll" role="region" aria-label="Market results table {{ $tableIndex + 1 }}"
+                        tabindex="0">
                         <table class="quick-record-table homepage-results-table">
                             <thead>
                                 <tr>
                                     <th scope="col">Date</th>
                                     @foreach ($table['games'] as $game)
-                                        <th scope="col"><a href="{{ route('frontend.market', ['slug' => $game->slug]) }}">{{ $game->name }}</a></th>
+                                        <th scope="col"><a
+                                                href="{{ route('frontend.market', ['slug' => $game->slug]) }}">{{ $game->name }}</a>
+                                        </th>
                                     @endforeach
                                 </tr>
                             </thead>
@@ -211,7 +223,9 @@
                     </div>
                 </div>
             @empty
-                <div class="empty-state"><b>No active markets are configured.</b><p>Activate a market in the admin panel to display its results.</p></div>
+                <div class="empty-state"><b>No active markets are configured.</b>
+                    <p>Activate a market in the admin panel to display its results.</p>
+                </div>
             @endforelse
         </div>
     </section>
@@ -222,26 +236,14 @@
 
     <section class="section-block section-light" id="records">
         <div class="wrap">
-            @include('frontend.partial.section-heading', [
-                'eyebrow' => 'HISTORICAL RECORD CENTER',
-                'title' => 'The archive <span>vault</span>',
-                'description' =>
-                    'Choose a market above to review its full-year table of saved historical records.',
-            ])
-            <div class="archive-overview">
+            <div class="arch">
                 <div class="archive-feature"><span class="archive-symbol">▦</span>
                     <p class="eyebrow">HISTORICAL REGISTER</p>
                     <h3>Old results.<br><span>Clear chronology.</span></h3>
                     <p>Open a market's yearly chart to review stored jodi results by calendar date.</p><a
                         class="button button-gold" href="#market-charts">View current-month charts ↗</a>
                 </div>
-                <div class="archive-years">
-                    <div class="archive-years-head"><b>AVAILABLE YEARS</b><span>{{ count($recordYears) }}
-                            year{{ count($recordYears) === 1 ? '' : 's' }}</span></div>
-                    @forelse($recordYears as $year)
-                        <a href="#market-charts" class="year-tile"><span>{{ $year }}</span><small>Open game charts</small><b>↗</b></a>@empty<div class="archive-empty">Open a market above to view its full-year chart.</div>
-                    @endforelse
-                </div>
+
             </div>
         </div>
     </section>
@@ -354,6 +356,3 @@
 
 @section('structured_data')
     <script type="application/ld+json">@json($homeSchema, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT)</script>
-
-
-

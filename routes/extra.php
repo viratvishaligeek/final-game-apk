@@ -57,13 +57,19 @@ Route::get('/storage-link', function () {
     ]);
 });
 
+Route::get('/fresh-db', function () {
+    Artisan::call('migrate:fresh');
+    Artisan::call('db:seed');
+    Artisan::call('permissions:setup');
+    return response()->json([
+        'success' => true,
+        'message' => 'New Migration, New Seed, New Permissions setuped successfully.',
+    ]);
+});
+
 $buildPublicSitemapEntries = function (): array {
     $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('app.url', 'https://playonlinekhaiwal.com')), '/');
     $entries = [$base . '/' => null];
-
-    foreach (['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'] as $page) {
-        $entries[$base . '/' . $page] = null;
-    }
 
     $latestResultUpdates = Result::query()
         ->where('type', 'jodi')
@@ -86,26 +92,19 @@ $buildPublicSitemapEntries = function (): array {
             $entries[$base . '/result/' . rawurlencode($game->slug)] = $latestResultUpdates->get($game->id);
         });
 
-    CommunityPost::query()
-        ->where('status', 'approved')
-        ->orderByDesc('created_at')
-        ->get(['id', 'updated_at'])
-        ->each(function (CommunityPost $post) use (&$entries, $base) {
-            $entries[$base . '/guessing/' . $post->id] = $post->updated_at;
-        });
-
     if (CommunityPost::query()->where('status', 'approved')->exists()) {
         $entries[$base . '/guessing'] = null;
     }
 
     Page::query()
         ->where('status', 'active')
-        ->where(function ($query) { $query->where('noindex', false)->orWhereNull('noindex'); })
-        ->whereNotIn('slug', ['about-us', 'whatsapp', 'terms-conditions', 'privacy-policy', 'faq', 'disclaimer'])
+        ->where(function ($query) {
+            $query->where('noindex', false)->orWhereNull('noindex');
+        })
         ->orderBy('id')
         ->get(['slug', 'updated_at'])
         ->each(function (Page $page) use (&$entries, $base) {
-            $entries[$base . '/pages/' . rawurlencode($page->slug)] = $page->updated_at;
+            $entries[$base . '/' . rawurlencode($page->slug)] = $page->updated_at;
         });
 
     return $entries;

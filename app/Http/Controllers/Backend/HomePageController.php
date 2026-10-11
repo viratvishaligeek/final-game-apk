@@ -22,7 +22,6 @@ class HomePageController extends Controller
         $pageName = 'Add Home Page Section';
         $locations = [
             'first_place' => 'First Place Of Top Page',
-            'first_place_another' => 'Just After First One',
             'second_place' => 'Second Place',
             'second_place_another' => 'Just After Second One',
             'third_place' => 'Third Place',
@@ -40,7 +39,7 @@ class HomePageController extends Controller
             'short_desc' => ['nullable', 'string', 'max:10000'],
             'content' => ['nullable', 'string', 'max:50000'],
             'status' => ['required', 'in:active,inactive',],
-            'location' => ['required', 'in:first_place,first_place_another,second_place,second_place_another,third_place,third_place_another,before_footer,after_footer'],
+            'location' => ['required', 'in:first_place,second_place,second_place_another,third_place,third_place_another,before_footer,after_footer'],
             'whatsapp' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'telegram' => ['nullable', 'string', 'max:255'],
@@ -58,7 +57,6 @@ class HomePageController extends Controller
         $homePage = HomePage::findOrFail($id);
         $locations = [
             'first_place' => 'First Place Of Top Page',
-            'first_place_another' => 'Just After First One',
             'second_place' => 'Second Place',
             'second_place_another' => 'Just After Second One',
             'third_place' => 'Third Place',

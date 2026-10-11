@@ -28,12 +28,12 @@
     </div>
 </header>
 <div class="ticker" aria-label="Quick navigation ticker">
-    <span class="ticker-label">{{ setting('title', 'Play Online Khaiwal') }}</span>
+    <span class="ticker-label">📢</span>
     <div class="ticker-window">
         <div class="ticker-track">
-            @if (filled(setting('ticker_text')))
+            @if (filled(setting('web_marquee')))
                 @for ($tickerCopy = 0; $tickerCopy < 2; $tickerCopy++)
-                    <span>{{ setting('ticker_text') }}</span><i>✦</i>
+                    <span>{{ setting('web_marquee') }}</span><i>✦</i>
                 @endfor
             @else
                 <span>Today's results</span><i>✦</i><span>Previous results</span><i>✦</i><span>Market

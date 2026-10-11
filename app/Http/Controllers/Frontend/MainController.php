@@ -30,8 +30,13 @@ class MainController extends Controller
             ->get(['id', 'name', 'slug', 'serial', 'result_time', 'last_result']);
 
         $frontendResults = $this->getFrontendResults();
-        $marketResults = collect($frontendResults)->map(fn (array $game) => collect($game)->only([
-            'id', 'name', 'slug', 'time', 'today', 'yesterday',
+        $marketResults = collect($frontendResults)->map(fn(array $game) => collect($game)->only([
+            'id',
+            'name',
+            'slug',
+            'time',
+            'today',
+            'yesterday',
         ])->all())->all();
         $recordYears = [$selectedYear];
         $homepageSections = HomePage::query()->where('status', 'active')->orderBy('id')->get();
@@ -50,7 +55,7 @@ class MainController extends Controller
         if ($faqs->isNotEmpty()) {
             $homeGraph[] = [
                 '@type' => 'FAQPage',
-                'mainEntity' => $faqs->map(fn ($faq) => [
+                'mainEntity' => $faqs->map(fn($faq) => [
                     '@type' => 'Question',
                     'name' => strip_tags((string) $faq->question),
                     'acceptedAnswer' => ['@type' => 'Answer', 'text' => strip_tags((string) $faq->answer)],
@@ -60,16 +65,20 @@ class MainController extends Controller
         $homeSchema = ['@context' => 'https://schema.org', '@graph' => $homeGraph];
 
         return view('frontend.index', compact(
-            'frontendResults', 'marketResults', 'recordYears', 'homepageSections',
-            'faqs', 'monthlyEntries', 'hasMonthlyResults',
-            'monthLabel', 'chunkSize', 'selectedYear', 'selectedMonth', 'homeSchema'
+            'frontendResults',
+            'marketResults',
+            'recordYears',
+            'homepageSections',
+            'faqs',
+            'monthlyTables',
+            'monthLabel',
+            'chunkSize',
+            'selectedYear',
+            'selectedMonth',
+            'homeSchema'
         ));
     }
 
-    /**
-     * Public game result page. The path is stable and contains only the game slug;
-     * legacy query parameters are accepted only for compatibility with old links.
-     */
     public function market(Request $request, string $slug, MonthlyChartService $charts)
     {
         $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
@@ -96,7 +105,7 @@ class MainController extends Controller
         $availableMonths = $charts->availableMonths($game->id);
         $availableYears = array_map('intval', array_keys($availableMonths));
         $availableYears[] = $currentYear;
-        $availableYears = array_values(array_unique(array_filter($availableYears, fn (int $availableYear) => $availableYear >= 2000 && $availableYear <= $currentYear)));
+        $availableYears = array_values(array_unique(array_filter($availableYears, fn(int $availableYear) => $availableYear >= 2000 && $availableYear <= $currentYear)));
         rsort($availableYears);
         $canonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/')
             . '/result/' . $game->slug;
@@ -133,82 +142,12 @@ class MainController extends Controller
             'year' => $year,
             'month' => $month,
             'month_label' => $charts->monthLabel($year, $month),
-            'days' => $results->map(fn (array $row) => [
+            'days' => $results->map(fn(array $row) => [
                 'day' => $row['date']->day,
                 'result' => $row['number'],
                 'status' => $row['status'],
             ])->values(),
         ])->header('Cache-Control', 'no-store');
-    }
-
-    /**
-     * Full-year view for a single game. Only the selected year's saved result
-     * rows are loaded; all twelve month columns are generated in memory.
-     */
-    public function legacyChart(string $year, string $month, string $slug)
-    {
-        $now = now()->timezone(config('app.timezone'));
-        $yearNumber = (int) $year;
-        $monthNumber = (int) $month;
-        abort_if($yearNumber < 2000 || $yearNumber > (int) $now->format('Y') || $monthNumber < 1 || $monthNumber > 12, 404);
-        abort_if($yearNumber === (int) $now->format('Y') && $monthNumber > (int) $now->format('n'), 404);
-
-        $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
-        if ($yearNumber < (int) $now->format('Y') || $monthNumber < (int) $now->format('n')) {
-            $start = sprintf('%04d-%02d-01', $yearNumber, $monthNumber);
-            $end = Carbon::createFromDate($yearNumber, $monthNumber, 1, config('app.timezone'))->endOfMonth()->toDateString();
-            abort_unless(Result::query()->where('game_id', $game->id)->where('type', 'jodi')
-                ->whereBetween('game_date', [$start, $end])->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
-        }
-
-        return redirect()->route('frontend.market', [
-            'slug' => $game->slug, 'year' => $yearNumber, 'month' => $monthNumber,
-        ], 301);
-    }
-
-    public function yearChart(string $slug, int $year)
-    {
-        $game = Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
-        $now = now()->timezone(config('app.timezone'));
-        abort_if($year < 2000 || $year > (int) $now->format('Y'), 404);
-
-        $start = Carbon::createFromDate($year, 1, 1, config('app.timezone'))->startOfYear();
-        $end = $year === (int) $now->format('Y')
-            ? $now->copy()->endOfDay()
-            : $start->copy()->endOfYear();
-        $saved = Result::query()->where('game_id', $game->id)->where('type', 'jodi')
-            ->whereBetween('game_date', [$start->toDateString(), $end->toDateString()])
-            ->whereNotNull('number')->where('number', '<>', '')
-            ->get(['game_date', 'number'])
-            ->keyBy(fn (Result $result) => Carbon::parse($result->game_date, config('app.timezone'))->format('n-j'));
-
-        if ($year < (int) $now->format('Y')) {
-            abort_if($saved->isEmpty(), 404);
-        }
-
-        $maxDays = 31;
-        $yearRows = collect(range(1, $maxDays))->map(function (int $day) use ($year, $saved) {
-            $cells = [];
-            for ($month = 1; $month <= 12; $month++) {
-                $daysInMonth = Carbon::createFromDate($year, $month, 1, config('app.timezone'))->daysInMonth;
-                $cells[$month] = $day <= $daysInMonth
-                    ? optional($saved->get($month . '-' . $day))->number
-                    : null;
-            }
-
-            return ['day' => $day, 'cells' => $cells];
-        });
-
-        $canonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/')
-            . '/charts/' . $game->slug . '/year/' . $year;
-
-        return view('frontend.year-chart', [
-            'game' => $game,
-            'year' => $year,
-            'yearRows' => $yearRows,
-            'hasPublishedResults' => $saved->isNotEmpty(),
-            'canonical' => $canonical,
-        ]);
     }
 
     public function information(string $page)
@@ -239,33 +178,13 @@ class MainController extends Controller
         return view('frontend.information', compact('page', 'title', 'copy', 'faqs'));
     }
 
-    public function showPage(string $slug)
-    {
-        $informationAliases = [
-            'about-us' => 'about',
-            'whatsapp' => 'contact',
-            'terms-conditions' => 'terms-and-conditions',
-            'privacy-policy' => 'privacy-policy',
-            'disclaimer' => 'disclaimer',
-            'faq' => 'faq',
-        ];
-
-        if (isset($informationAliases[$slug])) {
-            return redirect()->route('information', ['page' => $informationAliases[$slug]], 301);
-        }
-
-        $page = Page::query()->where('slug', $slug)->where('status', 'active')->firstOrFail();
-
-        return view('frontend.page', compact('page'));
-    }
-
     private function getFrontendResults(): array
     {
         $now = now()->timezone(config('app.timezone'));
         $games = Game::query()->where('status', 'active')->orderBy('serial')->orderBy('id')
             ->get(['id', 'name', 'slug', 'result_time', 'last_result']);
         $businessDates = $this->businessDatesFor($games, $now);
-        $resultDates = collect($businessDates)->flatMap(fn (array $dates) => array_values($dates))->unique()->values();
+        $resultDates = collect($businessDates)->flatMap(fn(array $dates) => array_values($dates))->unique()->values();
         $results = Result::query()->whereIn('game_id', $games->pluck('id'))->where('type', 'jodi')
             ->whereIn('game_date', $resultDates)->get(['game_id', 'game_date', 'number'])->groupBy('game_id');
 

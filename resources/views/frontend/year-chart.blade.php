@@ -1,14 +1,72 @@
 @extends('frontend.include.app')
-@section('title', $game->name . ' ' . $year . ' Full-Year Satta King Result Chart | ' . setting('title', 'Play Online Khaiwal'))
-@section('meta_description', 'Full-year date-by-month result table for ' . $game->name . ' in ' . $year . '. Only saved results are displayed; missing cells remain blank.')
+@section('title', $game->name . ' ' . $year . ' Full-Year Satta King Result Chart | ' . setting('title', 'Play Online
+    Khaiwal'))
+@section('meta_description', 'Full-year date-by-month result table for ' . $game->name . ' in ' . $year . '. Only saved
+    results are displayed; missing cells remain blank.')
 @section('meta_keywords', $game->name . ', ' . $year . ' result chart, yearly Satta King chart, Satta Result Chart')
 @section('robots_content', $hasPublishedResults ? setting('robots_default', 'index,follow') : 'noindex,follow')
 @section('content')
-<section class="page-banner page-banner--blue"><div class="wrap"><div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><a href="{{ route('index') }}#market-charts">Markets</a><span>/</span><b>{{ $game->name }} · {{ $year }}</b></div><p class="eyebrow">FULL-YEAR RESULT CHART</p><h1>{{ $game->name }} <span>{{ $year }}</span></h1><p>Each column represents a calendar month. Only saved results from this game's database records are shown; missing dates are not filled with sample values.</p></div></section>
-<section class="section-block section-light"><div class="wrap">
-<div class="page-toolbar"><h2>{{ $game->name }} · January–December {{ $year }}</h2><a class="button button-dark" href="{{ route('frontend.market', ['slug' => $game->slug]) }}">Current-month chart ↗</a></div>
-@if (!$hasPublishedResults)<div class="empty-state"><b>No published results are stored for {{ $year }}.</b><p>The full-year table is shown with empty cells. No results have been fabricated.</p></div>@endif
-<div class="table-shell light-table yearly-chart-shell"><div class="table-scroll yearly-chart-scroll" role="region" aria-label="{{ $game->name }} full-year results table" tabindex="0"><table class="quick-record-table monthly-result-table yearly-result-table"><thead><tr><th scope="col" class="year-date-col">Date</th>@foreach (range(1, 12) as $monthNumber)<th scope="col">{{ \Carbon\Carbon::createFromDate($year, $monthNumber, 1, config('app.timezone'))->format('M') }}</th>@endforeach</tr></thead><tbody>@foreach ($yearRows as $row)<tr><th scope="row" class="year-date-col">{{ str_pad((string) $row['day'], 2, '0', STR_PAD_LEFT) }}</th>@foreach ($row['cells'] as $monthNumber => $number)<td>@if ($number !== null)<span class="table-result is-published">{{ $number }}</span>@elseif ($row['day'] <= \Carbon\Carbon::createFromDate($year, $monthNumber, 1, config('app.timezone'))->daysInMonth)<span class="yearly-empty" aria-label="No result recorded">—</span>@else<span class="yearly-not-applicable" aria-label="Date does not exist in this month">·</span>@endif</td>@endforeach</tr>@endforeach</tbody></table></div></div>
-<p class="table-footnote">— No result recorded · · Date does not exist in that month. Results are read from stored records only.</p>
-</div></section>
+    <section class="page-banner page-banner--blue">
+        <div class="wrap">
+            <div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><a
+                    href="{{ route('index') }}#market-charts">Markets</a><span>/</span><b>{{ $game->name }} ·
+                    {{ $year }}</b></div>
+            <p class="eyebrow">FULL-YEAR RESULT CHART</p>
+            <h1>{{ $game->name }} <span>{{ $year }}</span></h1>
+            <p>Each column represents a calendar month. Only saved results from this game's database records are shown;
+                missing dates are not filled with sample values.</p>
+        </div>
+    </section>
+    <section class="section-block section-light">
+        <div class="wrap">
+            <div class="page-toolbar">
+                <h2>{{ $game->name }} · January–December {{ $year }}</h2><a class="button button-dark"
+                    href="{{ route('frontend.market', ['slug' => $game->slug]) }}">Current-month chart ↗</a>
+            </div>
+            @if (!$hasPublishedResults)
+                <div class="empty-state"><b>No published results are stored for {{ $year }}.</b>
+                    <p>The full-year table is shown with empty cells. No results have been fabricated.</p>
+                </div>
+            @endif
+            <div class="table-shell light-table yearly-chart-shell">
+                <div class="table-scroll yearly-chart-scroll" role="region"
+                    aria-label="{{ $game->name }} full-year results table" tabindex="0">
+                    <table class="quick-record-table monthly-result-table yearly-result-table">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="year-date-col">Date</th>
+                                @foreach (range(1, 12) as $monthNumber)
+                                    <th scope="col">
+                                        {{ \Carbon\Carbon::createFromDate($year, $monthNumber, 1, config('app.timezone'))->format('M') }}
+                                    </th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($yearRows as $row)
+                                <tr>
+                                    <th scope="row" class="year-date-col">
+                                        {{ str_pad((string) $row['day'], 2, '0', STR_PAD_LEFT) }}</th>
+                                    @foreach ($row['cells'] as $monthNumber => $number)
+                                        <td>
+                                            @if ($number !== null)
+                                                <span class="table-result is-published">{{ $number }}</span>
+                                            @elseif ($row['day'] <= \Carbon\Carbon::createFromDate($year, $monthNumber, 1, config('app.timezone'))->daysInMonth)
+                                                <span class="yearly-empty"
+                                                aria-label="No result recorded">—</span>@else<span
+                                                    class="yearly-not-applicable"
+                                                    aria-label="Date does not exist in this month">·</span>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <p class="table-footnote">— No result recorded · · Date does not exist in that month. Results are read from
+                stored records only.</p>
+        </div>
+    </section>
 @endsection

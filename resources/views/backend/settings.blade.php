@@ -122,7 +122,7 @@
                         'social_instagram' => ['Instagram URL', 'url'],
                         'social_youtube' => ['YouTube URL', 'url'],
                         'social_telegram' => ['Telegram URL', 'url'],
-                        'ticker_text' => ['Header Ticker Text', 'textarea'],
+                        'web_marquee' => ['Website Marquee', 'textarea'],
                         'disclaimer_content' => ['Shared Disclaimer (plain text)', 'textarea'],
                     ])
                     @foreach ($globalFields as $key => $field)
