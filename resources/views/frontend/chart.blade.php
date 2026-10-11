@@ -5,10 +5,7 @@
 @section('robots_content', $hasPublishedResults && (int) request()->query('page', 1) <= 1 ? setting('robots_default', 'index,follow') : 'noindex,follow')
 @section('structured_data')
     @php
-        $chartCanonical = rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/charts/' . $game->slug . '/' . $year . '/' . $month;
-        if ((int) request()->query('page', 1) > 1) {
-            $chartCanonical .= '?' . http_build_query(['page' => (int) request()->query('page')]);
-        }
+        $chartCanonical = rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/result/' . $game->slug;
         $chartSchema = [
             '@context' => 'https://schema.org',
             '@type' => 'WebPage',
@@ -20,7 +17,7 @@
                 'itemListElement' => [
                     ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/'],
                     ['@type' => 'ListItem', 'position' => 2, 'name' => 'Markets', 'item' => rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/#markets'],
-                    ['@type' => 'ListItem', 'position' => 3, 'name' => $game->name, 'item' => rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/charts/' . $game->slug . '/' . $year . '/' . $month],
+                    ['@type' => 'ListItem', 'position' => 3, 'name' => $game->name, 'item' => rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/result/' . $game->slug],
                     ['@type' => 'ListItem', 'position' => 4, 'name' => $monthLabel, 'item' => $chartCanonical],
                 ],
             ],
