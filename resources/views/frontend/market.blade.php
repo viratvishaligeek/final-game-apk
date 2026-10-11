@@ -45,7 +45,7 @@
                     <tbody data-result-body>
                         @foreach ($results as $entry)
                             <tr data-result-row="{{ $entry['date']->day }}">
-                                <th scope="row">{{ $entry['date']->format('d M Y') }}</th>
+                                <th scope="row">{{ $entry['date']->format('d') }} {{ $monthLabel }}</th>
                                 <td data-result-cell>{{ $entry['number'] ?? '—' }}</td>
                             </tr>
                         @endforeach
@@ -101,7 +101,8 @@
                     month: monthSelect.value
                 })
             });
-            const payload = await response.json();
+            let payload = {};
+            try { payload = await response.json(); } catch (parseError) { payload = {}; }
             if (thisRequest !== requestNumber) return;
             if (!response.ok) throw new Error(payload.message || 'Unable to load results. Please choose a valid month and year.');
 
