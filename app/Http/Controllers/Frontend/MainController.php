@@ -105,11 +105,16 @@ class MainController extends Controller
         $monthLabel = $charts->monthLabel($year, $month);
         $currentYear = (int) $now->format('Y');
         $currentMonth = (int) $now->format('n');
+        $availableMonths = $charts->availableMonths($game->id);
+        $availableYears = array_map('intval', array_keys($availableMonths));
+        $availableYears[] = $currentYear;
+        $availableYears = array_values(array_unique($availableYears));
+        rsort($availableYears);
         $canonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/')
             . '/result/' . $game->slug;
 
         return response()
-            ->view('frontend.market', compact('game', 'year', 'month', 'monthLabel', 'results', 'canonical', 'currentYear', 'currentMonth'))
+            ->view('frontend.market', compact('game', 'year', 'month', 'monthLabel', 'results', 'canonical', 'currentYear', 'currentMonth', 'availableYears'))
             ->header('X-Robots-Tag', $request->query->count() > 0 ? 'noindex, follow' : 'index, follow');
     }
 
@@ -168,7 +173,7 @@ class MainController extends Controller
                 ->whereBetween('game_date', [$start, $end])->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
         }
 
-        return redirect()->route('frontend.chart', [
+        return redirect()->route('frontend.market', [
             'slug' => $game->slug, 'year' => $yearNumber, 'month' => $monthNumber,
         ], 301);
     }
