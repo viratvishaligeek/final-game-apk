@@ -65,7 +65,7 @@
                                     <span class="badge bg-danger-soft text-danger">Inactive</span>
                                 @endif
                             </td>
-                             <td>
+                            <td>
                                 <span class="fw-bold">#{{ $game->serial }}</span>
                             </td>
                             <td>{{ $game->created_at ? $game->created_at->format('d M Y') : 'N/A' }}</td>
@@ -75,7 +75,6 @@
                                     href="{{ route('admin.games.edit', $game->id) }}" title="Edit Game">
                                     <i data-feather="edit"></i>
                                 </a>
-
                                 {{-- Delete Form with SweetAlert --}}
                                 <form action="{{ route('admin.games.destroy', $game->id) }}" method="POST"
                                     id="delete-form-{{ $game->id }}" class="d-inline">
@@ -101,31 +100,46 @@
         crossorigin="anonymous"></script>
     <script src="{{ URL::asset('backend') }}/js/datatables/datatables-simple-demo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const deleteButtons = document.querySelectorAll('.delete-game-btn');
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const gameId = this.getAttribute('data-id');
-                    const gameName = this.getAttribute('data-name');
-                    Swal.fire({
-                        title: 'Are you sure?',
-                        text: `Do you really want to delete "${gameName}"? This action cannot be undone.`,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#e74a3b',
-                        cancelButtonColor: '#858796',
-                        confirmButtonText: 'Yes, delete it!',
-                        cancelButtonText: 'Cancel',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            document.getElementById(`delete-form-${gameId}`).submit();
-                        }
-                    });
+        document.addEventListener('DOMContentLoaded', function () {
+
+            document.addEventListener('click', function (event) {
+                const button = event.target.closest('.delete-game-btn');
+                if (!button) {
+                    return;
+                }
+                event.preventDefault();
+                const gameId = button.dataset.id;
+                const gameName = button.dataset.name;
+                const deleteForm = document.getElementById('delete-form-' + gameId);
+                if (!deleteForm) {
+                    console.error('Delete form not found for game:', gameId);
+                    return;
+                }
+                if (typeof Swal === 'undefined') {
+                    console.error('SweetAlert2 is not loaded.');
+                    alert('SweetAlert2 failed to load. Please refresh the page.');
+                    return;
+                }
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'Do you really want to delete "' + gameName +
+                        '"? This action cannot be undone.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74a3b',
+                    cancelButtonColor: '#858796',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        deleteForm.submit();
+                    }
                 });
             });
+
         });
     </script>
 @endsection

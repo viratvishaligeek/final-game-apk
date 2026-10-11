@@ -129,54 +129,92 @@
         crossorigin="anonymous"></script>
     <script src="{{ URL::asset('backend') }}/js/datatables/datatables-simple-demo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.toggle-status-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const userId = this.getAttribute('data-id');
-                    const userName = this.getAttribute('data-name');
-                    const action = this.getAttribute('data-action');
+
+            document.addEventListener('click', function(event) {
+
+                // Block / Unblock User
+                const statusButton = event.target.closest('.toggle-status-btn');
+
+                if (statusButton) {
+                    event.preventDefault();
+
+                    const userId = statusButton.dataset.id;
+                    const userName = statusButton.dataset.name;
+                    const action = statusButton.dataset.action;
+                    const statusForm = document.getElementById('status-form-' + userId);
+
+                    if (!statusForm) {
+                        console.error('Status form not found for user:', userId);
+                        return;
+                    }
+
+                    if (typeof Swal === 'undefined') {
+                        alert('SweetAlert2 failed to load. Please refresh the page.');
+                        return;
+                    }
 
                     Swal.fire({
-                        title: `${action === 'block' ? 'Block' : 'Unblock'} User?`,
-                        text: `Are you sure you want to ${action} "${userName}"?`,
+                        title: (action === 'block' ? 'Block' : 'Unblock') + ' User?',
+                        text: 'Are you sure you want to ' + action + ' "' + userName + '"?',
                         icon: action === 'block' ? 'warning' : 'question',
                         showCancelButton: true,
                         confirmButtonColor: action === 'block' ? '#e74a3b' : '#1cc88a',
                         cancelButtonColor: '#858796',
-                        confirmButtonText: `Yes, ${action}!`,
-                        cancelButtonText: 'Cancel'
-                    }).then((result) => {
+                        confirmButtonText: 'Yes, ' + action + '!',
+                        cancelButtonText: 'Cancel',
+                        reverseButtons: true,
+                        focusCancel: true
+                    }).then(function(result) {
                         if (result.isConfirmed) {
-                            document.getElementById(`status-form-${userId}`).submit();
+                            statusForm.submit();
                         }
                     });
-                });
-            });
 
-            // Delete Swal
-            document.querySelectorAll('.delete-user-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const userId = this.getAttribute('data-id');
-                    const userName = this.getAttribute('data-name');
+                    return;
+                }
+
+                // Delete User
+                const deleteButton = event.target.closest('.delete-user-btn');
+
+                if (deleteButton) {
+                    event.preventDefault();
+
+                    const userId = deleteButton.dataset.id;
+                    const userName = deleteButton.dataset.name;
+                    const deleteForm = document.getElementById('delete-form-' + userId);
+
+                    if (!deleteForm) {
+                        console.error('Delete form not found for user:', userId);
+                        return;
+                    }
+
+                    if (typeof Swal === 'undefined') {
+                        alert('SweetAlert2 failed to load. Please refresh the page.');
+                        return;
+                    }
 
                     Swal.fire({
                         title: 'Delete User?',
-                        text: `Do you really want to delete "${userName}"?`,
+                        text: 'Do you really want to delete "' + userName + '"?',
                         icon: 'error',
                         showCancelButton: true,
                         confirmButtonColor: '#e74a3b',
                         cancelButtonColor: '#858796',
                         confirmButtonText: 'Yes, Delete!',
-                        cancelButtonText: 'Cancel'
-                    }).then((result) => {
+                        cancelButtonText: 'Cancel',
+                        reverseButtons: true,
+                        focusCancel: true
+                    }).then(function(result) {
                         if (result.isConfirmed) {
-                            document.getElementById(`delete-form-${userId}`).submit();
+                            deleteForm.submit();
                         }
                     });
-                });
+                }
+
             });
+
         });
     </script>
 @endsection

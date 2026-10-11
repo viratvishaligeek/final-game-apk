@@ -18,7 +18,7 @@
         <div class="wrap freshness-inner"><span class="freshness-date"><b>DATE DESK</b>
                 {{ now()->timezone(config('app.timezone'))->format('D, d M Y') }}</span><span class="freshness-note"><i></i>
                 {{ setting('announcement_text', "Records shown are read from the site's published result database") }}</span><a
-                href="{{ route('information', ['page' => 'disclaimer']) }}">Data & legal notice ↗</a></div>
+                href="{{ route('information', ['page' => 'disclaimer']) }}">legal notice ↗</a></div>
     </div>
 
     <section class="hero-shell" id="home">

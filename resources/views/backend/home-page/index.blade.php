@@ -134,35 +134,47 @@
 @section('script')
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js"
         crossorigin="anonymous"></script>
-
     <script src="{{ URL::asset('backend') }}/js/datatables/datatables-simple-demo.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.delete-home-page').forEach(function(button) {
-                button.addEventListener('click', function() {
-                    const id = this.dataset.id;
-                    const title = this.dataset.title;
-                    const form = document.getElementById('delete-form-' + id);
-                    Swal.fire({
-                        title: 'Delete Section?',
-                        text: `Are you sure you want to delete "${title}"?`,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#e74a3b',
-                        cancelButtonColor: '#858796',
-                        confirmButtonText: 'Yes, Delete',
-                        cancelButtonText: 'Cancel',
-                        reverseButtons: true
-                    }).then(function(result) {
-                        if (result.isConfirmed) {
-                            form.submit();
-                        }
-                    });
+
+            document.addEventListener('click', function(event) {
+                const button = event.target.closest('.delete-home-page');
+                if (!button) {
+                    return;
+                }
+                event.preventDefault();
+                const id = button.dataset.id;
+                const title = button.dataset.title;
+                const form = document.getElementById('delete-form-' + id);
+                if (!form) {
+                    console.error('Delete form not found for section:', id);
+                    return;
+                }
+                if (typeof Swal === 'undefined') {
+                    alert('SweetAlert2 failed to load. Please refresh the page.');
+                    return;
+                }
+                Swal.fire({
+                    title: 'Delete Section?',
+                    text: 'Are you sure you want to delete "' + title + '"?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74a3b',
+                    cancelButtonColor: '#858796',
+                    confirmButtonText: 'Yes, Delete',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
                 });
             });
+
         });
     </script>
 @endsection

@@ -98,29 +98,49 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const deleteButtons = document.querySelectorAll('.delete-banner-btn');
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const bannerId = this.getAttribute('data-id');
-                    const bannerName = this.getAttribute('data-name');
-                    Swal.fire({
-                        title: 'Are you sure?',
-                        text: `Do you really want to delete "${bannerName}"?`,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#e74a3b',
-                        cancelButtonColor: '#858796',
-                        confirmButtonText: 'Yes, delete it!',
-                        cancelButtonText: 'Cancel',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            document.getElementById(`delete-form-${bannerId}`).submit();
-                        }
-                    });
+        document.addEventListener('DOMContentLoaded', function () {
+
+            document.addEventListener('click', function (event) {
+                const button = event.target.closest('.delete-banner-btn');
+
+                if (!button) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const bannerId = button.dataset.id;
+                const bannerName = button.dataset.name;
+                const deleteForm = document.getElementById('delete-form-' + bannerId);
+
+                if (!deleteForm) {
+                    console.error('Delete form not found for banner:', bannerId);
+                    return;
+                }
+
+                if (typeof Swal === 'undefined') {
+                    alert('SweetAlert2 failed to load. Please refresh the page.');
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'Do you really want to delete "' + bannerName + '"?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e74a3b',
+                    cancelButtonColor: '#858796',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        deleteForm.submit();
+                    }
                 });
             });
+
         });
     </script>
 @endsection

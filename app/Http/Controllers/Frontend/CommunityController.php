@@ -18,14 +18,21 @@ class CommunityController extends Controller
     {
         $posts = CommunityPost::query()
             ->where('status', 'approved')
-            ->with(['game:id,name,slug', 'author:id,name'])
+            ->with([
+                'game:id,name,slug',
+                'author:id,name',
+                'replies' => function ($query) {
+                    $query->with('author:id,name')
+                        ->latest('created_at')
+                        ->limit(3);
+                },
+            ])
             ->withCount('replies')
             ->latest('created_at')
             ->paginate(15);
 
         return view('frontend.community.index', compact('posts'));
     }
-
     public function create(): View
     {
         $games = Game::query()->where('status', 'active')->orderBy('serial')->orderBy('name')->get(['id', 'name']);
@@ -36,7 +43,7 @@ class CommunityController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'game_id' => ['required', 'integer', Rule::exists('games', 'id')->where(fn ($query) => $query->where('status', 'active')->whereNull('deleted_at'))],
+            'game_id' => ['required', 'integer', Rule::exists('games', 'id')->where(fn($query) => $query->where('status', 'active')->whereNull('deleted_at'))],
             'title' => ['required', 'string', 'min:4', 'max:120'],
             'body' => ['required', 'string', 'min:10', 'max:5000'],
         ]);
