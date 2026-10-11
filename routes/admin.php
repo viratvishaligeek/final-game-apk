@@ -3,6 +3,7 @@
 use App\Http\Controllers\Backend\Auth\AuthController;
 use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\DashboardController;
+use App\Http\Controllers\Backend\CommunityModerationController;
 use App\Http\Controllers\Backend\FaqController;
 use App\Http\Controllers\Backend\Game\BiddingDeskController;
 use App\Http\Controllers\Backend\Game\GameController;
@@ -30,6 +31,9 @@ Route::controller(AuthController::class)->group(function () {
 
 // After Login
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin'], function () {
+    Route::get('guessing', [CommunityModerationController::class, 'index'])->name('guessing.index');
+    Route::patch('guessing/{post}/moderate', [CommunityModerationController::class, 'update'])->name('guessing.moderate');
+    Route::post('guessing/policy', [CommunityModerationController::class, 'updatePolicy'])->name('guessing.policy');
     Route::get('push-notifications', [PushNotificationController::class, 'index'])->name('push-notifications.index');
     Route::post('push-notifications/broadcast', [PushNotificationController::class, 'broadcast'])->name('push-notifications.broadcast');
     Route::controller(DashboardController::class)->group(function () {
