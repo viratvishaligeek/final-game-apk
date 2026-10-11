@@ -1,14 +1,7 @@
 @extends('frontend.include.app')
-@section('title', request()->filled('year') || request()->filled('month') ? $monthLabel . ' Satta King Result Chart | '
-    . (filled(setting('title')) ? setting('title') : 'Play Online Khaiwal') : (filled(setting('meta_title')) ?
-    setting('meta_title') : 'Play Online Khaiwal | Satta King Results & Monthly Charts'))
-@section('robots_content', (request()->filled('year') || request()->filled('month')) && !$hasMonthlyResults ?
-    'noindex,follow' : setting('robots_default', 'index,follow'))
-@section('meta_description', request()->filled('year') || request()->filled('month') ? 'Browse the ' . $monthLabel . '
-    Satta King monthly result chart across active markets on Play Online Khaiwal. Values reflect saved records; missing
-    results are marked pending.' : (filled(setting('meta_description')) ? setting('meta_description') :
-    (filled(setting('site_description')) ? setting('site_description') : 'Browse Satta King results, Satta Matka market
-    records, and game-wise monthly charts on Play Online Khaiwal.')))
+@section('title', filled(setting('meta_title')) ? setting('meta_title') : 'Play Online Khaiwal | Satta King Results & Monthly Charts')
+@section('robots_content', request()->hasAny(['year', 'month']) || (int) request()->query('page', 1) > 1 ? 'noindex,follow' : setting('robots_default', 'index,follow'))
+@section('meta_description', filled(setting('meta_description')) ? setting('meta_description') : (filled(setting('site_description')) ? setting('site_description') : 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on Play Online Khaiwal.'))
 @section('content')
     <div class="freshness-bar">
         <div class="wrap freshness-inner"><span class="freshness-date"><b>DATE DESK</b>
@@ -222,94 +215,35 @@
     <section class="section-block section-light" id="market-charts">
         <div class="wrap">
             @include('frontend.partial.section-heading', [
-                'eyebrow' => 'MONTHLY RESULT CHART',
+                'eyebrow' => 'CURRENT MONTH · ' . strtoupper($monthLabel),
                 'title' => 'Monthly <span>market chart</span>',
-                'description' =>
-                    'Choose a year and month to browse saved Satta King results across all active markets. Missing results are labelled pending; future dates are not due yet.',
+                'description' => 'This section always shows the current calendar month in the website timezone. Open any market to view its full-year chart. Missing results remain pending.',
             ])
-            <div class="archive-overview">
-                <div class="archive-feature">
-                    <span class="archive-symbol">▦</span>
-                    <p class="eyebrow">SELECTED PERIOD</p>
-                    <h3>{{ $monthLabel }}</h3>
-                    <p>{{ $monthlyEntries->total() }} game-date entries · {{ $chunkSize }} entries per page</p>
-                    <form method="GET" action="{{ route('index') }}" class="monthly-chart-filter" data-month-filter>
-                        <label for="homepage-chart-year">Year</label>
-                        <select class="form-select" id="homepage-chart-year" name="year" data-chart-year>
-                            @foreach ($availableYears as $yearOption)
-                                <option value="{{ $yearOption }}"
-                                    {{ (int) $yearOption === (int) $selectedYear ? 'selected' : '' }}>{{ $yearOption }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <label for="homepage-chart-month">Month</label>
-                        <select class="form-select" id="homepage-chart-month" name="month" data-chart-month>
-                            @foreach ($monthOptions as $monthOption)
-                                <option value="{{ $monthOption }}"
-                                    {{ (int) $monthOption === (int) $selectedMonth ? 'selected' : '' }}>
-                                    {{ \Carbon\Carbon::createFromDate($selectedYear, $monthOption, 1, config('app.timezone'))->translatedFormat('F') }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <button class="button button-dark" type="submit">View chart ↗</button>
-                    </form>
-                </div>
-                <div class="archive-years">
-                    <div class="archive-years-head"><b>AVAILABLE YEARS</b><span>{{ count($availableYears) }}
-                            year{{ count($availableYears) === 1 ? '' : 's' }}</span></div>
-                    @foreach ($availableYears as $yearOption)
-                        <a href="{{ route('index', ['year' => $yearOption]) }}"
-                            class="year-tile {{ (int) $yearOption === (int) $selectedYear ? 'is-current' : '' }}">
-                            <span>{{ $yearOption }}</span><small>{{ count($availableMonths[$yearOption] ?? []) }}
-                                available
-                                month{{ count($availableMonths[$yearOption] ?? []) === 1 ? '' : 's' }}</small><b>↗</b>
-                        </a>
-                    @endforeach
-                    <div class="archive-years-head"><b>MONTHS · {{ $selectedYear }}</b><span>{{ count($monthOptions) }}
-                            shown</span></div>
-                    <div class="year-links month-links">
-                        @foreach ($monthOptions as $monthOption)
-                            <a class="{{ (int) $monthOption === (int) $selectedMonth ? 'is-current' : '' }}"
-                                href="{{ route('index', ['year' => $selectedYear, 'month' => $monthOption]) }}">{{ \Carbon\Carbon::createFromDate($selectedYear, $monthOption, 1, config('app.timezone'))->translatedFormat('F') }}</a>
-                        @endforeach
-                    </div>
-                </div>
+            <div class="page-toolbar">
+                <h2>{{ $monthLabel }} · {{ $monthlyEntries->total() }} market-date entries</h2>
+                <span class="small-note">{{ $chunkSize }} entries per page</span>
             </div>
             <div class="table-shell light-table">
                 <div class="table-scroll">
                     <table class="quick-record-table monthly-result-table">
-                        <thead>
-                            <tr>
-                                <th>Game</th>
-                                <th>Date</th>
-                                <th>Result</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Game</th><th>Date</th><th>Result</th><th>Status</th><th>Full-year chart</th></tr></thead>
                         <tbody>
                             @forelse ($monthlyEntries as $entry)
                                 <tr>
-                                    <th scope="row"><a
-                                            href="{{ route('frontend.chart', ['slug' => $entry['game']->slug, 'year' => $selectedYear, 'month' => $selectedMonth]) }}">{{ $entry['game']->name }}</a>
-                                    </th>
+                                    <th scope="row">{{ $entry['game']->name }}</th>
                                     <td>{{ $entry['date']->format('d M Y') }}</td>
-                                    <td><span
-                                            class="table-result {{ $entry['status'] === 'published' ? 'is-published' : ($entry['status'] === 'upcoming' ? 'is-upcoming' : 'is-pending') }}">{{ $entry['number'] ?? '—' }}</span>
-                                    </td>
-                                    <td>{{ $entry['status'] === 'published' ? 'Published' : ($entry['status'] === 'upcoming' ? 'Not due yet' : 'Pending') }}
-                                    </td>
+                                    <td><span class="table-result {{ $entry['status'] === 'published' ? 'is-published' : ($entry['status'] === 'upcoming' ? 'is-upcoming' : 'is-pending') }}">{{ $entry['number'] ?? '—' }}</span></td>
+                                    <td>{{ $entry['status'] === 'published' ? 'Published' : ($entry['status'] === 'upcoming' ? 'Not due yet' : 'Pending') }}</td>
+                                    <td><a class="table-link" href="{{ route('frontend.year-chart', ['slug' => $entry['game']->slug, 'year' => $selectedYear]) }}">Open chart ↗</a></td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="4" class="table-empty">No active markets are configured for this
-                                        monthly chart.</td>
-                                </tr>
+                                <tr><td colspan="5" class="table-empty">No active markets are configured for this month's chart.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
-            <nav class="mt-3" aria-label="Monthly result chart pagination">{{ $monthlyEntries->links() }}</nav>
+            <nav class="mt-3" aria-label="Current-month chart pagination">{{ $monthlyEntries->links() }}</nav>
         </div>
     </section>
 
@@ -323,22 +257,20 @@
                 'eyebrow' => 'HISTORICAL RECORD CENTER',
                 'title' => 'The archive <span>vault</span>',
                 'description' =>
-                    'Browse supported years and open market-specific records. Archive years are discovered from saved result dates.',
+                    'Choose a market above to review its full-year table of saved historical records.',
             ])
             <div class="archive-overview">
                 <div class="archive-feature"><span class="archive-symbol">▦</span>
                     <p class="eyebrow">HISTORICAL REGISTER</p>
                     <h3>Old results.<br><span>Clear chronology.</span></h3>
-                    <p>Choose a market and a supported year to review saved jodi records in date order.</p><a
-                        class="button button-gold" href="#market-charts">Explore year-wise charts ↗</a>
+                    <p>Open a market's yearly chart to review stored jodi results by calendar date.</p><a
+                        class="button button-gold" href="#market-charts">View current-month charts ↗</a>
                 </div>
                 <div class="archive-years">
                     <div class="archive-years-head"><b>AVAILABLE YEARS</b><span>{{ count($recordYears) }}
                             year{{ count($recordYears) === 1 ? '' : 's' }}</span></div>
                     @forelse($recordYears as $year)
-                        <a href="#market-charts" class="year-tile"><span>{{ $year }}</span><small>Browse market
-                            charts</small><b>↗</b></a>@empty<div class="archive-empty">No historical result years are
-                            available yet.</div>
+                        <a href="#market-charts" class="year-tile"><span>{{ $year }}</span><small>Open game charts</small><b>↗</b></a>@empty<div class="archive-empty">Open a market above to view its full-year chart.</div>
                     @endforelse
                 </div>
             </div>
@@ -455,20 +387,4 @@
     <script type="application/ld+json">@json($homeSchema, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT)</script>
 
 
-@section('script')
-    <script>
-        document.querySelectorAll('[data-month-filter]').forEach(function(form) {
-            const year = form.querySelector('[data-chart-year]');
-            const month = form.querySelector('[data-chart-month]');
-            if (year && month) {
-                year.addEventListener('change', function() {
-                    month.value = '';
-                    form.submit();
-                });
-                month.addEventListener('change', function() {
-                    form.submit();
-                });
-            }
-        });
-    </script>
-@endsection
+
