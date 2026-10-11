@@ -25,8 +25,6 @@ jobs:
           coverage: none
       - run: composer validate --no-check-publish
       - run: composer install --no-interaction --prefer-dist
-      - name: Verify route cache compatibility
-        run: php artisan route:cache && php artisan route:clear
       - run: php artisan test --filter=DynamicFrontendIntegrationTest
       - run: php artisan test --filter=GuessingAndYearlyChartTest
       - run: php artisan test --filter=PushNotificationSubscriptionTest

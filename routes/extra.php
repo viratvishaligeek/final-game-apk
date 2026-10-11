@@ -2,10 +2,12 @@
 
 use App\Models\Game;
 use App\Models\CommunityPost;
-use App\Models\Page;
 use App\Models\Result;
+use App\Models\Page;
+use App\Services\MonthlyChartService;
 use App\Services\AppSettingsService;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/firebase-config.js', function () {
@@ -57,96 +59,50 @@ Route::get('/storage-link', function () {
     ]);
 });
 
-$buildPublicSitemapEntries = function (): array {
-    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('app.url', 'https://playonlinekhaiwal.com')), '/');
-    $entries = [$base . '/' => null];
+Route::get('/sitemap.xml', function () {
+    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/');
+    $urls = [$base . '/'];
+    if (CommunityPost::query()->where('status', 'approved')->exists()) {
+        $urls[] = $base . '/guessing';
+        foreach (CommunityPost::query()->where('status', 'approved')->latest('created_at')->limit(5000)->get(['id']) as $post) {
+            $urls[] = $base . '/guessing/' . $post->id;
+        }
+    }
 
     foreach (['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'] as $page) {
-        $entries[$base . '/' . $page] = null;
+        $urls[] = $base . '/info/' . $page;
     }
 
-    $latestResultUpdates = Result::query()
-        ->where('type', 'jodi')
-        ->whereNotNull('number')
-        ->where('number', '<>', '')
-        ->whereDate('game_date', '<=', now()->timezone(config('app.timezone'))->toDateString())
-        ->select('game_id')
-        ->selectRaw('MAX(updated_at) as lastmod')
-        ->groupBy('game_id')
-        ->pluck('lastmod', 'game_id');
-
-    Game::query()
-        ->where('status', 'active')
-        ->whereNotNull('slug')
-        ->where('slug', '<>', '')
-        ->orderBy('serial')
-        ->orderBy('id')
-        ->get(['id', 'slug'])
-        ->each(function (Game $game) use (&$entries, $base, $latestResultUpdates) {
-            $entries[$base . '/result/' . rawurlencode($game->slug)] = $latestResultUpdates->get($game->id);
-        });
-
-    CommunityPost::query()
-        ->where('status', 'approved')
-        ->orderByDesc('created_at')
-        ->get(['id', 'updated_at'])
-        ->each(function (CommunityPost $post) use (&$entries, $base) {
-            $entries[$base . '/guessing/' . $post->id] = $post->updated_at;
-        });
-
-    if (CommunityPost::query()->where('status', 'approved')->exists()) {
-        $entries[$base . '/guessing'] = null;
+    $charts = app(MonthlyChartService::class);
+    $games = Game::query()->where('status', 'active')->orderBy('serial')->get(['id', 'slug']);
+    foreach ($games as $game) {
+        $monthsByYear = $charts->availableMonths($game->id);
+        foreach (array_keys($monthsByYear) as $year) {
+            $urls[] = $base . '/charts/' . rawurlencode($game->slug) . '/year/' . (int) $year;
+        }
+        foreach ($monthsByYear as $year => $months) {
+            foreach ($months as $month) {
+                $urls[] = $base . '/charts/' . rawurlencode($game->slug) . '/' . (int) $year . '/' . (int) $month;
+            }
+        }
     }
 
-    Page::query()
+    $pages = Page::query()
         ->where('status', 'active')
-        ->where(function ($query) { $query->where('noindex', false)->orWhereNull('noindex'); })
+        ->where('noindex', false)
         ->whereNotIn('slug', ['about-us', 'whatsapp', 'terms-conditions', 'privacy-policy', 'faq', 'disclaimer'])
         ->orderBy('id')
-        ->get(['slug', 'updated_at'])
-        ->each(function (Page $page) use (&$entries, $base) {
-            $entries[$base . '/pages/' . rawurlencode($page->slug)] = $page->updated_at;
-        });
+        ->get(['slug']);
+    foreach ($pages as $page) {
+        $urls[] = $base . '/pages/' . rawurlencode($page->slug);
+    }
 
-    return $entries;
-};
-
-$renderSitemapUrlSet = function (array $entries) {
+    $urls = array_values(array_unique($urls));
     $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-    foreach ($entries as $loc => $lastmod) {
-        $xml .= '<url><loc>' . htmlspecialchars($loc, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc>';
-        if ($lastmod) {
-            $xml .= '<lastmod>' . htmlspecialchars((is_string($lastmod) ? \Carbon\Carbon::parse($lastmod) : $lastmod)->copy()->utc()->toAtomString(), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</lastmod>';
-        }
-        $xml .= '</url>';
+    foreach ($urls as $loc) {
+        $xml .= '<url><loc>' . htmlspecialchars($loc, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc></url>';
     }
     $xml .= '</urlset>';
-
-    return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
-};
-
-Route::get('/sitemap-{part}.xml', function (string $part) use ($buildPublicSitemapEntries, $renderSitemapUrlSet) {
-    abort_unless(ctype_digit($part) && (int) $part >= 1, 404);
-    $entries = $buildPublicSitemapEntries();
-    $chunks = array_chunk($entries, 50000, true);
-    abort_if((int) $part > count($chunks), 404);
-
-    return $renderSitemapUrlSet($chunks[(int) $part - 1]);
-})->where('part', '[0-9]+')->name('sitemap.part');
-
-Route::get('/sitemap.xml', function () use ($buildPublicSitemapEntries, $renderSitemapUrlSet) {
-    $entries = $buildPublicSitemapEntries();
-    $chunks = array_chunk($entries, 50000, true);
-    if (count($chunks) <= 1) {
-        return $renderSitemapUrlSet($entries);
-    }
-
-    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('app.url', 'https://playonlinekhaiwal.com')), '/');
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-    foreach (array_keys($chunks) as $index) {
-        $xml .= '<sitemap><loc>' . htmlspecialchars($base . '/sitemap-' . ($index + 1) . '.xml', ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc></sitemap>';
-    }
-    $xml .= '</sitemapindex>';
 
     return response($xml, 200)->header('Content-Type', 'application/xml; charset=UTF-8');
 })->name('sitemap');

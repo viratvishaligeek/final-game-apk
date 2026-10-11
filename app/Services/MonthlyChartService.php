@@ -144,54 +144,6 @@ class MonthlyChartService
         });
     }
 
-    /**
-     * Build current-month homepage tables with game columns and calendar-day rows.
-     * The existing chart_chunk_size setting is reused as the target games-per-table
-     * value. The number of tables is calculated first, then games are distributed
-     * as evenly as possible across those tables.
-     *
-     * @return array<int, array{games: Collection, dates: array, results: array}>
-     */
-    public function homepageTables(Collection $games, Carbon $start, Carbon $end, array $dates, int $targetGamesPerTable): array
-    {
-        if ($games->isEmpty()) {
-            return [];
-        }
-
-        $results = Result::query()
-            ->whereIn('game_id', $games->pluck('id'))
-            ->where('type', 'jodi')
-            ->whereBetween('game_date', [$start->toDateString(), $end->toDateString()])
-            ->whereNotNull('number')
-            ->where('number', '<>', '')
-            ->get(['game_id', 'game_date', 'number']);
-
-        $resultMap = [];
-        foreach ($results as $result) {
-            $day = Carbon::parse($result->game_date, config('app.timezone'))->day;
-            $resultMap[(int) $result->game_id][$day] = (string) $result->number;
-        }
-
-        $tableCount = max(1, (int) ceil($games->count() / max(1, $targetGamesPerTable)));
-        $baseSize = intdiv($games->count(), $tableCount);
-        $remainder = $games->count() % $tableCount;
-        $tables = [];
-        $offset = 0;
-
-        for ($tableIndex = 0; $tableIndex < $tableCount; $tableIndex++) {
-            $size = $baseSize + ($tableIndex < $remainder ? 1 : 0);
-            $tableGames = $games->slice($offset, $size)->values();
-            $offset += $size;
-            $tables[] = [
-                'games' => $tableGames,
-                'dates' => $dates,
-                'results' => $resultMap,
-            ];
-        }
-
-        return $tables;
-    }
-
     public function paginate(Collection $rows, Request $request, ?int $perPage = null): LengthAwarePaginator
     {
         $perPage = $perPage ?? $this->chunkSize();

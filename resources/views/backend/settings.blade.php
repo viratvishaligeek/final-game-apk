@@ -159,10 +159,10 @@
                         @error('community_post_approval')<small class="text-danger">{{ $message }}</small>@enderror
                     </div>
                     <div class="col-lg-6 mb-3">
-                        <label class="small mb-1" for="chart_chunk_size">Games Per Homepage Results Table</label>
+                        <label class="small mb-1" for="chart_chunk_size">Monthly Chart Entries Per Page</label>
                         <input class="form-control" id="chart_chunk_size" name="chart_chunk_size" type="number" min="1" max="50"
                             value="{{ old('chart_chunk_size', optional($setting->firstWhere('option', 'chart_chunk_size'))->value ?? 10) }}">
-                        <small class="text-muted">Choose 1–50 games per homepage table. Games are distributed evenly across the generated tables; invalid or missing values use 10.</small>
+                        <small class="text-muted">Choose 1–50 chart rows per page. Invalid or missing values use 10.</small>
                         @error('chart_chunk_size')<small class="text-danger">{{ $message }}</small>@enderror
                     </div>
                 </div>
