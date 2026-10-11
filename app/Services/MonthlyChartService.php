@@ -33,6 +33,7 @@ class MonthlyChartService
         $keys = Result::query()
             ->where('type', 'jodi')
             ->whereNotNull('game_date')
+            ->whereDate('game_date', '<=', now()->timezone(config('app.timezone'))->toDateString())
             ->whereHas('game', fn ($query) => $query->where('status', 'active'))
             ->when($gameId !== null, fn ($query) => $query->where('game_id', $gameId))
             ->selectRaw("{$monthExpression} as month_key")
@@ -97,10 +98,9 @@ class MonthlyChartService
         foreach ($dates as $date) {
             foreach ($games as $game) {
                 $result = $results->get($game->id . '|' . $date->toDateString());
-                $number = $result && filled($result->number) ? (string) $result->number : null;
-                $status = $number !== null
-                    ? 'published'
-                    : ($date->gt($now->copy()->startOfDay()) ? 'upcoming' : 'pending');
+                $isFutureDate = $date->gt($now->copy()->startOfDay());
+                $number = !$isFutureDate && $result && filled($result->number) ? (string) $result->number : null;
+                $status = $isFutureDate ? 'upcoming' : ($number !== null ? 'published' : 'pending');
 
                 $rows->push([
                     'game' => $game,
@@ -136,15 +136,14 @@ class MonthlyChartService
 
         return collect($dates)->map(function (Carbon $date) use ($results, $game, $now) {
             $result = $results->get($date->toDateString());
-            $number = $result && filled($result->number) ? (string) $result->number : null;
+            $isFutureDate = $date->gt($now->copy()->startOfDay());
+            $number = !$isFutureDate && $result && filled($result->number) ? (string) $result->number : null;
 
             return [
                 'game' => $game,
                 'date' => $date->copy(),
                 'number' => $number,
-                'status' => $number !== null
-                    ? 'published'
-                    : ($date->gt($now->copy()->startOfDay()) ? 'upcoming' : 'pending'),
+                'status' => $isFutureDate ? 'upcoming' : ($number !== null ? 'published' : 'pending'),
             ];
         });
     }
