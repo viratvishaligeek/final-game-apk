@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\CommunityPost;
 use App\Models\Game;
-use App\Models\Setting;
 use App\Services\AppSettingsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,7 +36,7 @@ class CommunityController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'game_id' => ['required', 'integer', Rule::exists('games', 'id')->where(fn ($query) => $query->where('status', 'active'))],
+            'game_id' => ['required', 'integer', Rule::exists('games', 'id')->where(fn ($query) => $query->where('status', 'active')->whereNull('deleted_at'))],
             'title' => ['required', 'string', 'min:4', 'max:120'],
             'body' => ['required', 'string', 'min:10', 'max:5000'],
         ]);
