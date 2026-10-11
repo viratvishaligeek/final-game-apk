@@ -208,7 +208,7 @@ class DynamicFrontendIntegrationTest extends TestCase
         }
 
         $response = $this->get(route('index'))->assertOk();
-        preg_match_all('/<table class="quick-record-table homepage-results-table">(.*?)<\\/table>/s', $response->getContent(), $matches);
+        preg_match_all('/<table class="quick-record-table homepage-results-table">(.*?)<\/table>/s', $response->getContent(), $matches);
         $this->assertCount(3, $matches[1]);
         $sizes = [];
         foreach ($matches[1] as $table) {
@@ -217,6 +217,26 @@ class DynamicFrontendIntegrationTest extends TestCase
         }
         $this->assertSame([8, 7, 7], $sizes);
         $this->assertStringNotContainsString('pagination', strtolower($response->getContent()));
+    }
+
+    public function test_homepage_matrix_uses_the_actual_number_of_days_in_leap_and_short_months(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2024-02-15 10:00:00', 'Asia/Kolkata'));
+        $game = $this->createGame('February Market', 'february-market', 1);
+        Result::create(['game_id' => $game->id, 'game_date' => '2024-02-29', 'type' => 'jodi', 'number' => '04']);
+
+        $response = $this->get(route('index'))->assertOk()->assertSee('February 2024');
+        preg_match('/<table class="quick-record-table homepage-results-table">(.*?)<\/table>/s', $response->getContent(), $table);
+        preg_match('/<tbody>(.*?)<\/tbody>/s', $table[1] ?? '', $tbody);
+        preg_match_all('/<tr>/', $tbody[1] ?? '', $rows);
+        $this->assertCount(29, $rows[0]);
+        $this->assertStringContainsString('>29</th>', $tbody[1]);
+        $this->assertStringNotContainsString('>30</th>', $tbody[1]);
+        $this->assertStringContainsString('04', $tbody[1]);
+
+        $charts = app(\App\Services\MonthlyChartService::class);
+        $this->assertCount(28, $charts->monthDates(2025, 2)[2]);
+        $this->assertCount(30, $charts->monthDates(2026, 4)[2]);
     }
 
     public function test_legacy_market_and_month_urls_redirect_to_the_slug_only_result_page(): void
@@ -383,12 +403,17 @@ class DynamicFrontendIntegrationTest extends TestCase
             ->assertSee('Download App')
             ->assertDontSee('Find market');
 
-        $this->get(route('sitemap'))
+        $sitemap = $this->get(route('sitemap'))
             ->assertOk()
             ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
             ->assertSee('https://playonlinekhaiwal.com/result/first-market')
+            ->assertSee('<loc>https://playonlinekhaiwal.com/about</loc>', false)
+            ->assertDontSee('https://playonlinekhaiwal.com/info/about')
             ->assertDontSee('https://playonlinekhaiwal.com/charts/first-market')
             ->assertDontSee('https://playonlinekhaiwal.com/get_result');
+
+        preg_match_all('/<loc>(.*?)<\/loc>/', $sitemap->getContent(), $locations);
+        $this->assertSame(count($locations[1]), count(array_unique($locations[1])));
     }
 
     private function createGame(string $name, string $slug, int $serial): Game
