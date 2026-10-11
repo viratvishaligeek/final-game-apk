@@ -128,10 +128,6 @@ class MonthlyChartService
             ->get(['game_date', 'number'])
             ->keyBy(fn (Result $result) => Carbon::parse($result->game_date, config('app.timezone'))->toDateString());
 
-        if ($results->filter(fn (Result $result) => filled($result->number))->isEmpty()) {
-            return collect();
-        }
-
         $now = now()->timezone(config('app.timezone'));
 
         return collect($dates)->map(function (Carbon $date) use ($results, $game, $now) {
