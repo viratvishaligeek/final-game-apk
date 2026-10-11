@@ -20,7 +20,7 @@
             <a href="{{ route('index') }}#records">Records</a>
             <a href="{{ route('information', ['page' => 'faq']) }}">Help / FAQ</a>
             @foreach ($navPages ?? collect() as $navPage)
-                <a href="{{ route('frontend.page', ['slug' => $navPage->slug]) }}">{{ $navPage->name }}</a>
+                <a href="{{ route('information', ['page' => $navPage->slug]) }}">{{ $navPage->name }}</a>
             @endforeach
             <a class="nav-search" href="{{ route('frontend.app-download') }}" aria-label="Download App">↓
                 <span>Download App</span></a>

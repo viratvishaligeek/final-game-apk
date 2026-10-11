@@ -32,7 +32,8 @@
                 </p>
                 <div class="hero-actions"><a class="button button-gold" href="{{ route('frontend.app-download') }}">Download
                         App
-                        <span>↓</span></a><a class="button button-outline" href="{{ route('community.register') }}">Register Now
+                        <span>↓</span></a><a class="button button-outline" href="{{ route('community.register') }}">Register
+                        Now
                         <span>↗</span></a></div>
                 <div class="hero-facts">
                     <div><strong>{{ count($frontendResults) }}</strong><span>Active markets</span></div>
@@ -96,7 +97,8 @@
                 @forelse($remainingFrontendResults as $index => $game)
                     <article class="result-board-card">
                         <div class="result-board-head">
-                            <span class="market-index">{{ str_pad((string) ($game['serial'] ?? ($index + 1)), 2, '0', STR_PAD_LEFT) }}</span>
+                            <span
+                                class="market-index">{{ str_pad((string) ($game['serial'] ?? $index + 1), 2, '0', STR_PAD_LEFT) }}</span>
                             <span
                                 class="result-state {{ $game['today'] === '--' ? 'is-pending' : 'is-published' }}"><i></i>{{ $game['today'] === '--' ? 'PENDING' : 'PUBLISHED' }}</span>
                         </div>
@@ -237,15 +239,16 @@
     <section class="section-block section-light" id="records">
         <div class="wrap">
             <div class="arch">
-                <div class="archive-feature"><span class="archive-symbol">▦</span>
+                <div class="archive-feature">
                     <p class="eyebrow">HISTORICAL REGISTER</p>
                     <h3>Old results.<br><span>Clear chronology.</span></h3>
-                    <p>Open a market's yearly chart to review stored jodi results by calendar date.</p><a
-                        class="button button-gold" href="#market-charts">View current-month charts ↗</a>
+                    <br>
+                    @foreach ($games as $game)
+                        <a class="button button-gold" style="padding: 10px; margin: 5px"
+                            href="{{ route('frontend.market', ['slug' => $game->slug]) }}"> {{ $game->name }} Result ↗</a>
+                    @endforeach
                 </div>
-
             </div>
-        </div>
     </section>
 
     <section class="section-block section-light" id="about">

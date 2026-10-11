@@ -178,7 +178,9 @@ a,button,input,summary{-webkit-tap-highlight-color:transparent}
 .faq-item[open] .faq-answer{animation:answer-in 240ms var(--ease) both}
 .faq-list-light .faq-item{border-radius:13px;box-shadow:0 5px 16px rgba(9,25,55,.035)}
 .disclaimer-section{padding-block:24px}
-.disclaimer-inner{border:1px solid rgba(255,255,255,.1);border-radius:20px;background:linear-gradient(110deg,#101f3b,#0b1730);box-shadow:0 14px 32px rgba(0,0,0,.14)}
+.disclaimer-inner{border:1px solid rgba(255,255,255,.1);border-radius:20px;
+    /* background:linear-gradient(110deg,#101f3b,#0b1730);box-shadow:0 14px 32px rgba(0,0,0,.14) */
+}
 .disclaimer-icon{border-radius:13px}
 .button{min-height:46px;border-radius:11px;padding-inline:19px;transition:transform var(--medium) var(--ease),box-shadow var(--medium) var(--ease),filter var(--medium),background-position var(--medium)}
 .button:hover{transform:translateY(-2px);filter:saturate(1.08)}

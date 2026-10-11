@@ -41,7 +41,7 @@ class MainController extends Controller
         })->first();
         $featuredGameId = $featuredGame['id'] ?? null;
         $remainingFrontendResults = collect($frontendResults)
-            ->reject(fn (array $game) => $featuredGameId !== null && (int) $game['id'] === (int) $featuredGameId)
+            ->reject(fn(array $game) => $featuredGameId !== null && (int) $game['id'] === (int) $featuredGameId)
             ->values()
             ->all();
         $marketResults = collect($remainingFrontendResults)->map(fn(array $game) => collect($game)->only([
@@ -81,6 +81,7 @@ class MainController extends Controller
 
         return view('frontend.index', compact(
             'frontendResults',
+            'games',
             'remainingFrontendResults',
             'featuredGame',
             'marketResults',
