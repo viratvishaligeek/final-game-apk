@@ -95,7 +95,7 @@ $buildPublicSitemapEntries = function (): array {
 
     Page::query()
         ->where('status', 'active')
-        ->where('noindex', false)
+        ->where(function ($query) { $query->where('noindex', false)->orWhereNull('noindex'); })
         ->whereNotIn('slug', ['about-us', 'whatsapp', 'terms-conditions', 'privacy-policy', 'faq', 'disclaimer'])
         ->orderBy('id')
         ->get(['slug', 'updated_at'])
