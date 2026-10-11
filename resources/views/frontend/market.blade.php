@@ -17,7 +17,7 @@
         <div class="page-toolbar result-month-toolbar">
             <h2>{{ $game->name }} · <span data-month-label>{{ $monthLabel }}</span></h2>
             <form method="GET" action="{{ route('frontend.market', ['slug' => $game->slug]) }}" class="monthly-chart-filter result-month-filter" data-result-filter data-endpoint="{{ route('frontend.chart') }}">
-                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                <input type="hidden" data-csrf-token value="{{ csrf_token() }}">
                 <label for="result-year">Year</label>
                 <select class="form-select" id="result-year" name="year" data-result-year>
                     @foreach ($availableYears as $yearOption)
@@ -63,7 +63,7 @@
     if (!form) return;
     const yearSelect = form.querySelector('[data-result-year]');
     const monthSelect = form.querySelector('[data-result-month]');
-    const csrf = form.querySelector('input[name="_token"]').value;
+    const csrf = form.querySelector('[data-csrf-token]').value;
     const status = document.querySelector('[data-result-status]');
     const empty = document.querySelector('[data-result-empty]');
     const tbody = document.querySelector('[data-result-body]');
