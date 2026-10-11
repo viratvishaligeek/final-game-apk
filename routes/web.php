@@ -41,7 +41,9 @@ Route::controller(MainController::class)->group(function () {
     // Backward-compatible redirects for established URLs; month/year are preserved
     // as noncanonical query parameters on the new game page where applicable.
     Route::get('/markets/{slug}', function (string $slug) {
-        return redirect()->route('frontend.market', ['slug' => $slug], 301);
+        $game = \\App\\Models\\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
+
+        return redirect()->route('frontend.market', ['slug' => $game->slug], 301);
     })->where('slug', '[A-Za-z0-9-]+')->name('frontend.legacy-market');
 
     Route::get('/charts/{slug}/year/{year}', function (string $slug, string $year) {
@@ -71,6 +73,12 @@ Route::controller(MainController::class)->group(function () {
     Route::get('/chart/{year}/{month}/{slug}', 'legacyChart')
         ->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}', 'slug' => '[A-Za-z0-9-]+'])
         ->name('frontend.legacy-chart');
+
+    Route::get('/info/{page}', function (string $page) {
+        abort_unless(in_array($page, ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'], true), 404);
+
+        return redirect()->route('information', ['page' => $page], 301);
+    })->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])->name('frontend.legacy-information');
 
     Route::get('/{page}', 'information')
         ->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])
