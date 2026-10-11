@@ -462,9 +462,9 @@ class DynamicFrontendIntegrationTest extends TestCase
         preg_match('/<div class="market-grid" id="market-grid">(.*?)<\/div>\s*<p class="empty-state" id="no-markets"/s', $html, $marketGrid);
         $marketHtml = $marketGrid[1] ?? '';
         $this->assertStringNotContainsString('Second Market', $marketHtml);
-        $this->assertStringContainsString('href="/result/first-market"', $marketHtml);
-        $this->assertStringContainsString('href="/result/third-market"', $marketHtml);
-        $this->assertStringNotContainsString('href="/result/second-market"', $marketHtml);
+        $this->assertStringContainsString('href="' . route('frontend.market', ['slug' => 'first-market']) . '"', $marketHtml);
+        $this->assertStringContainsString('href="' . route('frontend.market', ['slug' => 'third-market']) . '"', $marketHtml);
+        $this->assertStringNotContainsString('href="' . route('frontend.market', ['slug' => 'second-market']) . '"', $marketHtml);
         $this->assertTrue(strpos($marketHtml, 'First Market') < strpos($marketHtml, 'Third Market'), 'Market cards must retain serial order.');
 
         preg_match_all('/href="#([^"]+)"/', $html, $fragmentLinks);
