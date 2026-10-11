@@ -416,6 +416,65 @@ class DynamicFrontendIntegrationTest extends TestCase
         $this->assertSame(count($locations[1]), count(array_unique($locations[1])));
     }
 
+    public function test_homepage_features_most_recently_published_game_and_keeps_remaining_games_serial_order(): void
+    {
+        $first = $this->createGame('First Market', 'first-market', 1);
+        $second = $this->createGame('Second Market', 'second-market', 2);
+        $third = $this->createGame('Third Market', 'third-market', 3);
+
+        Result::create([
+            'game_id' => $first->id,
+            'game_date' => '2026-10-11',
+            'type' => 'jodi',
+            'number' => '11',
+            'created_at' => '2026-10-11 08:00:00',
+            'updated_at' => '2026-10-11 08:00:00',
+        ]);
+        Result::create([
+            'game_id' => $second->id,
+            'game_date' => '2026-10-11',
+            'type' => 'jodi',
+            'number' => '22',
+            'created_at' => '2026-10-11 09:00:00',
+            'updated_at' => '2026-10-11 10:30:00',
+        ]);
+        Result::create([
+            'game_id' => $third->id,
+            'game_date' => '2026-10-11',
+            'type' => 'jodi',
+            'number' => '33',
+            'created_at' => '2026-10-11 07:00:00',
+            'updated_at' => '2026-10-11 07:00:00',
+        ]);
+
+        $html = $this->get(route('index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('<div class="spotlight-market">Second Market</div>', $html);
+        $this->assertStringContainsString('<div class="spotlight-number">22</div>', $html);
+
+        preg_match('/<div class="result-board-grid">(.*?)<\/div>\s*<\/div>\s*<\/section>/s', $html, $board);
+        $boardHtml = $board[1] ?? '';
+        $this->assertStringNotContainsString('Second Market', $boardHtml);
+        $this->assertStringContainsString('First Market', $boardHtml);
+        $this->assertStringContainsString('Third Market', $boardHtml);
+
+        preg_match('/<div class="market-grid" id="market-grid">(.*?)<\/div>\s*<p class="empty-state" id="no-markets"/s', $html, $marketGrid);
+        $marketHtml = $marketGrid[1] ?? '';
+        $this->assertStringNotContainsString('Second Market', $marketHtml);
+        $this->assertStringContainsString('href="/result/first-market"', $marketHtml);
+        $this->assertStringContainsString('href="/result/third-market"', $marketHtml);
+        $this->assertStringNotContainsString('href="/result/second-market"', $marketHtml);
+
+        preg_match_all('/href="#([^"]+)"/', $html, $fragmentLinks);
+        preg_match_all('/\bid="([^"]+)"/', $html, $elementIds);
+        $ids = array_unique($elementIds[1]);
+        foreach (array_unique($fragmentLinks[1]) as $fragment) {
+            $this->assertContains($fragment, $ids, "Homepage link #{$fragment} must point to an existing element.");
+        }
+
+        $this->assertStringNotContainsString('#quick-record', $html);
+    }
+
     private function createGame(string $name, string $slug, int $serial): Game
     {
         return Game::create([
