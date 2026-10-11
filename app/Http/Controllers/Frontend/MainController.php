@@ -29,11 +29,26 @@ class MainController extends Controller
             ->orderBy('id')
             ->get(['id', 'name', 'slug', 'serial', 'result_time', 'last_result']);
 
+        // Keep public lists in stable serial order, but feature the game whose
+        // latest non-empty result record was published/updated most recently.
         $frontendResults = $this->getFrontendResults();
-        $marketResults = collect($frontendResults)->map(fn(array $game) => collect($game)->only([
+        $featuredGame = collect($frontendResults)->sort(function (array $a, array $b) {
+            $timestampOrder = strcmp((string) ($b['latest_result_at'] ?? ''), (string) ($a['latest_result_at'] ?? ''));
+
+            return $timestampOrder !== 0
+                ? $timestampOrder
+                : ((int) $a['serial'] <=> (int) $b['serial']);
+        })->first();
+        $featuredGameId = $featuredGame['id'] ?? null;
+        $remainingFrontendResults = collect($frontendResults)
+            ->reject(fn (array $game) => $featuredGameId !== null && (int) $game['id'] === (int) $featuredGameId)
+            ->values()
+            ->all();
+        $marketResults = collect($remainingFrontendResults)->map(fn(array $game) => collect($game)->only([
             'id',
             'name',
             'slug',
+            'serial',
             'time',
             'today',
             'yesterday',
@@ -66,6 +81,8 @@ class MainController extends Controller
 
         return view('frontend.index', compact(
             'frontendResults',
+            'remainingFrontendResults',
+            'featuredGame',
             'marketResults',
             'recordYears',
             'homepageSections',
@@ -182,13 +199,23 @@ class MainController extends Controller
     {
         $now = now()->timezone(config('app.timezone'));
         $games = Game::query()->where('status', 'active')->orderBy('serial')->orderBy('id')
-            ->get(['id', 'name', 'slug', 'result_time', 'last_result']);
+            ->get(['id', 'name', 'slug', 'serial', 'result_time', 'last_result']);
         $businessDates = $this->businessDatesFor($games, $now);
         $resultDates = collect($businessDates)->flatMap(fn(array $dates) => array_values($dates))->unique()->values();
         $results = Result::query()->whereIn('game_id', $games->pluck('id'))->where('type', 'jodi')
             ->whereIn('game_date', $resultDates)->get(['game_id', 'game_date', 'number'])->groupBy('game_id');
+        $latestPublishedAt = Result::query()
+            ->whereIn('game_id', $games->pluck('id'))
+            ->where('type', 'jodi')
+            ->whereNotNull('game_date')
+            ->whereDate('game_date', '<=', $now->toDateString())
+            ->whereNotNull('number')
+            ->where('number', '<>', '')
+            ->selectRaw('game_id, MAX(COALESCE(updated_at, created_at)) as latest_published_at')
+            ->groupBy('game_id')
+            ->pluck('latest_published_at', 'game_id');
 
-        return $games->map(function (Game $game) use ($results, $businessDates) {
+        return $games->map(function (Game $game) use ($results, $businessDates, $latestPublishedAt) {
             $gameResults = $results->get($game->id, collect());
             $dates = $businessDates[$game->id];
             $todayResult = optional($gameResults->firstWhere('game_date', $dates['today']))->number;
@@ -198,6 +225,8 @@ class MainController extends Controller
                 'id' => $game->id,
                 'name' => $game->name,
                 'slug' => $game->slug,
+                'serial' => (int) $game->serial,
+                'latest_result_at' => $latestPublishedAt->get($game->id),
                 'time' => $game->result_time ? Carbon::parse($game->result_time)->format('h:i A') : '—',
                 'today' => $todayResult !== null && $todayResult !== '' ? (string) $todayResult : '--',
                 'yesterday' => $yesterdayResult !== null && $yesterdayResult !== '' ? (string) $yesterdayResult : '--',
