@@ -52,7 +52,7 @@ Route::controller(MainController::class)->group(function () {
             ->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
 
         return redirect()->route('frontend.market', ['slug' => $game->slug], 301);
-    })->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}'])->name('frontend.legacy-year-chart');
+    })->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}'])->name('frontend.year-chart');
 
     Route::get('/charts/{slug}/{year}/{month}', function (string $slug, string $year, string $month) {
         $game = \\App\\Models\\Game::query()->where('status', 'active')->where('slug', $slug)->firstOrFail();
@@ -66,11 +66,11 @@ Route::controller(MainController::class)->group(function () {
             ->whereNotNull('number')->where('number', '<>', '')->exists(), 404);
 
         return redirect()->route('frontend.market', ['slug' => $game->slug, 'year' => $yearNumber, 'month' => $monthNumber], 301);
-    })->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}', 'month' => '[0-9]{1,2}'])->name('frontend.legacy-chart');
+    })->where(['slug' => '[A-Za-z0-9-]+', 'year' => '[0-9]{4}', 'month' => '[0-9]{1,2}'])->name('frontend.legacy-month-chart');
 
     Route::get('/chart/{year}/{month}/{slug}', 'legacyChart')
         ->where(['year' => '[0-9]{4}', 'month' => '[0-9]{1,2}', 'slug' => '[A-Za-z0-9-]+'])
-        ->name('frontend.legacy-chart-old');
+        ->name('frontend.legacy-chart');
 
     Route::get('/{page}', 'information')
         ->whereIn('page', ['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'])
