@@ -67,15 +67,15 @@ Route::get('/sitemap.xml', function () {
     }
 
     $charts = app(MonthlyChartService::class);
-    foreach ($charts->availableMonths() as $year => $months) {
-        foreach ($months as $month) {
-            $urls[] = $base . '/?year=' . (int) $year . '&month=' . (int) $month;
-        }
-    }
-
     $games = Game::query()->where('status', 'active')->orderBy('serial')->get(['id', 'slug']);
     foreach ($games as $game) {
         $monthsByYear = $charts->availableMonths($game->id);
+        foreach (array_keys($monthsByYear) as $year) {
+            $urls[] = $base . '/charts/' . rawurlencode($game->slug) . '/year/' . (int) $year;
+        }
+        if (isset($monthsByYear[(int) now()->timezone(config('app.timezone'))->format('Y')])) {
+            $urls[] = $base . '/charts/' . rawurlencode($game->slug) . '/year/' . (int) now()->timezone(config('app.timezone'))->format('Y');
+        }
         foreach ($monthsByYear as $year => $months) {
             foreach ($months as $month) {
                 $urls[] = $base . '/charts/' . rawurlencode($game->slug) . '/' . (int) $year . '/' . (int) $month;
