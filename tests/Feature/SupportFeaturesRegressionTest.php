@@ -53,6 +53,22 @@ class SupportFeaturesRegressionTest extends TestCase
             ->assertJsonMissing(['question' => 'App only']);
     }
 
+    public function test_faq_queries_are_isolated_by_the_active_site(): void
+    {
+        Faq::withoutGlobalScope('site')->query()->create([
+            'question' => 'Khatauli-only test FAQ',
+            'answer' => 'This must not leak across domains.',
+            'platform' => 'both',
+            'site_key' => 'play-online-khaiwal',
+        ]);
+
+        config(['sites.current_key' => 'galidisawar']);
+        $this->getJson('/api/v1/faqs?platform=web')
+            ->assertOk()
+            ->assertJsonCount(0, 'data')
+            ->assertJsonMissing(['question' => 'Khatauli-only test FAQ']);
+    }
+
     public function test_support_faq_and_sound_settings_routes_are_registered(): void
     {
         $faqRoute = Route::getRoutes()->getByAction(SupportFaqController::class . '@index');
