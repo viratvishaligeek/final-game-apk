@@ -8,12 +8,15 @@ use Illuminate\Support\Facades\DB;
 
 class AppSettingsService
 {
-    private const CACHE_KEY = 'app_settings';
+    private function cacheKey(): string
+    {
+        return 'app_settings:' . (string) config('sites.current_key', config('sites.default', 'play-online-khaiwal'));
+    }
 
     public function all(): array
     {
         return Cache::remember(
-            self::CACHE_KEY,
+            $this->cacheKey(),
             now()->addMinutes(5),
             fn() => Setting::query()
                 ->pluck('value', 'option')
@@ -55,7 +58,7 @@ class AppSettingsService
 
     public function forgetCache(): void
     {
-        Cache::forget(self::CACHE_KEY);
+        Cache::forget($this->cacheKey());
     }
 
     public function save(array $settings): void
