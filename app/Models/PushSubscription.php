@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PushSubscription extends Model
 {
     use BelongsToSite;
-    protected $fillable = ['user_id', 'token', 'token_hash', 'platform', 'public_enabled'];
+    protected $fillable = ['user_id', 'admin_id', 'token', 'token_hash', 'platform', 'public_enabled'];
 
     protected function casts(): array
     {
