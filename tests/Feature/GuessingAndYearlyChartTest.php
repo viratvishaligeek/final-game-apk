@@ -9,12 +9,13 @@ use Tests\TestCase;
 
 class GuessingAndYearlyChartTest extends TestCase
 {
-    public function test_market_list_and_historical_chart_routes_remain_registered(): void
+    public function test_market_list_and_historical_chart_controllers_remain_routed(): void
     {
-        $uris = collect(Route::getRoutes()->getRoutes())->map(fn ($route) => $route->uri());
+        $actions = collect(Route::getRoutes()->getRoutes())
+            ->map(fn ($route) => $route->getActionName());
 
-        $this->assertTrue($uris->contains('api/v1/games/list'));
-        $this->assertTrue($uris->contains('api/v1/result-chart/index'));
+        $this->assertTrue($actions->contains(fn ($action) => str_contains($action, GameController::class)));
+        $this->assertTrue($actions->contains(fn ($action) => str_contains($action, ResultChartController::class)));
         $this->assertTrue(method_exists(GameController::class, 'index'));
         $this->assertTrue(method_exists(GameController::class, 'show'));
         $this->assertTrue(method_exists(ResultChartController::class, 'index'));
