@@ -38,6 +38,14 @@
                                 value="{{ old('question', $faq->question) }}" required />
                         </div>
                         <div class="col-md-12 mb-3">
+                            <label class="small mb-1" for="platform">Available on <span class="text-danger">*</span></label>
+                            <select class="form-select" id="platform" name="platform" required>
+                                <option value="both" {{ old('platform', $faq->platform ?? 'both') === 'both' ? 'selected' : '' }}>Web and App</option>
+                                <option value="web" {{ old('platform', $faq->platform ?? 'both') === 'web' ? 'selected' : '' }}>Web only</option>
+                                <option value="app" {{ old('platform', $faq->platform ?? 'both') === 'app' ? 'selected' : '' }}>App only</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-3">
                             <label class="small mb-1" for="answer">Answer <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="answer" name="answer" rows="5"
                                 required>{{ old('answer', $faq->answer) }}</textarea>

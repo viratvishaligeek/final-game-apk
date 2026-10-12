@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Faq;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class FaqController extends Controller
@@ -27,9 +28,12 @@ class FaqController extends Controller
     {
         $validated = $request->validate([
             'question' => ['required', 'string', 'max:500'],
-            'answer'   => ['required', 'string'],
+            'answer' => ['required', 'string'],
+            'platform' => ['required', 'in:web,app,both'],
         ]);
         Faq::create($validated);
+        $this->clearFaqCache();
+
         return redirect()->route('admin.faqs.index')->with('success', 'FAQ created successfully.');
     }
 
@@ -43,15 +47,26 @@ class FaqController extends Controller
     {
         $validated = $request->validate([
             'question' => ['required', 'string', 'max:500'],
-            'answer'   => ['required', 'string'],
+            'answer' => ['required', 'string'],
+            'platform' => ['required', 'in:web,app,both'],
         ]);
         $faq->update($validated);
+        $this->clearFaqCache();
+
         return redirect()->route('admin.faqs.index')->with('success', 'FAQ updated successfully.');
     }
 
     public function destroy(Faq $faq): RedirectResponse
     {
         $faq->delete();
+        $this->clearFaqCache();
+
         return redirect()->route('admin.faqs.index')->with('success', 'FAQ deleted successfully.');
+    }
+
+    private function clearFaqCache(): void
+    {
+        Cache::forget('support-faqs:web');
+        Cache::forget('support-faqs:app');
     }
 }

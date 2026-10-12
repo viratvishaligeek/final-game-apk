@@ -69,6 +69,10 @@
                     <div class="nav-link-icon"><i data-feather="message-circle"></i></div>
                     Live Support Chat
                 </a>
+                <a class="nav-link {{ request()->routeIs('admin.notification-sounds.*') ? 'active' : '' }}" href="{{ route('admin.notification-sounds.index') }}">
+                    <div class="nav-link-icon"><i data-feather="volume-2"></i></div>
+                    Notification Sounds
+                </a>
                 @foreach ($menuItems as $item)
                     @if (($item['type'] ?? 'link') === 'heading')
                         <div class="sidenav-menu-heading">

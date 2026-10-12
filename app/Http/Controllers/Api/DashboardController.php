@@ -270,6 +270,13 @@ class DashboardController extends Controller
             'admin_notice',
             'marquee',
             'notice_status',
+            'notification_sound_add_money',
+            'notification_sound_withdraw',
+            'notification_sound_debit',
+            'notification_sound_credit',
+            'notification_sound_winning',
+            'notification_sound_result',
+            'notification_sound_chat',
         ];
 
         $keysInput = $request->input('keys', []);
