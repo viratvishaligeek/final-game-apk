@@ -13,7 +13,7 @@
 - Existing rows are assigned to the default site during migration. If a second domain already has live data, classify and assign those records to the correct site before routing traffic to it.
 
 ## Private chat attachments
-- Local private storage remains the safe default for existing installs. To enable private S3-compatible object storage, set SUPPORT_CHAT_DISK=s3 and configure AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, AWS_BUCKET, and (for compatible providers) AWS_ENDPOINT / AWS_USE_PATH_STYLE_ENDPOINT.
+- Local private storage remains the safe default for existing installs. Before enabling S3, add the adapter with composer require league/flysystem-aws-s3-v3 and commit the resulting composer.json and composer.lock changes. Then set SUPPORT_CHAT_DISK=s3 and configure AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION, AWS_BUCKET, and (for compatible providers) AWS_ENDPOINT / AWS_USE_PATH_STYLE_ENDPOINT.
 - Before switching the app to S3, configure the S3 adapter dependency in Composer, then run php artisan support-chat:migrate-media-to-s3 (use --dry-run first). The command copies files and intentionally keeps the local originals until you verify the destination bucket.
 - Set SUPPORT_CHAT_PRESIGNED_URL_MINUTES=5 or another short expiry. Keep the bucket private and configure bucket CORS for the exact web origins that must play attachments. Never make the bucket public. The app redirects authenticated media requests to short-lived signed URLs when the S3 disk is enabled.
 - Test upload, playback and expiry against the target object-storage provider before switching production traffic. The app cannot verify provider credentials from source control.
