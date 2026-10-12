@@ -211,7 +211,8 @@ class BidController extends Controller
             $transaction = $this->walletService->debit(
                 $lockedUser,
                 $calculatedTotal,
-                "Bet placed - {$lockedGame->name}"
+                "Bet placed - {$lockedGame->name}",
+                false
             );
 
             $newBalance = round((float) $transaction->balance, 2);
