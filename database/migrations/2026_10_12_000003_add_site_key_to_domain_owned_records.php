@@ -37,7 +37,7 @@ return new class extends Migration {
             }
 
             Schema::table($tableName, function (Blueprint $table) use ($defaultSite): void {
-                $table->string('site_key', 64)->default($defaultSite)->index();
+                $table->string('site_key', 32)->default($defaultSite)->index();
             });
         }
     }
