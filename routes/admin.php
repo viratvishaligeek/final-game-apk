@@ -38,6 +38,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
     Route::get('push-notifications', [PushNotificationController::class, 'index'])->name('push-notifications.index');
     Route::get('support-chat', [SupportChatController::class, 'index'])->name('support-chat.index');
     Route::get('support-chat/conversations', [SupportChatController::class, 'conversations'])->name('support-chat.conversations');
+    Route::get('support-chat/media/{message}', [SupportChatController::class, 'media'])->name('support-chat.media');
     Route::get('support-chat/{conversation}/messages', [SupportChatController::class, 'messages'])->name('support-chat.messages');
     Route::post('support-chat/{conversation}/send', [SupportChatController::class, 'send'])->name('support-chat.send');
     Route::post('push-notifications/broadcast', [PushNotificationController::class, 'broadcast'])->name('push-notifications.broadcast');
