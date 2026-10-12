@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Models\SupportConversation;
 use App\Models\SupportMessage;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -46,11 +47,17 @@ class SupportChatController extends Controller
         ]);
     }
 
-    public function media(SupportMessage $message): BinaryFileResponse
+    public function media(SupportMessage $message)
     {
-        abort_unless($message->media_path && Storage::disk('local')->exists($message->media_path), 404);
+        $disk = Storage::disk(config('support-chat.disk', 'local'));
+        abort_unless($message->media_path && $disk->exists($message->media_path), 404);
 
-        return response()->file(Storage::disk('local')->path($message->media_path), ['Content-Type' => $message->media_mime ?: 'application/octet-stream', 'X-Content-Type-Options' => 'nosniff']);
+        if (config('support-chat.disk') === 's3') {
+            abort_unless(method_exists($disk, 'temporaryUrl'), 503, 'Private object storage is not configured for temporary URLs.');
+            return redirect()->away($disk->temporaryUrl($message->media_path, now()->addMinutes(config('support-chat.presigned_url_minutes', 5))));
+        }
+
+        return response()->file($disk->path($message->media_path), ['Content-Type' => $message->media_mime ?: 'application/octet-stream', 'X-Content-Type-Options' => 'nosniff']);
     }
 
     public function send(Request $request, SupportConversation $conversation)
@@ -70,12 +77,21 @@ class SupportChatController extends Controller
         ];
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $data['media_path'] = $file->store('support-chat/' . $conversation->id, 'local');
+            $data['media_path'] = $file->store('support-chat/' . $conversation->id, config('support-chat.disk', 'local'));
             $data['media_mime'] = $file->getMimeType();
             $data['media_name'] = mb_substr($file->getClientOriginalName(), 0, 255);
         }
         $message = $conversation->messages()->create($data);
         $conversation->forceFill(['assigned_admin_id' => auth('admin')->id()])->touch();
+
+        // Persist the reply in the user's notification history and attempt push delivery.
+        if ($conversation->user) {
+            app(NotificationService::class)->create(
+                $conversation->user,
+                'Support replied',
+                $message->body ?: 'Support sent you an attachment.'
+            );
+        }
 
         return response()->json(['data' => $this->formatMessage($message)], 201);
     }
@@ -86,7 +102,11 @@ class SupportChatController extends Controller
             'id' => $message->id,
             'sender' => $message->sender_type,
             'body' => $message->body,
-            'media_url' => $message->media_path ? url('/admin/support-chat/media/' . $message->id) : null,
+            'media_url' => $message->media_path
+                ? (config('support-chat.disk') === 's3'
+                    ? Storage::disk('s3')->temporaryUrl($message->media_path, now()->addMinutes(config('support-chat.presigned_url_minutes', 5)))
+                    : url('/admin/support-chat/media/' . $message->id))
+                : null,
             'media_mime' => $message->media_mime,
             'media_name' => $message->media_name,
             'read_at' => $message->read_at?->toIso8601String(),
