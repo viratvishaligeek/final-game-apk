@@ -21,7 +21,7 @@
 ## Chat delivery and real-time transport
 - Current chat delivery still uses authenticated HTTP polling every three seconds. It is not WebSocket or server-push real-time messaging. No Reverb/Echo/Pusher server configuration or connection credentials are included in the repository; install and configure the chosen WebSocket/broadcast service before claiming scalable real-time delivery.
 - User chat messages are persisted in the database. Admin replies create a user notification and attempt FCM delivery when Firebase server credentials are configured. User messages attempt FCM delivery to admin browser subscriptions registered from the support dashboard.
-- The admin page supports foreground desktop alerts and background web push using the root Firebase messaging service worker. It requires HTTPS, a valid public Firebase web config/VAPID key, and server-side FCM_PROJECT_ID / FCM_SERVICE_ACCOUNT_JSON. Push delivery was not live-tested because production Firebase credentials are not available in source control.
+- The admin page supports foreground desktop alerts and background web push using the root Firebase messaging service worker. It requires HTTPS, a valid public Firebase web config/VAPID key, and server-side FCM_PROJECT_ID / FCM_SERVICE_ACCOUNT_JSON. FCM_PROJECT_ID must match the projectId in public/firebase-config.js. Push delivery was not live-tested because production Firebase service-account credentials are not available in source control.
 - Voice recording uses the browser MediaRecorder API and requires microphone permission plus a secure context (HTTPS, except localhost). Supported formats depend on the browser. Files are limited to 20 MB and server MIME validation is enforced.
 
 ## FAQ-first support
