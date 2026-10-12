@@ -4,6 +4,7 @@ $defaultKey = env('SITE_DEFAULT_KEY', 'play-online-khaiwal');
 
 return [
     'default' => $defaultKey,
+    'strict_hosts' => env('SITES_STRICT_HOSTS', env('APP_ENV', 'production') === 'production'),
     'current_key' => $defaultKey,
     'current' => [
         'key' => $defaultKey,
