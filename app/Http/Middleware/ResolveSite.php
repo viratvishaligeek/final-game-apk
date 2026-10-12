@@ -15,20 +15,29 @@ class ResolveSite
         $defaultKey = config('sites.default');
         $resolvedKey = $defaultKey;
         $resolvedSite = $sites[$defaultKey] ?? config('sites.current', []);
+        $matchedHost = false;
 
-        $matched = false;
         foreach ($sites as $key => $site) {
             $hosts = array_map('strtolower', $site['hosts'] ?? []);
             if (in_array($host, $hosts, true)) {
                 $resolvedKey = $key;
                 $resolvedSite = $site;
-                $matched = true;
+                $matchedHost = true;
                 break;
             }
         }
 
-        if (!$matched && config('sites.strict_hosts', false) && app()->environment('production')) {
+        if (!$matchedHost && config('sites.strict_hosts', false) && app()->environment('production')) {
             abort(404);
+        }
+
+        // Resolve the admin's persisted site cookie before route model binding runs.
+        // This cookie is only honored for protected admin URLs, never for public APIs.
+        $isAdminPath = $request->is('admin') || $request->is('admin/*');
+        $selectedAdminSite = (string) $request->cookie('admin_site', '');
+        if ($isAdminPath && $selectedAdminSite !== '' && isset($sites[$selectedAdminSite])) {
+            $resolvedKey = $selectedAdminSite;
+            $resolvedSite = $sites[$selectedAdminSite];
         }
 
         config([
