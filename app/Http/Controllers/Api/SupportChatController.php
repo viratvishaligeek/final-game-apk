@@ -7,6 +7,7 @@ use App\Models\SupportConversation;
 use App\Models\SupportMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Validation\ValidationException;
 
 class SupportChatController extends Controller
@@ -27,6 +28,14 @@ class SupportChatController extends Controller
             'unread_count' => $conversation->messages()->where('sender_type', 'admin')->whereNull('read_at')->count(),
             'data' => $conversation->messages()->orderBy('id')->limit(200)->get()->map(fn ($message) => $this->formatMessage($message)),
         ]);
+    }
+
+    public function media(Request $request, SupportMessage $message): StreamedResponse
+    {
+        abort_unless($message->conversation()->where('user_id', $request->user()->id)->exists(), 404);
+        abort_unless($message->media_path && Storage::disk('local')->exists($message->media_path), 404);
+
+        return Storage::disk('local')->download($message->media_path, $message->media_name ?: 'attachment');
     }
 
     public function send(Request $request)
@@ -55,7 +64,7 @@ class SupportChatController extends Controller
         ];
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $data['media_path'] = $file->store('support-chat/' . $conversation->id, 'public');
+            $data['media_path'] = $file->store('support-chat/' . $conversation->id, 'local');
             $data['media_mime'] = $file->getMimeType();
             $data['media_name'] = mb_substr($file->getClientOriginalName(), 0, 255);
         }
@@ -68,7 +77,7 @@ class SupportChatController extends Controller
             'id' => $message->id,
             'sender' => $message->sender_type,
             'body' => $message->body,
-            'media_url' => $message->media_path ? Storage::disk('public')->url($message->media_path) : null,
+            'media_url' => $message->media_path ? url('/api/v1/support-chat/media/' . $message->id) : null,
             'media_mime' => $message->media_mime,
             'media_name' => $message->media_name,
             'read_at' => $message->read_at?->toIso8601String(),
