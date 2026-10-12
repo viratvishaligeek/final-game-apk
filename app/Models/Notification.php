@@ -34,7 +34,8 @@ class Notification extends Model
                 ->where('user_id', $notification->user_id)
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
-                ->skip(10)
+                ->offset(10)
+                ->limit(PHP_INT_MAX)
                 ->pluck('id');
 
             if ($oldIds->isNotEmpty()) {
