@@ -26,17 +26,21 @@ class Notification extends Model
                 return;
             }
 
-            $latestIds = static::query()
+            // Fetch IDs first instead of using a same-table DELETE subquery, which
+            // is rejected by some MySQL configurations (error 1093).
+            $oldIds = static::query()
                 ->where('user_id', $notification->user_id)
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
-                ->limit(10)
-                ->select('id');
+                ->skip(10)
+                ->pluck('id');
 
-            static::query()
-                ->where('user_id', $notification->user_id)
-                ->whereNotIn('id', $latestIds)
-                ->delete();
+            if ($oldIds->isNotEmpty()) {
+                static::query()
+                    ->where('user_id', $notification->user_id)
+                    ->whereIn('id', $oldIds)
+                    ->delete();
+            }
         });
     }
 }
