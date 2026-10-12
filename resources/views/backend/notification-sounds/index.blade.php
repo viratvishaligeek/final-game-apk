@@ -20,6 +20,7 @@
                     'credit' => 'Wallet credit',
                     'winning' => 'Winner / prize',
                     'result' => 'Game result',
+                    'chat' => 'Live support chat',
                 ];
             @endphp
             @foreach ($events as $key => $label)
