@@ -37,6 +37,53 @@ class PushNotificationService
         return $subscription;
     }
 
+    public function registerAdmin(string $token, \App\Models\Admin $admin): PushSubscription
+    {
+        $subscription = PushSubscription::query()->firstOrNew([
+            'token_hash' => hash('sha256', $token),
+        ]);
+        $isNew = !$subscription->exists;
+        $subscription->token = $token;
+        $subscription->platform = 'web';
+        $subscription->admin_id = $admin->id;
+        if ($isNew) {
+            $subscription->public_enabled = false;
+        }
+        $subscription->save();
+
+        return $subscription;
+    }
+
+    public function unregisterAdmin(string $token, \App\Models\Admin $admin): void
+    {
+        $subscription = PushSubscription::query()
+            ->where('token_hash', hash('sha256', $token))
+            ->where('admin_id', $admin->id)
+            ->first();
+
+        if (!$subscription) {
+            return;
+        }
+
+        $subscription->admin_id = null;
+        if ($subscription->user_id === null && !$subscription->public_enabled) {
+            $subscription->delete();
+        } else {
+            $subscription->save();
+        }
+    }
+
+    public function sendToAdmins(string $title, string $body): int
+    {
+        return $this->sendToSubscriptions(
+            PushSubscription::query()->whereNotNull('admin_id')->where('platform', 'web')->get(),
+            $title,
+            $body,
+            'admin',
+            null
+        );
+    }
+
     public function sendToUser(User $user, string $title, string $body, ?int $notificationId = null): int
     {
         return $this->sendToSubscriptions(
@@ -111,7 +158,7 @@ class PushNotificationService
                 'message' => [
                     'token' => $token,
                     'notification' => ['title' => $title, 'body' => $body],
-                    'data' => ['url' => $subscription->platform === 'web' ? rtrim((string) config('app.url'), '/') . '/' : '/notifications'],
+                    'data' => ['url' => $subscription->platform === 'web' ? rtrim((string) config('sites.current.url', config('app.url')), '/') . '/' : '/notifications'],
                     'android' => [
                         'priority' => 'HIGH',
                         'notification' => [
@@ -128,7 +175,7 @@ class PushNotificationService
                             'badge' => '/favicon.ico',
                             'requireInteraction' => false,
                         ],
-                        'fcm_options' => ['link' => rtrim((string) config('app.url'), '/') . '/'],
+                        'fcm_options' => ['link' => rtrim((string) config('sites.current.url', config('app.url')), '/') . '/'],
                     ],
                 ],
             ]);

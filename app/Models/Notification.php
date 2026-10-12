@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToSite;
 use Illuminate\Database\Eloquent\Model;
 
 class Notification extends Model
 {
+    use BelongsToSite;
     protected $primaryKey = 'id';
     public $timestamps = true;
     protected $guarded = ['id'];
@@ -32,7 +34,8 @@ class Notification extends Model
                 ->where('user_id', $notification->user_id)
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
-                ->skip(10)
+                ->offset(10)
+                ->limit(PHP_INT_MAX)
                 ->pluck('id');
 
             if ($oldIds->isNotEmpty()) {

@@ -15,6 +15,7 @@ use App\Http\Controllers\Backend\PagesController;
 use App\Http\Controllers\Backend\PushNotificationController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\SupportChatController;
+use App\Http\Controllers\Backend\AdminPushSubscriptionController;
 use App\Http\Controllers\Backend\NotificationSoundController;
 use App\Http\Controllers\Backend\User\MemberController;
 use App\Http\Controllers\Backend\User\RoleController;
@@ -32,7 +33,7 @@ Route::controller(AuthController::class)->group(function () {
 });
 
 // After Login
-Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin'], function () {
+Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admin', 'admin.site']], function () {
     Route::get('guessing', [CommunityModerationController::class, 'index'])->name('guessing.index');
     Route::patch('guessing/{post}/moderate', [CommunityModerationController::class, 'update'])->name('guessing.moderate');
     Route::post('guessing/policy', [CommunityModerationController::class, 'updatePolicy'])->name('guessing.policy');
@@ -40,6 +41,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
     Route::get('notification-sounds', [NotificationSoundController::class, 'index'])->name('notification-sounds.index');
     Route::post('notification-sounds', [NotificationSoundController::class, 'update'])->name('notification-sounds.update');
 
+    Route::post('push-subscribe', [AdminPushSubscriptionController::class, 'subscribe'])->name('push-subscribe');
+    Route::delete('push-subscribe', [AdminPushSubscriptionController::class, 'unsubscribe'])->name('push-unsubscribe');
     Route::get('support-chat', [SupportChatController::class, 'index'])->name('support-chat.index');
     Route::get('support-chat/conversations', [SupportChatController::class, 'conversations'])->name('support-chat.conversations');
     Route::get('support-chat/media/{message}', [SupportChatController::class, 'media'])->name('support-chat.media');

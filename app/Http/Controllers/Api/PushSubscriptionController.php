@@ -44,7 +44,7 @@ class PushSubscriptionController extends Controller
 
         if ($subscription) {
             $subscription->public_enabled = false;
-            if ($subscription->user_id === null) {
+            if ($subscription->user_id === null && $subscription->admin_id === null) {
                 $subscription->delete();
             } else {
                 $subscription->save();
@@ -67,7 +67,7 @@ class PushSubscriptionController extends Controller
 
         if ($subscription) {
             $subscription->user_id = null;
-            if (!$subscription->public_enabled) {
+            if (!$subscription->public_enabled && $subscription->admin_id === null) {
                 $subscription->delete();
             } else {
                 $subscription->save();

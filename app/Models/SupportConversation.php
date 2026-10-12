@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToSite;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupportConversation extends Model
 {
+    use BelongsToSite;
     protected $fillable = ['user_id', 'assigned_admin_id', 'user_last_read_at', 'admin_last_read_at'];
 
     protected function casts(): array

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SupportConversation;
 use App\Models\SupportMessage;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -56,6 +57,11 @@ class SupportChatController extends Controller
         $conversation = SupportConversation::firstOrCreate(['user_id' => $request->user()->id]);
         $message = $this->persistMessage($request, $conversation, 'user', (int) $request->user()->id, $validated);
         $conversation->touch();
+
+        app(PushNotificationService::class)->sendToAdmins(
+            'New support message',
+            $message->body ?: 'A user sent a support attachment.'
+        );
 
         return response()->json(['success' => true, 'data' => $this->formatMessage($message)], 201);
     }

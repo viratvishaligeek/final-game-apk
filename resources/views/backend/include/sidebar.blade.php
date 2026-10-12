@@ -65,6 +65,16 @@
                     };
                 @endphp
 
+                @if (count(config('sites.sites', [])) > 1)
+                    <form method="GET" action="{{ route('admin.dashboard') }}" class="px-3 py-2">
+                        <label class="small text-muted mb-1" for="admin-site-select">Active site</label>
+                        <select id="admin-site-select" name="site" class="form-select form-select-sm" onchange="this.form.submit()">
+                            @foreach (config('sites.sites', []) as $siteKey => $site)
+                                <option value="{{ $siteKey }}" @selected(config('sites.current_key') === $siteKey)>{{ $site['name'] ?? $siteKey }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                @endif
                 <a class="nav-link {{ request()->routeIs('admin.support-chat.*') ? 'active' : '' }}" href="{{ route('admin.support-chat.index') }}">
                     <div class="nav-link-icon"><i data-feather="message-circle"></i></div>
                     Live Support Chat
