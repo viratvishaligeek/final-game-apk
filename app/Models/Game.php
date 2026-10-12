@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToSite;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Support\Str;
 
 class Game extends Model
 {
+    use BelongsToSite;
     use HasFactory, SoftDeletes;
 
     protected $guarded = ['id'];
