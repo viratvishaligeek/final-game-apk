@@ -6,6 +6,8 @@ use App\Models\Faq;
 use App\Models\Notification;
 use App\Models\User;
 use App\Http\Controllers\Api\SupportFaqController;
+use App\Http\Controllers\Api\SupportChatController as ApiSupportChatController;
+use App\Http\Controllers\Backend\SupportChatController as AdminSupportChatController;
 use App\Http\Controllers\Backend\NotificationSoundController;
 use App\Http\Controllers\Backend\AdminPushSubscriptionController;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -73,6 +75,17 @@ class SupportFeaturesRegressionTest extends TestCase
         $response = app(SupportFaqController::class)->index(\Illuminate\Http\Request::create('/api/v1/faqs?platform=web'));
 
         $this->assertSame([], $response->getData(true)['data']);
+    }
+
+    public function test_private_chat_media_routes_require_user_or_admin_authentication(): void
+    {
+        $userMedia = Route::getRoutes()->getByAction(ApiSupportChatController::class . '@media');
+        $adminMedia = Route::getRoutes()->getByAction(AdminSupportChatController::class . '@media');
+
+        $this->assertNotNull($userMedia);
+        $this->assertContains('auth:sanctum', $userMedia->gatherMiddleware());
+        $this->assertNotNull($adminMedia);
+        $this->assertContains('auth:admin', $adminMedia->gatherMiddleware());
     }
 
     public function test_support_faq_and_sound_settings_routes_are_registered(): void
