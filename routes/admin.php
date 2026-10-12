@@ -32,7 +32,7 @@ Route::controller(AuthController::class)->group(function () {
 });
 
 // After Login
-Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin'], function () {
+Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admin', 'admin.site']], function () {
     Route::get('guessing', [CommunityModerationController::class, 'index'])->name('guessing.index');
     Route::patch('guessing/{post}/moderate', [CommunityModerationController::class, 'update'])->name('guessing.moderate');
     Route::post('guessing/policy', [CommunityModerationController::class, 'updatePolicy'])->name('guessing.policy');
