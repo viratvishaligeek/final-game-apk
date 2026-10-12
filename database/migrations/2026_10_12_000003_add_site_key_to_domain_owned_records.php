@@ -22,6 +22,9 @@ return new class extends Migration {
         'settings',
         'support_conversations',
         'support_messages',
+        'referral_rewards',
+        'community_posts',
+        'community_replies',
     ];
 
     public function up(): void
