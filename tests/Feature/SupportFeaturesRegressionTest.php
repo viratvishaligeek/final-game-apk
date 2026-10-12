@@ -17,7 +17,13 @@ class SupportFeaturesRegressionTest extends TestCase
 
     public function test_private_notification_history_is_limited_to_ten_records_per_user(): void
     {
-        $user = User::factory()->create();
+        $user = User::query()->create([
+            'name' => 'Retention Test User',
+            'phone' => '9999999912',
+            'password' => 'test-password',
+            'status' => 'active',
+            'balance' => 0,
+        ]);
 
         for ($index = 1; $index <= 12; $index++) {
             Notification::query()->create([
@@ -63,7 +69,8 @@ class SupportFeaturesRegressionTest extends TestCase
         ]);
 
         config(['sites.current_key' => 'galidisawar']);
-        $this->getJson('/api/v1/faqs?platform=web')
+        $this->withServerVariables(['HTTP_HOST' => 'galidisawar.com'])
+            ->getJson('/api/v1/faqs?platform=web')
             ->assertOk()
             ->assertJsonCount(0, 'data')
             ->assertJsonMissing(['question' => 'Khatauli-only test FAQ']);
