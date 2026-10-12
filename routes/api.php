@@ -71,6 +71,7 @@ Route::prefix('v1')->group(function () {
         });
         Route::get('/pages/{slug}', [PageController::class, 'show']);
         Route::get('/support-chat', [SupportChatController::class, 'show'])->middleware('throttle:60,1');
+        Route::get('/support-chat/media/{message}', [SupportChatController::class, 'media'])->middleware('throttle:60,1');
         Route::post('/support-chat/messages', [SupportChatController::class, 'send'])->middleware('throttle:30,1');
 
     });
