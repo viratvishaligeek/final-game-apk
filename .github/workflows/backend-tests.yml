@@ -30,6 +30,8 @@ jobs:
       - run: php artisan test --filter=DynamicFrontendIntegrationTest
       - run: php artisan test --filter=GuessingAndYearlyChartTest
       - run: php artisan test --filter=PushNotificationSubscriptionTest
+      - name: Run support feature regression tests (blocking)
+        run: php artisan test --filter=SupportFeaturesRegressionTest
       - name: Run full regression suite (non-blocking; settlement failures tracked separately)
         run: php artisan test
         continue-on-error: true
