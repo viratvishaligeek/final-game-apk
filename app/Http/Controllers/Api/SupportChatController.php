@@ -58,6 +58,11 @@ class SupportChatController extends Controller
         $message = $this->persistMessage($request, $conversation, 'user', (int) $request->user()->id, $validated);
         $conversation->touch();
 
+        app(PushNotificationService::class)->sendToAdmins(
+            'New support message',
+            $message->body ?: 'A user sent a support attachment.'
+        );
+
         return response()->json(['success' => true, 'data' => $this->formatMessage($message)], 201);
     }
 
