@@ -10,6 +10,7 @@
         <div class="d-flex gap-2 align-items-center">
             <span class="badge bg-secondary" id="connection-status">Connecting…</span>
             <button type="button" class="btn btn-sm btn-outline-primary" id="enable-desktop-alerts">Enable desktop & push alerts</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="disable-admin-push">Disable admin push</button>
         </div>
     </div>
     <div class="row g-3" style="min-height:65vh">
@@ -133,6 +134,25 @@
      alert('Background push alerts enabled for this admin account.');
    } catch (error) {
      alert('Desktop alerts are enabled, but background push registration failed: ' + (error?.message || 'Unknown error'));
+   }
+ });
+ document.getElementById('disable-admin-push').addEventListener('click', async () => {
+   if (!window.firebase || !window.FIREBASE_CONFIG || !window.FIREBASE_VAPID_KEY) return alert('Firebase web push configuration is not available.');
+   try {
+     const registration = await navigator.serviceWorker.getRegistration('/');
+     if (!registration) return alert('No admin push registration was found.');
+     const firebaseApp = window.firebase.apps.length ? window.firebase.app() : window.firebase.initializeApp(window.FIREBASE_CONFIG);
+     const messaging = window.firebase.messaging(firebaseApp);
+     const token = await messaging.getToken({ vapidKey: window.FIREBASE_VAPID_KEY, serviceWorkerRegistration: registration });
+     if (!token) return alert('No active push token was found.');
+     await request(root.replace(/\/support-chat\/?$/, '/push-subscribe'), {
+       method: 'DELETE',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ token }),
+     });
+     alert('Admin background push disabled. Browser permission was left unchanged so user-app notifications are not disturbed.');
+   } catch (error) {
+     alert('Unable to disable admin push: ' + (error?.message || 'Unknown error'));
    }
  });
  const recordButton = document.getElementById('record-voice');
