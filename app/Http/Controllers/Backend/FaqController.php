@@ -66,7 +66,8 @@ class FaqController extends Controller
 
     private function clearFaqCache(): void
     {
-        Cache::forget('support-faqs:web');
-        Cache::forget('support-faqs:app');
+        $siteKey = (string) config('sites.current_key', config('sites.default', 'play-online-khaiwal'));
+        Cache::forget("support-faqs:{$siteKey}:web");
+        Cache::forget("support-faqs:{$siteKey}:app");
     }
 }
