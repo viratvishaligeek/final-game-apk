@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\ResultChartController;
 use App\Http\Controllers\Api\SupportChatController;
+use App\Http\Controllers\Api\SupportFaqController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\BidController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Middleware\EnsureUserIsActive;
 
 Route::prefix('v1')->group(function () {
+    Route::get('faqs', [SupportFaqController::class, 'index'])->middleware('throttle:60,1');
     Route::post('push/subscribe', [PushSubscriptionController::class, 'subscribePublic'])->middleware('throttle:20,1');
     Route::delete('push/subscribe', [PushSubscriptionController::class, 'unsubscribe'])->middleware('throttle:20,1');
     Route::controller(AuthController::class)->group(function () {
