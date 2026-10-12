@@ -9,7 +9,7 @@
         </div>
         <div class="d-flex gap-2 align-items-center">
             <span class="badge bg-secondary" id="connection-status">Connecting…</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" id="enable-desktop-alerts">Enable desktop alerts</button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="enable-desktop-alerts">Enable desktop & push alerts</button>
         </div>
     </div>
     <div class="row g-3" style="min-height:65vh">
@@ -37,6 +37,9 @@
         </div>
     </div>
 </div>
+<script src="/firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js"></script>
 <script>
 (() => {
  const root = @json(url('/admin/support-chat'));
@@ -107,9 +110,30 @@
    } finally { busy=false; }
  }
  document.getElementById('enable-desktop-alerts').addEventListener('click', async () => {
-   if (!('Notification' in window)) return alert('Desktop notifications are not supported by this browser.');
+   if (!('Notification' in window)) return alert('Notifications are not supported by this browser.');
    const permission = await Notification.requestPermission();
-   alert(permission === 'granted' ? 'Desktop alerts enabled while this dashboard is open.' : 'Desktop alerts were not enabled.');
+   if (permission !== 'granted') return alert('Notifications were not enabled. Please allow notifications in browser settings.');
+
+   if (!('serviceWorker' in navigator) || !window.firebase || !window.FIREBASE_CONFIG || !window.FIREBASE_VAPID_KEY) {
+     return alert('Desktop alerts are enabled while this tab is open, but background push configuration is not available on this domain.');
+   }
+
+   try {
+     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+     await navigator.serviceWorker.ready;
+     const firebaseApp = window.firebase.apps.length ? window.firebase.app() : window.firebase.initializeApp(window.FIREBASE_CONFIG);
+     const messaging = window.firebase.messaging(firebaseApp);
+     const token = await messaging.getToken({ vapidKey: window.FIREBASE_VAPID_KEY, serviceWorkerRegistration: registration });
+     if (!token) throw new Error('Firebase did not return a push token.');
+     await request(root.replace(/\\/support-chat\\/?$/, '/push-subscribe'), {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ token, platform: 'web' }),
+     });
+     alert('Background push alerts enabled for this admin account.');
+   } catch (error) {
+     alert('Desktop alerts are enabled, but background push registration failed: ' + (error?.message || 'Unknown error'));
+   }
  });
  const recordButton = document.getElementById('record-voice');
  const recordingStatus = document.getElementById('recording-status');
