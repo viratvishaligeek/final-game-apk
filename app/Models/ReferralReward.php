@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToSite;
 use Illuminate\Database\Eloquent\Model;
 
 class ReferralReward extends Model
 {
+    use BelongsToSite;
     protected $guarded = ['id'];
 
     protected $casts = [
