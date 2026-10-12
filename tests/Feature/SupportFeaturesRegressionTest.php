@@ -80,7 +80,7 @@ class SupportFeaturesRegressionTest extends TestCase
 
     public function test_admin_site_cookie_is_resolved_before_route_binding(): void
     {
-        $request = \\Illuminate\\Http\\Request::create(
+        $request = \Illuminate\Http\Request::create(
             'https://playonlinekhaiwal.com/admin/dashboard',
             'GET',
             [],
