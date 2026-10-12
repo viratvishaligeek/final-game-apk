@@ -19,86 +19,7 @@
 @section('meta_keywords', $game->name . ', Satta King result, monthly result chart')
 @section('robots_content', request()->query->count() > 0 ? 'noindex,follow' : setting('robots_default', 'index,follow'))
 @section('content')
-    <style>
-        /* Monthly result section: mobile visibility fix */
-        .result-month-toolbar,
-        .result-month-toolbar *,
-        .result-table-compact,
-        .result-table-compact table {
-            box-sizing: border-box;
-        }
 
-        .section-block.section-light:has(.result-table-compact) {
-            display: block;
-            width: 100%;
-            height: auto;
-            min-width: 0;
-            overflow: visible;
-        }
-
-        .result-table-compact {
-            display: block;
-            width: 100%;
-            max-width: 420px;
-            margin: 16px auto;
-            overflow: visible;
-        }
-
-        .result-table-compact .monthly-result-table {
-            display: table;
-            width: 100%;
-            min-width: 0;
-            table-layout: fixed;
-            border-collapse: collapse;
-        }
-
-        .result-table-compact .monthly-result-table thead {
-            display: table-header-group;
-        }
-
-        .result-table-compact .monthly-result-table tbody {
-            display: table-row-group;
-        }
-
-        .result-table-compact .monthly-result-table tr {
-            display: table-row;
-        }
-
-        .result-table-compact .monthly-result-table th,
-        .result-table-compact .monthly-result-table td {
-            display: table-cell;
-            padding: 7px 10px;
-            white-space: normal;
-            overflow-wrap: anywhere;
-            text-align: center;
-        }
-
-        @media (max-width: 600px) {
-
-            .section-block.section-light:has(.result-table-compact),
-            .section-block.section-light:has(.result-table-compact) .wrap,
-            .section-block.section-light:has(.result-table-compact) .table-shell {
-                display: block;
-                width: 100%;
-                max-width: 100%;
-                min-width: 0;
-                height: auto;
-                visibility: visible;
-            }
-
-            .result-table-compact {
-                width: 100%;
-                max-width: 100%;
-                margin: 12px auto;
-            }
-
-            .result-table-compact .monthly-result-table th,
-            .result-table-compact .monthly-result-table td {
-                padding: 6px 8px;
-                font-size: 12px;
-            }
-        }
-    </style>
     <section class="page-banner page-banner--blue">
         <div class="wrap">
             <div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><a
@@ -111,7 +32,6 @@
     <section class="section-block section-light">
         <div class="wrap">
             <div class="page-toolbar result-month-toolbar">
-                <h2>{{ $game->name }} · <span data-month-label>{{ $monthLabel }}</span></h2>
                 <form method="GET" action="{{ route('frontend.market', ['slug' => $game->slug]) }}"
                     class="monthly-chart-filter result-month-filter" data-result-filter
                     data-endpoint="{{ route('frontend.chart') }}">
@@ -151,10 +71,11 @@
                     <tbody data-result-body>
                         @foreach ($results as $entry)
                             <tr data-result-row="{{ $entry['date']->day }}">
-                                <th scope="row">
+                                <th scope="row" style="text-align: center; font-weight:bold">
                                     {{ $entry['date']->format('d') }}
                                 </th>
-                                <td data-result-cell>{{ $entry['number'] ?? '—' }}</td>
+                                <td data-result-cell>
+                                    {{ $entry['number'] ?? '—' }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -212,6 +133,7 @@
                     let payload = {};
                     try {
                         payload = await response.json();
+                        console.log(payload);
                     } catch (parseError) {
                         payload = {};
                     }
@@ -226,15 +148,18 @@
                         row.dataset.resultRow = String(day.day);
                         const dateCell = document.createElement('th');
                         dateCell.scope = 'row';
-                        dateCell.textContent = String(day.day).padStart(2, '0') + ' ' + payload.month_label;
+                        dateCell.style = 'text-align:center';
+                        dateCell.textContent = String(day.day).padStart(2, '0');
                         const resultCell = document.createElement('td');
                         resultCell.dataset.resultCell = '';
+                        resultCell.style = 'font-weight:bold';
+
                         resultCell.textContent = day.result === null ? '—' : String(day.result);
                         if (day.result !== null) hasPublished = true;
                         row.append(dateCell, resultCell);
                         tbody.appendChild(row);
                     });
-                    monthLabel.textContent = payload.month_label;
+                    // monthLabel.textContent = payload.month_label;
                     empty.hidden = hasPublished;
                     setStatus(hasPublished ? 'Results updated.' : 'No published results for this month.', false);
                 } catch (error) {

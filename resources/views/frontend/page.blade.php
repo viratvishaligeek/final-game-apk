@@ -38,7 +38,7 @@
                 @if (session('notice'))
                     <div class="empty-state"><p>{{ session('notice') }}</p></div>
                 @endif
-                <div class="homepage-managed-content">{!! \App\Support\SafeHtml::sanitize((string) $page->content) !!}</div>
+                <div class="homepage-managed-content">{!! $page->content !!}</div>
             </article>
         </div>
     </section>

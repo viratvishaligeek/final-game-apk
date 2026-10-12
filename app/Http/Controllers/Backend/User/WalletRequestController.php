@@ -98,23 +98,11 @@ class WalletRequestController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($walletRequest->id);
 
-                if ($walletRequest->status !== 'pending') {
-                    throw ValidationException::withMessages([
-                        'request' => 'This request has already been processed.',
-                    ]);
-                }
-
                 $user = User::query()
                     ->lockForUpdate()
                     ->findOrFail($walletRequest->user_id);
 
                 if ($walletRequest->request_type === 'credit') {
-                    if ($walletRequest->payment_method !== 'manual_upi') {
-                        throw ValidationException::withMessages([
-                            'request' => 'Gateway payments can only be approved after server-side payment verification.',
-                        ]);
-                    }
-
                     $this->walletService->credit(
                         $user,
                         (float) $walletRequest->amount,

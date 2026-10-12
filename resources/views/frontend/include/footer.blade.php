@@ -52,18 +52,17 @@
         <div>
             <h3>Policies</h3><a href="{{ route('information', ['page' => 'terms-and-conditions']) }}">Terms &
                 conditions</a><a href="{{ route('information', ['page' => 'disclaimer']) }}">Disclaimer</a>
-            <p class="footer-note">{!! \App\Support\SafeHtml::sanitize(
-                (string) setting(
-                    'disclaimer_content',
-                    'Historical records are for information only and do not predict or guarantee future outcomes.',
-                ),
+            <p class="footer-note">{!! setting(
+                'disclaimer_content',
+                'Historical records are for information only and do not predict or guarantee future outcomes.',
             ) !!}</p>
         </div>
     </div>
     <div class="footer-bottom">
         <div class="wrap">
             <span>{{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Play Online Khaiwal')) }}</span><span>Use
-                responsibly • Follow applicable local laws</span></div>
+                responsibly • Follow applicable local laws</span>
+        </div>
     </div>
 </footer>
 @if (request()->routeIs('index'))

@@ -167,31 +167,54 @@
 @endsection
 
 @section('script')
-    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
 
     <style>
-        .ck-editor__editable_inline {
+        .note-editor.note-frame .note-editing-area .note-editable {
             min-height: 300px;
         }
 
-        .ck-editor {
-            width: 100%;
+        .note-editor {
+            margin-bottom: 1rem;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        $(document).ready(function() {
+            $('#content').summernote({
+                placeholder: 'Enter page content here...',
+                height: 300,
+                minHeight: 300,
+                dialogsInBody: true,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'italic', 'underline', 'clear']],
+                    ['fontname', ['fontname']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'hr']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ]
+            });
 
-            const contentEditor = document.querySelector('#content');
-
-            if (contentEditor) {
-                ClassicEditor
-                    .create(contentEditor)
-                    .catch(error => {
-                        console.error(error);
-                    });
-            }
-
+            $('#short_desc').summernote({
+                placeholder: 'Enter page content here...',
+                height: 300,
+                minHeight: 300,
+                dialogsInBody: true,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'italic', 'underline', 'clear']],
+                    ['fontname', ['fontname']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'hr']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ]
+            });
         });
     </script>
 @endsection
