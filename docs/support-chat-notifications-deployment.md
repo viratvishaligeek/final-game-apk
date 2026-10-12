@@ -2,7 +2,7 @@
 
 ## Database and storage
 1. Deploy the Laravel branch and run `php artisan migrate --force` after taking a database backup. The migration adds `support_conversations` and `support_messages`; it does not reset existing tables.
-2. Ensure Laravel's configured storage disk is writable and run `php artisan storage:link` if using the public disk for chat attachments.
+2. Ensure Laravel's configured local storage disk is writable. Chat media is stored privately and served through authenticated, conversation-authorized download endpoints; no public storage symlink is required.
 3. Chat polling uses authenticated HTTP requests every three seconds; it does not require a WebSocket server or Redis. This is suitable for shared cPanel hosting. Requests are throttled and protected by Sanctum for users and the admin guard for the dashboard.
 4. Chat uploads are limited to supported image/video/audio MIME types and 20 MB per file. User downloads are scoped to their own conversation; admin downloads require the admin guard.
 
