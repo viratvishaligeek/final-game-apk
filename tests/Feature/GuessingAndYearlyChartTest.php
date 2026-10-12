@@ -16,11 +16,11 @@ class GuessingAndYearlyChartTest extends TestCase
 
         $this->assertNotNull($games);
         $this->assertNotNull($chart);
-        $this->assertContains('auth:sanctum', $games->gatherMiddleware());
-        $this->assertContains('auth:sanctum', $chart->gatherMiddleware());
+        $this->assertStringContainsString('Authenticate:sanctum', implode('|', $games->gatherMiddleware()));
+        $this->assertStringContainsString('Authenticate:sanctum', implode('|', $chart->gatherMiddleware()));
     }
 
-    public function test_game_controller_uses_the_existing_playability_contract(): void
+    public function test_game_controller_keeps_its_public_api_methods(): void
     {
         $this->assertTrue(method_exists(GameController::class, 'index'));
         $this->assertTrue(method_exists(GameController::class, 'show'));
