@@ -52,6 +52,7 @@ class ResultController extends Controller
             'allGames',
             'existingResults',
             'selectedDate',
+            'resultNotificationsEnabled',
         ));
     }
 
