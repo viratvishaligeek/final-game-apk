@@ -7,6 +7,7 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Http\Controllers\Api\SupportFaqController;
 use App\Http\Controllers\Backend\NotificationSoundController;
+use App\Http\Controllers\Backend\AdminPushSubscriptionController;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -79,6 +80,7 @@ class SupportFeaturesRegressionTest extends TestCase
         $faqRoute = Route::getRoutes()->getByAction(SupportFaqController::class . '@index');
         $soundPage = Route::getRoutes()->getByAction(NotificationSoundController::class . '@index');
         $soundUpdate = Route::getRoutes()->getByAction(NotificationSoundController::class . '@update');
+        $adminPushSubscribe = Route::getRoutes()->getByAction(AdminPushSubscriptionController::class . '@subscribe');
 
         $this->assertNotNull($faqRoute);
         $this->assertContains('throttle:60,1', $faqRoute->gatherMiddleware());
@@ -86,5 +88,7 @@ class SupportFeaturesRegressionTest extends TestCase
         $this->assertContains('auth:admin', $soundPage->gatherMiddleware());
         $this->assertNotNull($soundUpdate);
         $this->assertContains('auth:admin', $soundUpdate->gatherMiddleware());
+        $this->assertNotNull($adminPushSubscribe);
+        $this->assertContains('auth:admin', $adminPushSubscribe->gatherMiddleware());
     }
 }
