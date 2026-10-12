@@ -10,7 +10,7 @@ use Illuminate\View\View;
 
 class NotificationSoundController extends Controller
 {
-    private const EVENTS = ['add_money', 'withdraw', 'debit', 'credit', 'winning', 'result'];
+    private const EVENTS = ['add_money', 'withdraw', 'debit', 'credit', 'winning', 'result', 'chat'];
 
     public function __construct(private AppSettingsService $settings) {}
 
