@@ -197,7 +197,7 @@ class GameController extends Controller
                     'type' => $todayResult->type,
                 ] : null,
 
-                'last_result' => $latestResult?->number,
+                'last_result' => $todayResult?->number,
 
                 /*
                 |--------------------------------------------------------------------------
