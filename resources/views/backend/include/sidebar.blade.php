@@ -65,6 +65,10 @@
                     };
                 @endphp
 
+                <a class="nav-link {{ request()->routeIs('admin.support-chat.*') ? 'active' : '' }}" href="{{ route('admin.support-chat.index') }}">
+                    <div class="nav-link-icon"><i data-feather="message-circle"></i></div>
+                    Live Support Chat
+                </a>
                 @foreach ($menuItems as $item)
                     @if (($item['type'] ?? 'link') === 'heading')
                         <div class="sidenav-menu-heading">

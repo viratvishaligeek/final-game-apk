@@ -2,6 +2,15 @@
 
 @section('content')
     <div class="container-fluid px-4 py-4">
+        <div class="alert alert-light border rounded d-flex align-items-center justify-content-between gap-3 mb-3">
+            <div><strong>Result notifications</strong><div class="small text-muted">Controls public result alerts and winner notifications only. Settlement continues when disabled.</div></div>
+            <form method="POST" action="{{ route('admin.results.notifications-toggle') }}" class="d-flex align-items-center gap-2">
+                @csrf
+                <input type="hidden" name="result_notifications_enabled" value="{{ $resultNotificationsEnabled ? 0 : 1 }}">
+                <span class="badge {{ $resultNotificationsEnabled ? 'bg-success' : 'bg-secondary' }}">{{ $resultNotificationsEnabled ? 'ON' : 'OFF' }}</span>
+                <button class="btn btn-sm {{ $resultNotificationsEnabled ? 'btn-outline-danger' : 'btn-success' }}" type="submit">{{ $resultNotificationsEnabled ? 'Turn OFF' : 'Turn ON' }}</button>
+            </form>
+        </div>
 
         <!-- Top Filter Bar -->
         <div class="row align-items-center mb-4">

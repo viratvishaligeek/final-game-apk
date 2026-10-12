@@ -14,6 +14,7 @@ use App\Http\Controllers\Backend\MobileAppController;
 use App\Http\Controllers\Backend\PagesController;
 use App\Http\Controllers\Backend\PushNotificationController;
 use App\Http\Controllers\Backend\SettingController;
+use App\Http\Controllers\Backend\SupportChatController;
 use App\Http\Controllers\Backend\User\MemberController;
 use App\Http\Controllers\Backend\User\RoleController;
 use App\Http\Controllers\Backend\User\UserController;
@@ -35,6 +36,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
     Route::patch('guessing/{post}/moderate', [CommunityModerationController::class, 'update'])->name('guessing.moderate');
     Route::post('guessing/policy', [CommunityModerationController::class, 'updatePolicy'])->name('guessing.policy');
     Route::get('push-notifications', [PushNotificationController::class, 'index'])->name('push-notifications.index');
+    Route::get('support-chat', [SupportChatController::class, 'index'])->name('support-chat.index');
+    Route::get('support-chat/conversations', [SupportChatController::class, 'conversations'])->name('support-chat.conversations');
+    Route::get('support-chat/media/{message}', [SupportChatController::class, 'media'])->name('support-chat.media');
+    Route::get('support-chat/{conversation}/messages', [SupportChatController::class, 'messages'])->name('support-chat.messages');
+    Route::post('support-chat/{conversation}/send', [SupportChatController::class, 'send'])->name('support-chat.send');
     Route::post('push-notifications/broadcast', [PushNotificationController::class, 'broadcast'])->name('push-notifications.broadcast');
     Route::controller(DashboardController::class)->group(function () {
         Route::get('dashboard', 'dashboard')->name('dashboard');
@@ -67,6 +73,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
         Route::get('/results', 'index')->name('index');
         Route::post('/results/save', 'storeOrUpdate')->name('storeOrUpdate');
         Route::post('/results/revert', 'revert')->name('revert');
+        Route::post('/notifications-toggle', 'updateNotifications')->name('notifications-toggle');
     });
 
     Route::resource('member', MemberController::class);

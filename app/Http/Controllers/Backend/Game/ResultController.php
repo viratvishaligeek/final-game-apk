@@ -10,6 +10,7 @@ use App\Models\Result;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Winner;
+use App\Services\AppSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +18,16 @@ use Illuminate\Validation\ValidationException;
 
 class ResultController extends Controller
 {
+    public function __construct(private AppSettingsService $settings) {}
+
+    public function updateNotifications(Request $request)
+    {
+        $validated = $request->validate(['result_notifications_enabled' => ['required', 'boolean']]);
+        $this->settings->save(['result_notifications_enabled' => $validated['result_notifications_enabled'] ? '1' : '0']);
+
+        return redirect()->back()->with('success', 'Result notifications ' . ($validated['result_notifications_enabled'] ? 'enabled.' : 'disabled.'));
+    }
+
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -24,6 +35,7 @@ class ResultController extends Controller
         ]);
 
         $selectedDate = $validated['date'] ?? now()->toDateString();
+        $resultNotificationsEnabled = (string) $this->settings->value('result_notifications_enabled', '1') === '1';
 
         $allGames = Game::query()
             ->where('status', 'active')
@@ -40,6 +52,7 @@ class ResultController extends Controller
             'allGames',
             'existingResults',
             'selectedDate',
+            'resultNotificationsEnabled',
         ));
     }
 
@@ -143,16 +156,18 @@ class ResultController extends Controller
                 );
             }
 
-            $message = sprintf('Result for %s is %s', $game->name, $jodi);
-
-            $publicNotification = Notification::create([
-                'user_id' => null,
-                'subject' => 'Game Result Out',
-                'message' => $message,
-            ]);
-
-            $this->sendResultNotification($game, $gameDate, $jodi, $publicNotification->id);
-            $this->sendWinnerNotifications($game, $gameDate);
+            // Settlement always completes first. This setting only controls result-related
+            // notification generation and delivery; suppressed results are never replayed.
+            if ((string) $this->settings->value('result_notifications_enabled', '1') === '1') {
+                $message = sprintf('Result for %s is %s', $game->name, $jodi);
+                $publicNotification = Notification::create([
+                    'user_id' => null,
+                    'subject' => 'Game Result Out',
+                    'message' => $message,
+                ]);
+                $this->sendResultNotification($game, $gameDate, $jodi, $publicNotification->id);
+                $this->sendWinnerNotifications($game, $gameDate);
+            }
 
             return redirect()->back()->with(
                 'success',

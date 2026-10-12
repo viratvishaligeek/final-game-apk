@@ -22,10 +22,10 @@ class WalletService
             return $transaction;
         });
     }
-    public function debit(User $user, float $amount, ?string $remark = null): Transaction
+    public function debit(User $user, float $amount, ?string $remark = null, bool $notifyUser = true): Transaction
     {
         $this->validateAmount($amount);
-        return DB::transaction(function () use ($user, $amount, $remark) {
+        return DB::transaction(function () use ($user, $amount, $remark, $notifyUser) {
             $user = User::query()->lockForUpdate()->findOrFail($user->id);
             $currentBalance = (float) $user->balance;
             if ($amount > $currentBalance) {
@@ -34,7 +34,9 @@ class WalletService
             $newBalance = round($currentBalance - $amount, 2);
             $user->update(['balance' => $newBalance,]);
             $transaction = Transaction::create(['user_id' => $user->id, 'amount' => $amount, 'balance' => $newBalance, 'subject' => $remark ?: 'Wallet debited', 'status' => 'completed', 'type' => 'debit',]);
-            $this->notificationService->create($user, 'Wallet Debited', '₹' . number_format($amount, 2) . ' has been debited from your wallet. ' . 'Available balance: ₹' . number_format($newBalance, 2) . '.');
+            if ($notifyUser) {
+                $this->notificationService->create($user, 'Wallet Debited', '₹' . number_format($amount, 2) . ' has been debited from your wallet. ' . 'Available balance: ₹' . number_format($newBalance, 2) . '.');
+            }
             return $transaction;
         });
     }
