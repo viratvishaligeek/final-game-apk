@@ -69,7 +69,7 @@ class SupportFeaturesRegressionTest extends TestCase
         ]);
 
         config(['sites.current_key' => 'galidisawar']);
-        $this->withServerVariables(['HTTP_HOST' => 'galidisawar.com'])
+        $this->withServerVariables(['HTTP_HOST' => 'galidisawar.com', 'SERVER_NAME' => 'galidisawar.com'])
             ->getJson('/api/v1/faqs?platform=web')
             ->assertOk()
             ->assertJsonCount(0, 'data')
