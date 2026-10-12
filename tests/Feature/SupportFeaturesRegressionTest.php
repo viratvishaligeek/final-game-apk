@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Faq;
 use App\Models\Notification;
 use App\Models\User;
+use App\Http\Middleware\ResolveSite;
 use App\Http\Controllers\Api\SupportFaqController;
 use App\Http\Controllers\Api\SupportChatController as ApiSupportChatController;
 use App\Http\Controllers\Backend\SupportChatController as AdminSupportChatController;
@@ -75,6 +76,20 @@ class SupportFeaturesRegressionTest extends TestCase
         $response = app(SupportFaqController::class)->index(\Illuminate\Http\Request::create('/api/v1/faqs?platform=web'));
 
         $this->assertSame([], $response->getData(true)['data']);
+    }
+
+    public function test_admin_site_cookie_is_resolved_before_route_binding(): void
+    {
+        $request = \\Illuminate\\Http\\Request::create(
+            'https://playonlinekhaiwal.com/admin/dashboard',
+            'GET',
+            [],
+            ['admin_site' => 'galidisawar']
+        );
+
+        app(ResolveSite::class)->handle($request, fn () => response()->noContent());
+
+        $this->assertSame('galidisawar', config('sites.current_key'));
     }
 
     public function test_private_chat_media_routes_require_user_or_admin_authentication(): void
