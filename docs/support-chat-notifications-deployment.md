@@ -4,7 +4,7 @@
 1. Deploy the Laravel branch and run `php artisan migrate --force` after taking a database backup. The migration adds `support_conversations` and `support_messages`; it does not reset existing tables.
 2. Ensure Laravel's configured storage disk is writable and run `php artisan storage:link` if using the public disk for chat attachments.
 3. Chat polling uses authenticated HTTP requests every three seconds; it does not require a WebSocket server or Redis. This is suitable for shared cPanel hosting. Requests are throttled and protected by Sanctum for users and the admin guard for the dashboard.
-4. Chat attachments currently use the Laravel public disk. Because those URLs can be accessed by anyone who knows them, use only for non-sensitive support media; before handling sensitive personal documents, change attachment storage to a private disk and stream files through authorization-checked download endpoints.
+4. Chat uploads are limited to supported image/video/audio MIME types and 20 MB per file. User downloads are scoped to their own conversation; admin downloads require the admin guard.
 
 ## Result notification toggle
 The result page stores `result_notifications_enabled` in the existing settings table through `AppSettingsService`. Missing setting defaults to ON. OFF prevents the result controller from creating the public result notification and from dispatching winner/result alerts; result persistence and settlement still run.
