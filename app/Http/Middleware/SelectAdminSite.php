@@ -11,6 +11,8 @@ class SelectAdminSite
     public function handle(Request $request, Closure $next): Response
     {
         $sites = config('sites.sites', []);
+        $selectedSite = '';
+
         if (auth('admin')->check()) {
             $requestedSite = (string) $request->query('site', '');
             if ($requestedSite !== '' && array_key_exists($requestedSite, $sites)) {
@@ -26,6 +28,21 @@ class SelectAdminSite
             }
         }
 
-        return $next($request);
+        $response = $next($request);
+        if ($selectedSite !== '' && isset($sites[$selectedSite])) {
+            $response->headers->setCookie(cookie(
+                'admin_site',
+                $selectedSite,
+                60 * 24 * 30,
+                '/',
+                null,
+                $request->isSecure(),
+                true,
+                false,
+                'strict'
+            ));
+        }
+
+        return $response;
     }
 }
