@@ -276,6 +276,7 @@ class DashboardController extends Controller
             'notification_sound_credit',
             'notification_sound_winning',
             'notification_sound_result',
+            'notification_sound_chat',
         ];
 
         $keysInput = $request->input('keys', []);
