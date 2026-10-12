@@ -7,7 +7,7 @@ use App\Models\SupportConversation;
 use App\Models\SupportMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Validation\ValidationException;
 
 class SupportChatController extends Controller
@@ -46,11 +46,11 @@ class SupportChatController extends Controller
         ]);
     }
 
-    public function media(SupportMessage $message): StreamedResponse
+    public function media(SupportMessage $message): BinaryFileResponse
     {
         abort_unless($message->media_path && Storage::disk('local')->exists($message->media_path), 404);
 
-        return Storage::disk('local')->download($message->media_path, $message->media_name ?: 'attachment');
+        return response()->file(Storage::disk('local')->path($message->media_path), ['Content-Type' => $message->media_mime ?: 'application/octet-stream', 'X-Content-Type-Options' => 'nosniff']);
     }
 
     public function send(Request $request, SupportConversation $conversation)
