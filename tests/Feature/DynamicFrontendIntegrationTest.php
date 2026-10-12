@@ -21,7 +21,7 @@ class DynamicFrontendIntegrationTest extends TestCase
         $userShow = Route::getRoutes()->getByAction(SupportChatController::class . '@show');
         $adminIndex = Route::getRoutes()->getByName('admin.support-chat.index');
 
-        $this->assertContains('auth:sanctum', $userShow->gatherMiddleware());
-        $this->assertContains('auth:admin', $adminIndex->gatherMiddleware());
+        $this->assertStringContainsString('Authenticate:sanctum', implode('|', $userShow->gatherMiddleware()));
+        $this->assertStringContainsString('Authenticate:admin', implode('|', $adminIndex->gatherMiddleware()));
     }
 }
