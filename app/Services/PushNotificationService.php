@@ -111,7 +111,7 @@ class PushNotificationService
                 'message' => [
                     'token' => $token,
                     'notification' => ['title' => $title, 'body' => $body],
-                    'data' => ['url' => $subscription->platform === 'web' ? rtrim((string) config('app.url'), '/') . '/' : '/notifications'],
+                    'data' => ['url' => $subscription->platform === 'web' ? rtrim((string) config('sites.current.url', config('app.url')), '/') . '/' : '/notifications'],
                     'android' => [
                         'priority' => 'HIGH',
                         'notification' => [
