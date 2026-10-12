@@ -13,9 +13,10 @@ use Illuminate\Validation\ValidationException;
 
 class SupportChatController extends Controller
 {
-    public function index()
+    public function index(\App\Services\AppSettingsService $settings)
     {
-        return view('backend.support-chat.index');
+        $chatSoundEnabled = (string) $settings->value('notification_sound_chat', 'default') !== 'mute';
+        return view('backend.support-chat.index', compact('chatSoundEnabled'));
     }
 
     public function conversations()
