@@ -274,7 +274,7 @@ class GameController extends Controller
         }
 
         if (!$featuredGame) {
-            $featuredGame = $games->first();
+            $featuredGame = $games->firstWhere('status', 'active') ?? $games->first();
         }
 
         /*
