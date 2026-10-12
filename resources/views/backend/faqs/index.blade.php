@@ -33,6 +33,7 @@
                             <th>Serial</th>
                             <th>Question</th>
                             <th>Answer</th>
+                            <th>Platform</th>
                             <th>Created At</th>
                             <th>Actions</th>
                         </tr>
@@ -56,6 +57,7 @@
                                 <td>
                                     <div class="small">{{ Str::limit($faq->answer, 80) }}</div>
                                 </td>
+                                <td><span class="badge bg-secondary">{{ strtoupper($faq->platform ?? 'both') }}</span></td>
                                 <td>{{ $faq->created_at ? $faq->created_at->format('d M Y') : 'N/A' }}</td>
                                 <td>
                                     <a class="btn btn-datatable btn-icon btn-transparent-dark me-1"
