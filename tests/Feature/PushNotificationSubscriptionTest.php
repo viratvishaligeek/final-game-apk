@@ -17,8 +17,8 @@ class PushNotificationSubscriptionTest extends TestCase
 
         $this->assertNotNull($publicSubscribe);
         $this->assertNotNull($userSubscribe);
-        $this->assertContains('throttle:20,1', $publicSubscribe->gatherMiddleware());
-        $this->assertContains('auth:sanctum', $userSubscribe->gatherMiddleware());
+        $this->assertStringContainsString('ThrottleRequests:20,1', implode('|', $publicSubscribe->gatherMiddleware()));
+        $this->assertStringContainsString('Authenticate:sanctum', implode('|', $userSubscribe->gatherMiddleware()));
     }
 
     public function test_wallet_debits_still_notify_by_default_but_can_suppress_bid_notifications(): void
