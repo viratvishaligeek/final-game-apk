@@ -72,6 +72,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin
         Route::get('/results', 'index')->name('index');
         Route::post('/results/save', 'storeOrUpdate')->name('storeOrUpdate');
         Route::post('/results/revert', 'revert')->name('revert');
+        Route::post('/notifications-toggle', 'updateNotifications')->name('notifications-toggle');
     });
 
     Route::resource('member', MemberController::class);
