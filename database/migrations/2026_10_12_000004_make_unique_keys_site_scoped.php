@@ -19,6 +19,8 @@ return new class extends Migration {
         if (Schema::hasTable('settings') && Schema::hasColumn('settings', 'site_key')) {
             Schema::table('settings', function (Blueprint $table): void {
                 $table->dropUnique('settings_option_unique');
+                // Keep the combined utf8mb4 index within older MySQL 5.7 limits.
+                $table->string('option', 159)->change();
                 $table->unique(['site_key', 'option'], 'settings_site_key_option_unique');
             });
         }
@@ -43,6 +45,7 @@ return new class extends Migration {
         if (Schema::hasTable('settings') && Schema::hasColumn('settings', 'site_key')) {
             Schema::table('settings', function (Blueprint $table): void {
                 $table->dropUnique('settings_site_key_option_unique');
+                $table->string('option', 255)->change();
                 $table->unique('option', 'settings_option_unique');
             });
         }
