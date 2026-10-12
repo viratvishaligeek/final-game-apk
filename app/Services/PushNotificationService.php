@@ -128,7 +128,7 @@ class PushNotificationService
                             'badge' => '/favicon.ico',
                             'requireInteraction' => false,
                         ],
-                        'fcm_options' => ['link' => rtrim((string) config('app.url'), '/') . '/'],
+                        'fcm_options' => ['link' => rtrim((string) config('sites.current.url', config('app.url')), '/') . '/'],
                     ],
                 ],
             ]);
