@@ -8,7 +8,7 @@
     </div>
     <div class="row g-3" style="min-height:65vh">
         <div class="col-md-4"><div class="card h-100"><div class="card-header fw-bold">Conversations</div><div id="conversations" class="list-group list-group-flush overflow-auto" style="max-height:65vh"></div></div></div>
-        <div class="col-md-8"><div class="card h-100 d-flex flex-column"><div id="chat-title" class="card-header fw-bold">Select a conversation</div><div id="messages" class="card-body overflow-auto d-flex flex-column gap-2" style="height:50vh"></div><form id="send-form" class="card-footer d-flex gap-2 align-items-center"><input id="attachment" type="file" class="form-control" accept="image/*,video/mp4,video/webm,audio/*" style="max-width:220px"><input id="body" class="form-control" maxlength="5000" placeholder="Write a reply…"><button class="btn btn-warning" type="submit">Send</button></form></div></div>
+        <div class="col-md-8"><div class="card h-100 d-flex flex-column"><div id="chat-title" class="card-header fw-bold">Select a conversation</div><div id="messages" class="card-body overflow-auto d-flex flex-column gap-2" style="height:50vh"></div><form id="send-form" class="card-footer d-flex gap-2 align-items-center"><input id="attachment" type="file" class="form-control" accept="image/*,video/mp4,video/webm,audio/*" style="max-width:180px"><button id="record-voice" type="button" class="btn btn-outline-secondary" title="Record voice message"><i class="fas fa-microphone"></i></button><input id="body" class="form-control" maxlength="5000" placeholder="Write a reply…"><button class="btn btn-warning" type="submit">Send</button></form></div></div>
     </div>
 </div>
 <script>
@@ -55,6 +55,20 @@
      messages.scrollTop=messages.scrollHeight;
    } finally { busy=false; }
  }
+ let recorder=null, stream=null, chunks=[];
+ document.getElementById('record-voice').addEventListener('click', async ()=>{
+   const button=document.getElementById('record-voice');
+   if(recorder && recorder.state==='recording'){recorder.stop();button.classList.remove('btn-danger');button.classList.add('btn-outline-secondary');return;}
+   if(!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder==='undefined'){alert('Voice recording is not supported in this browser.');return;}
+   try{
+     stream=await navigator.mediaDevices.getUserMedia({audio:true});
+     const mime=['audio/webm;codecs=opus','audio/webm','audio/mp4'].find(type=>MediaRecorder.isTypeSupported(type));
+     recorder=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);chunks=[];
+     recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+     recorder.onstop=()=>{const type=recorder.mimeType||'audio/webm';const ext=type.includes('mp4')?'mp4':'webm';const file=new File([new Blob(chunks,{type})],'voice-message.'+ext,{type});const input=document.getElementById('attachment');const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;stream?.getTracks().forEach(t=>t.stop());stream=null;};
+     recorder.start();button.classList.remove('btn-outline-secondary');button.classList.add('btn-danger');
+   }catch(e){alert('Microphone permission was denied or unavailable.');}
+ });
  document.getElementById('send-form').addEventListener('submit', async event=>{
    event.preventDefault(); if(!active) return alert('Select a conversation first.');
    const body=document.getElementById('body'), file=document.getElementById('attachment');
