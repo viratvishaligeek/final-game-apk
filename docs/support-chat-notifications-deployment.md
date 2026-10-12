@@ -29,7 +29,7 @@
 - The Vue support screen presents FAQs first; the user explicitly escalates to a human conversation when the FAQ does not resolve the issue.
 
 ## Notification retention and sounds
-- Private per-user notification rows are pruned to the latest ten whenever a new private notification is created. Public announcements (user_id=null) are shared site-level records and are not deleted as a side effect of one user's retention cleanup.
+- Private per-user notification rows are pruned to the latest ten whenever a new private notification is created. Run php artisan notifications:prune --dry-run, review the count, then php artisan notifications:prune once after deployment to clean older existing records. Public announcements (user_id=null) are shared site-level records and are not deleted as a side effect of one user's retention cleanup.
 - Admins can mute individual in-app sound categories. The repository currently has one confirmed web WAV fallback (public/notification-tune.wav); event-specific MP3s are not present. Native OS push sounds are controlled separately by the mobile platform's notification channel/settings and are not dynamically changed by the web sound selector.
 - Push links use the resolved site's configured URL rather than a hard-coded unrelated domain. FCM delivery still requires valid FCM_PROJECT_ID and FCM_SERVICE_ACCOUNT_JSON secrets in the server environment.
 
