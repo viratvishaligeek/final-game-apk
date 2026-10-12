@@ -55,7 +55,7 @@ class SupportFeaturesRegressionTest extends TestCase
 
     public function test_faq_queries_are_isolated_by_the_active_site(): void
     {
-        Faq::withoutGlobalScope('site')->query()->create([
+        Faq::withoutGlobalScope('site')->create([
             'question' => 'Khatauli-only test FAQ',
             'answer' => 'This must not leak across domains.',
             'platform' => 'both',
