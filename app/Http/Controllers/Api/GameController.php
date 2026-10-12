@@ -42,7 +42,6 @@ class GameController extends Controller
         */
 
         $games = Game::query()
-            ->where('status', 'active')
             ->orderBy('serial')
             ->orderBy('id')
             ->get([
@@ -231,6 +230,19 @@ class GameController extends Controller
                     ? $window['end']->toIso8601String()
                     : null,
             ];
+        })->sort(function ($a, $b) use ($now) {
+            $rank = function ($game) use ($now) {
+                if (($game['status'] ?? null) !== 'active') return 2;
+                if (!empty($game['is_playable'])) return 0;
+                $start = $game['play_window_start_at'] ? Carbon::parse($game['play_window_start_at']) : null;
+                return $start && $start->greaterThan($now) ? 1 : 2;
+            };
+            $rankCompare = $rank($a) <=> $rank($b);
+            if ($rankCompare !== 0) return $rankCompare;
+            if ($rank($a) === 1) {
+                return strcmp((string) $a['play_window_start_at'], (string) $b['play_window_start_at']);
+            }
+            return ((int) ($a['serial'] ?? 0)) <=> ((int) ($b['serial'] ?? 0));
         })->values();
 
         /*
