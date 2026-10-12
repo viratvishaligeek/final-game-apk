@@ -125,7 +125,7 @@
      const messaging = window.firebase.messaging(firebaseApp);
      const token = await messaging.getToken({ vapidKey: window.FIREBASE_VAPID_KEY, serviceWorkerRegistration: registration });
      if (!token) throw new Error('Firebase did not return a push token.');
-     await request(root.replace(/\\/support-chat\\/?$/, '/push-subscribe'), {
+     await request(root.replace(/\/support-chat\/?$/, '/push-subscribe'), {
        method: 'POST',
        headers: { 'Content-Type': 'application/json' },
        body: JSON.stringify({ token, platform: 'web' }),
