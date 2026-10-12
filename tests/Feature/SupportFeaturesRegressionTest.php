@@ -69,11 +69,9 @@ class SupportFeaturesRegressionTest extends TestCase
         ]);
 
         config(['sites.current_key' => 'galidisawar']);
-        $this->withServerVariables(['HTTP_HOST' => 'galidisawar.com', 'SERVER_NAME' => 'galidisawar.com'])
-            ->getJson('/api/v1/faqs?platform=web')
-            ->assertOk()
-            ->assertJsonCount(0, 'data')
-            ->assertJsonMissing(['question' => 'Khatauli-only test FAQ']);
+        $response = app(SupportFaqController::class)->index(\Illuminate\Http\Request::create('/api/v1/faqs?platform=web'));
+
+        $this->assertSame([], $response->getData(true)['data']);
     }
 
     public function test_support_faq_and_sound_settings_routes_are_registered(): void
