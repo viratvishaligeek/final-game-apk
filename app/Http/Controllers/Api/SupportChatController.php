@@ -7,7 +7,6 @@ use App\Models\SupportConversation;
 use App\Models\SupportMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Validation\ValidationException;
 
 class SupportChatController extends Controller
@@ -30,7 +29,7 @@ class SupportChatController extends Controller
         ]);
     }
 
-    public function media(Request $request, SupportMessage $message): BinaryFileResponse
+    public function media(Request $request, SupportMessage $message)
     {
         abort_unless($message->conversation()->where('user_id', $request->user()->id)->exists(), 404);
         $disk = Storage::disk(config('support-chat.disk', 'local'));
