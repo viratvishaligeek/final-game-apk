@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToSite;
+use App\Services\ProjectStorage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -24,7 +25,7 @@ class Banner extends Model
     public function getImageUrlAttribute(): string
     {
         return $this->image
-            ? asset('storage/' . $this->image)
+            ? app(ProjectStorage::class)->publicUrl($this->image)
             : asset('backend/assets/img/default-banner.png');
     }
 
