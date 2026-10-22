@@ -31,6 +31,7 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
             'copyright_text' => '© ' . date('Y') . ' Play Online Khaiwal',
             'chart_chunk_size' => '10',
             'latest_url' => '',
+            'latest_version' => '',
             'update_date' => '2026-08-12',
         ];
 
