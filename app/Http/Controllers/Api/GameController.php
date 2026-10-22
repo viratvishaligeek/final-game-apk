@@ -63,15 +63,13 @@ class GameController extends Controller
 
         $gameIds = $games->pluck('id');
 
-        $gameDates = $games->mapWithKeys(function (Game $game) use ($now) {
-            $businessDate = $game->businessDate($now);
-
+        // Homepage "today" is the application's calendar date, not a market-specific
+        // business-day boundary. Keep businessDate() for play/betting logic only.
+        $gameDates = $games->mapWithKeys(function (Game $game) use ($today, $yesterday) {
             return [
                 $game->id => [
-                    'current' => $businessDate,
-                    'previous' => Carbon::parse($businessDate, config('app.timezone'))
-                        ->subDay()
-                        ->toDateString(),
+                    'current' => $today,
+                    'previous' => $yesterday,
                 ],
             ];
         });
@@ -138,12 +136,6 @@ class GameController extends Controller
             $isPlayable = $game->isPlayableAt($now);
 
             $remainingSeconds = $game->remainingSeconds($now);
-
-            /*
-             * latest_result is deliberately provided because
-             * frontend expects this property.
-             */
-            $latestResult = $todayResult ?: $yesterdayResult;
 
             return [
                 'id' => $game->id,
