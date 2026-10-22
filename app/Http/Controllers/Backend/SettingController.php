@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Throwable;
@@ -78,6 +79,20 @@ class SettingController extends Controller
             'site_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'site_favicon' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'og_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:4096'],
+            'notification_sound_add_money_mode' => ['nullable', Rule::in(['default', 'mute', 'custom'])],
+            'notification_sound_withdraw_mode' => ['nullable', Rule::in(['default', 'mute', 'custom'])],
+            'notification_sound_debit_mode' => ['nullable', Rule::in(['default', 'mute', 'custom'])],
+            'notification_sound_credit_mode' => ['nullable', Rule::in(['default', 'mute', 'custom'])],
+            'notification_sound_winning_mode' => ['nullable', Rule::in(['default', 'mute', 'custom'])],
+            'notification_sound_result_mode' => ['nullable', Rule::in(['default', 'mute', 'custom'])],
+            'notification_sound_chat_mode' => ['nullable', Rule::in(['default', 'mute', 'custom'])],
+            'notification_sound_add_money_upload' => ['nullable', 'file', 'mimes:wav,mp3,ogg', 'max:2048'],
+            'notification_sound_withdraw_upload' => ['nullable', 'file', 'mimes:wav,mp3,ogg', 'max:2048'],
+            'notification_sound_debit_upload' => ['nullable', 'file', 'mimes:wav,mp3,ogg', 'max:2048'],
+            'notification_sound_credit_upload' => ['nullable', 'file', 'mimes:wav,mp3,ogg', 'max:2048'],
+            'notification_sound_winning_upload' => ['nullable', 'file', 'mimes:wav,mp3,ogg', 'max:2048'],
+            'notification_sound_result_upload' => ['nullable', 'file', 'mimes:wav,mp3,ogg', 'max:2048'],
+            'notification_sound_chat_upload' => ['nullable', 'file', 'mimes:wav,mp3,ogg', 'max:2048'],
         ]);
 
         foreach ([
@@ -93,15 +108,45 @@ class SettingController extends Controller
 
         $newFiles = [];
         $oldFiles = [];
+        $newStoredFiles = [];
+        $oldStoredFiles = [];
 
         try {
-            DB::transaction(function () use ($request, $validated, &$newFiles, &$oldFiles) {
+            DB::transaction(function () use ($request, $validated, &$newFiles, &$oldFiles, &$newStoredFiles, &$oldStoredFiles) {
                 foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'announcement_text', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'og_title', 'og_description', 'robots_default', 'twitter_card', 'app_download_url', 'latest_url', 'latest_version', 'update_date', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'social_whatsapp', 'web_marquee', 'disclaimer_content', 'chart_chunk_size', 'community_post_approval', 'referral_percentage', 'referral_min_amount'] as $key) {
                     if (array_key_exists($key, $validated)) {
                         Setting::updateOrCreate(
                             ['option' => $key],
                             ['value' => $validated[$key]]
                         );
+                    }
+                }
+
+                foreach (['add_money', 'withdraw', 'debit', 'credit', 'winning', 'result', 'chat'] as $category) {
+                    $settingKey = 'notification_sound_' . $category;
+                    $modeKey = $settingKey . '_mode';
+                    $uploadKey = $settingKey . '_upload';
+                    $existingValue = Setting::query()->where('option', $settingKey)->value('value');
+
+                    if ($request->hasFile($uploadKey)) {
+                        $storedPath = Storage::disk('public')->putFile('notification-sounds', $request->file($uploadKey));
+                        if (!$storedPath) {
+                            throw new \RuntimeException('Unable to store notification sound: ' . $category);
+                        }
+                        $newStoredFiles[] = $storedPath;
+                        if (is_string($existingValue) && $existingValue !== '' && !in_array($existingValue, ['default', 'mute'], true)) {
+                            $oldStoredFiles[] = $existingValue;
+                        }
+                        Setting::updateOrCreate(['option' => $settingKey], ['value' => $storedPath]);
+                        continue;
+                    }
+
+                    $mode = $validated[$modeKey] ?? null;
+                    if (in_array($mode, ['default', 'mute'], true)) {
+                        if (is_string($existingValue) && $existingValue !== '' && !in_array($existingValue, ['default', 'mute'], true)) {
+                            $oldStoredFiles[] = $existingValue;
+                        }
+                        Setting::updateOrCreate(['option' => $settingKey], ['value' => $mode]);
                     }
                 }
 
@@ -140,6 +185,9 @@ class SettingController extends Controller
                     File::delete($oldFile);
                 }
             }
+            foreach (array_unique($oldStoredFiles) as $oldStoredFile) {
+                Storage::disk('public')->delete($oldStoredFile);
+            }
 
             return redirect()->back()->with('success', 'Settings updated successfully.');
         } catch (Throwable $e) {
@@ -147,6 +195,9 @@ class SettingController extends Controller
                 if (File::exists($newFile)) {
                     File::delete($newFile);
                 }
+            }
+            foreach ($newStoredFiles as $newStoredFile) {
+                Storage::disk('public')->delete($newStoredFile);
             }
 
             Log::error('Global settings update failed.', [
