@@ -113,6 +113,8 @@
                         'robots_default' => ['Default Robots Directive', 'select'],
                         'twitter_card' => ['Twitter Card Type', 'select'],
                         'app_download_url' => ['App Download URL (optional)', 'url'],
+                        'latest_url' => ['Latest Android APK URL (HTTPS)', 'url'],
+                        'update_date' => ['App Update Date (YYYY-MM-DD)', 'text'],
                         'copyright_text' => ['Copyright Text', 'text'],
                         'footer_description' => ['Footer Description', 'textarea'],
                         'contact_phone' => ['Public Contact Phone', 'text'],
