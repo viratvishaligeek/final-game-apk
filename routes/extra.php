@@ -57,6 +57,16 @@ Route::get('/storage-link', function () {
     ]);
 });
 
+
+Route::get('/storage-link', function () {
+    Artisan::call('migrate --force');
+    return response()->json([
+        'success' => true,
+        'message' => 'Forcly Migrated Successfully.',
+    ]);
+});
+
+
 Route::get('/fresh-db', function () {
     Artisan::call('migrate:fresh');
     Artisan::call('db:seed');
