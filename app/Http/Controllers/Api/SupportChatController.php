@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SupportConversation;
 use App\Models\SupportMessage;
 use App\Services\PushNotificationService;
+use App\Services\ProjectStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -39,10 +40,11 @@ class SupportChatController extends Controller
     public function media(Request $request, SupportMessage $message)
     {
         abort_unless($message->conversation()->where('user_id', $request->user()->id)->exists(), 404);
-        $disk = Storage::disk(config('support-chat.disk', 'local'));
+        $diskName = app(ProjectStorage::class)->privateDiskName();
+        $disk = Storage::disk($diskName);
         abort_unless($message->media_path && $disk->exists($message->media_path), 404);
 
-        if (config('support-chat.disk') === 's3') {
+        if (config('filesystems.disks.' . $diskName . '.driver') === 's3') {
             abort_unless(method_exists($disk, 'temporaryUrl'), 503, 'Private object storage is not configured for temporary URLs.');
             return redirect()->away($disk->temporaryUrl($message->media_path, now()->addMinutes(config('support-chat.presigned_url_minutes', 5))));
         }
@@ -81,7 +83,7 @@ class SupportChatController extends Controller
         ];
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
-            $data['media_path'] = $file->store('support-chat/' . $conversation->id, config('support-chat.disk', 'local'));
+            $data['media_path'] = app(ProjectStorage::class)->storePrivateFile($file, 'support-chat/' . $conversation->id);
             $data['media_mime'] = $file->getMimeType();
             $data['media_name'] = mb_substr($file->getClientOriginalName(), 0, 255);
         }
@@ -90,13 +92,16 @@ class SupportChatController extends Controller
 
     private function formatMessage(SupportMessage $message): array
     {
+        $diskName = app(ProjectStorage::class)->privateDiskName();
+        $isRemotePrivateDisk = config('filesystems.disks.' . $diskName . '.driver') === 's3';
+
         return [
             'id' => $message->id,
             'sender' => $message->sender_type,
             'body' => $message->body,
             'media_url' => $message->media_path
-                ? (config('support-chat.disk') === 's3'
-                    ? Storage::disk(config('support-chat.disk', 'local'))->temporaryUrl($message->media_path, now()->addMinutes(config('support-chat.presigned_url_minutes', 5)))
+                ? ($isRemotePrivateDisk
+                    ? Storage::disk($diskName)->temporaryUrl($message->media_path, now()->addMinutes(config('support-chat.presigned_url_minutes', 5)))
                     : url('/api/v1/support-chat/media/' . $message->id))
                 : null,
             'media_mime' => $message->media_mime,
