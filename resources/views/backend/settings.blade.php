@@ -91,7 +91,7 @@
             </div>
         </form>
 
-        <form action="{{ route('admin.setting.store') }}" method="POST">
+        <form action="{{ route('admin.setting.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="card mb-4">
                 <div class="card-header">Frontend Content, SEO & Results Chart</div>
