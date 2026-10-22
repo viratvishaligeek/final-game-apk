@@ -7,11 +7,11 @@ use App\Models\Banner;
 use App\Models\Game;
 use App\Models\Notification;
 use App\Services\AppSettingsService;
+use App\Services\ProjectStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -312,7 +312,7 @@ class DashboardController extends Controller
             $key = 'notification_sound_' . $category;
             $value = $data[$key] ?? null;
             if (is_string($value) && $value !== '' && !in_array($value, ['default', 'mute'], true)) {
-                $data[$key] = Storage::disk('public')->url($value);
+                $data[$key] = app(ProjectStorage::class)->publicUrl($value);
             }
         }
 
