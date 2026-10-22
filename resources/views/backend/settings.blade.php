@@ -146,7 +146,7 @@
                                 </select>
                             @else
                                 <input class="form-control" id="{{ $key }}" name="{{ $key }}" type="{{ $field[1] }}"
-                                    value="{{ old($key, optional($setting->firstWhere('option', $key))->value) }}">
+                                    value="{{ old($key, optional($setting->firstWhere('option', $key))->value ?? ($key === 'update_date' ? '2026-08-12' : null)) }}">
                             @endif
                             @error($key)<small class="text-danger">{{ $message }}</small>@enderror
                         </div>
