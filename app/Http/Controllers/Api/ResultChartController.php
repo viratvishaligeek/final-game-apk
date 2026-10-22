@@ -19,7 +19,8 @@ class ResultChartController extends Controller
             'game_id' => ['nullable', 'integer', 'exists:games,id'],
         ]);
 
-        $today = Carbon::today();
+        $timezone = config('app.timezone');
+        $today = Carbon::today($timezone);
 
         $month = (int) ($validated['month'] ?? $today->month);
         $year = (int) ($validated['year'] ?? $today->year);
@@ -51,7 +52,7 @@ class ResultChartController extends Controller
             ]);
         }
 
-        $startDate = Carbon::create($year, $month, 1)->startOfDay();
+        $startDate = Carbon::create($year, $month, 1, 0, 0, 0, $timezone)->startOfDay();
         $endDate = $startDate->copy()->endOfMonth();
 
         $results = Result::query()
