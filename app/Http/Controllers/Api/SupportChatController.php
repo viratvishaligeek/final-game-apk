@@ -14,6 +14,7 @@ class SupportChatController extends Controller
 {
     public function show(Request $request)
     {
+        $request->validate(['after_id' => ['sometimes', 'nullable', 'integer', 'min:0']]);
         $user = $request->user();
         $conversation = SupportConversation::firstOrCreate(['user_id' => $user->id]);
         $conversation->messages()
@@ -26,7 +27,12 @@ class SupportChatController extends Controller
             'success' => true,
             'conversation_id' => $conversation->id,
             'unread_count' => $conversation->messages()->where('sender_type', 'admin')->whereNull('read_at')->count(),
-            'data' => $conversation->messages()->orderBy('id')->limit(200)->get()->map(fn ($message) => $this->formatMessage($message)),
+            'data' => $conversation->messages()
+                ->when($request->query('after_id') !== null, fn ($query) => $query->where('id', '>', (int) $request->query('after_id')))
+                ->orderBy('id')
+                ->limit(200)
+                ->get()
+                ->map(fn ($message) => $this->formatMessage($message)),
         ]);
     }
 
