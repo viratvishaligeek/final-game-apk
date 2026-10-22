@@ -47,6 +47,7 @@
  const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
  const playChatSound = @json(($chatSoundEnabled ?? true) === true);
  let active = null, lastId = 0, busy = false, recordedFile = null, recorder = null, stream = null, chunks = [];
+ let pollTimer = null, pollDelay = 5000;
  const conversations = document.getElementById('conversations');
  const messages = document.getElementById('messages');
  const status = document.getElementById('connection-status');
@@ -86,13 +87,15 @@
    if (!active || busy) return;
    busy=true;
    try {
-     const result=await request(root+'/'+active+'/messages');
+     const wasNearBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 100;
+     const query = !reset ? '?after_id='+encodeURIComponent(String(lastId)) : '';
+     const result=await request(root+'/'+active+'/messages'+query);
      const all=result.data || [];
      const previousId = lastId;
      if (!reset && previousId > 0) {
        all.filter(m => m.sender === 'user' && m.id > previousId).forEach(notifyAdmin);
      }
-     messages.innerHTML=all.map(m=>{
+     const rendered=all.map(m=>{
        let media='';
        if (m.media_url) {
          if (String(m.media_mime||'').startsWith('image/')) media='<img alt="Attachment" src="'+esc(m.media_url)+'" style="max-width:min(260px,65vw);max-height:240px;border-radius:8px">';
@@ -101,9 +104,14 @@
          else media='<a href="'+esc(m.media_url)+'" target="_blank" rel="noopener">Open attachment</a>';
        }
        return '<div class="p-3 rounded-3 border '+(m.sender==='admin'?'align-self-end bg-warning-subtle':'align-self-start bg-white')+'" style="max-width:90%;overflow-wrap:anywhere">'+(m.body?'<div style="white-space:pre-wrap">'+esc(m.body)+'</div>':'')+media+'<small class="d-block text-muted mt-2">'+esc(m.created_at||'')+(m.read_at?' · Seen':'')+'</small></div>';
-     }).join('') || '<p class="text-muted text-center my-auto">No messages yet. Send the first reply.</p>';
-     lastId=all.length?Math.max(...all.map(m=>Number(m.id)||0)):0;
-     messages.scrollTop=messages.scrollHeight;
+     }).join('');
+     if (reset || messages.querySelector('p.text-muted.text-center')) {
+       messages.innerHTML=rendered || '<p class="text-muted text-center my-auto">No messages yet. Send the first reply.</p>';
+     } else if (rendered) {
+       messages.insertAdjacentHTML('beforeend', rendered);
+     }
+     if (all.length) lastId=Math.max(lastId,...all.map(m=>Number(m.id)||0));
+     if (reset || (rendered && wasNearBottom)) messages.scrollTop=messages.scrollHeight;
      status.textContent='Connected · refreshes automatically'; status.className='badge bg-success';
    } catch(e) {
      status.textContent='Reconnecting…'; status.className='badge bg-secondary';
