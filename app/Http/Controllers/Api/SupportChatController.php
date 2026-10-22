@@ -90,7 +90,7 @@ class SupportChatController extends Controller
             'body' => $message->body,
             'media_url' => $message->media_path
                 ? (config('support-chat.disk') === 's3'
-                    ? Storage::disk('s3')->temporaryUrl($message->media_path, now()->addMinutes(config('support-chat.presigned_url_minutes', 5)))
+                    ? Storage::disk(config('support-chat.disk', 'local'))->temporaryUrl($message->media_path, now()->addMinutes(config('support-chat.presigned_url_minutes', 5)))
                     : url('/api/v1/support-chat/media/' . $message->id))
                 : null,
             'media_mime' => $message->media_mime,
