@@ -22,6 +22,7 @@ Route::prefix('v1')->group(function () {
         return response()->json([
             'success' => true,
             'latest_url' => $settings->value('latest_url', ''),
+            'latest_version' => $settings->value('latest_version', ''),
             'update_date' => $settings->value('update_date', '2026-08-12'),
         ]);
     })->middleware('throttle:60,1');
