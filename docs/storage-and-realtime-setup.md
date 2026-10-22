@@ -10,6 +10,16 @@ Cloudflare's published Standard free allowance currently lists 10 GB-month stora
 
 Supabase Storage is an alternative, but its current free plan lists 1 GB file storage and 5 GB egress, and free projects can be paused after inactivity. See https://supabase.com/docs/guides/storage/pricing and https://supabase.com/pricing.
 
+## App update download allowlist
+
+The admin `latest_url` setting accepts HTTPS URLs only when their hostname is in `APP_UPDATE_ALLOWED_HOSTS`. By default, the host is derived from `APP_URL`. For a dedicated APK host, configure a comma-separated allowlist on the Laravel server, for example:
+
+```dotenv
+APP_UPDATE_ALLOWED_HOSTS=playonlinekhaiwal.com,downloads.example.com
+```
+
+Use only hostnames you control or have explicitly approved. Clear/rebuild Laravel's config cache after changing the environment value. The API exposes only the configured download URL, optional version string, and update date; the app does not compare installed and latest versions automatically.
+
 ## Local/private storage (works without cloud credentials)
 
 Keep these defaults in place:

@@ -7,7 +7,6 @@ use App\Models\Banner;
 use App\Models\Game;
 use App\Models\Notification;
 use App\Services\AppSettingsService;
-use App\Services\ProjectStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -271,13 +270,6 @@ class DashboardController extends Controller
             'admin_notice',
             'marquee',
             'notice_status',
-            'notification_sound_add_money',
-            'notification_sound_withdraw',
-            'notification_sound_debit',
-            'notification_sound_credit',
-            'notification_sound_winning',
-            'notification_sound_result',
-            'notification_sound_chat',
         ];
 
         $keysInput = $request->input('keys', []);
@@ -305,16 +297,6 @@ class DashboardController extends Controller
         $data = collect($keys)
             ->mapWithKeys(fn($key) => [$key => $allSettings[$key] ?? null])
             ->all();
-
-        // Return a current public URL for custom sound files, never a stored
-        // temporary URL. Default/mute are stable control values.
-        foreach (['add_money', 'withdraw', 'debit', 'credit', 'winning', 'result', 'chat'] as $category) {
-            $key = 'notification_sound_' . $category;
-            $value = $data[$key] ?? null;
-            if (is_string($value) && $value !== '' && !in_array($value, ['default', 'mute'], true)) {
-                $data[$key] = app(ProjectStorage::class)->publicUrl($value);
-            }
-        }
 
         return response()->json([
             'success' => true,
