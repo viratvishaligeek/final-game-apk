@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Services\AppSettingsService;
+use App\Services\ProjectStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Throwable;
@@ -129,7 +129,7 @@ class SettingController extends Controller
                     $existingValue = Setting::query()->where('option', $settingKey)->value('value');
 
                     if ($request->hasFile($uploadKey)) {
-                        $storedPath = Storage::disk('public')->putFile('notification-sounds', $request->file($uploadKey));
+                        $storedPath = app(ProjectStorage::class)->storePublicFile($request->file($uploadKey), 'notification-sounds');
                         if (!$storedPath) {
                             throw new \RuntimeException('Unable to store notification sound: ' . $category);
                         }
@@ -186,7 +186,7 @@ class SettingController extends Controller
                 }
             }
             foreach (array_unique($oldStoredFiles) as $oldStoredFile) {
-                Storage::disk('public')->delete($oldStoredFile);
+                app(ProjectStorage::class)->deletePublicFile($oldStoredFile);
             }
 
             return redirect()->back()->with('success', 'Settings updated successfully.');
@@ -197,7 +197,7 @@ class SettingController extends Controller
                 }
             }
             foreach ($newStoredFiles as $newStoredFile) {
-                Storage::disk('public')->delete($newStoredFile);
+                app(ProjectStorage::class)->deletePublicFile($newStoredFile);
             }
 
             Log::error('Global settings update failed.', [
