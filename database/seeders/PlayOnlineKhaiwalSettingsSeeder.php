@@ -30,6 +30,8 @@ class PlayOnlineKhaiwalSettingsSeeder extends Seeder
             'disclaimer_content' => 'Results and historical charts are provided for information only and reflect stored records. They are not predictions, guarantees, or financial advice. Follow applicable local laws and use this information responsibly.',
             'copyright_text' => '© ' . date('Y') . ' Play Online Khaiwal',
             'chart_chunk_size' => '10',
+            'latest_url' => '',
+            'update_date' => '2026-08-12',
         ];
 
         $knownLegacyDefaults = [
