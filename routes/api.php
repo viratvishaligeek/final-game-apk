@@ -12,11 +12,19 @@ use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\ReferralController;
 use App\Http\Controllers\Api\PushSubscriptionController;
+use App\Services\AppSettingsService;
 use App\Http\Middleware\EnsureUserIsActive;
 
 Route::prefix('v1')->group(function () {
     Route::get('faqs', [SupportFaqController::class, 'index'])->middleware('throttle:60,1');
     Route::post('push/subscribe', [PushSubscriptionController::class, 'subscribePublic'])->middleware('throttle:20,1');
+    Route::get('app-update', function (AppSettingsService $settings) {
+        return response()->json([
+            'success' => true,
+            'latest_url' => $settings->value('latest_url', ''),
+            'update_date' => $settings->value('update_date', '2026-08-12'),
+        ]);
+    })->middleware('throttle:60,1');
     Route::delete('push/subscribe', [PushSubscriptionController::class, 'unsubscribe'])->middleware('throttle:20,1');
     Route::controller(AuthController::class)->group(function () {
         Route::post('login', 'tryLogin')->middleware('throttle:10,1');
