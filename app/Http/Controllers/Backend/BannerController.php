@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
+use App\Services\ProjectStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class BannerController extends Controller
@@ -35,7 +35,7 @@ class BannerController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('banners', 'public');
+            $validated['image'] = app(ProjectStorage::class)->storePublicFile($request->file('image'), 'banners');
         }
 
         Banner::create($validated);
@@ -58,26 +58,25 @@ class BannerController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ]);
 
+        $oldImage = $banner->image;
         if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($banner->image && Storage::disk('public')->exists($banner->image)) {
-                Storage::disk('public')->delete($banner->image);
-            }
-            $validated['image'] = $request->file('image')->store('banners', 'public');
+            // Save the replacement first; keep the old file until the record updates.
+            $validated['image'] = app(ProjectStorage::class)->storePublicFile($request->file('image'), 'banners');
         } else {
             unset($validated['image']);
         }
 
         $banner->update($validated);
+        if ($request->hasFile('image') && $oldImage && $oldImage !== $banner->image) {
+            app(ProjectStorage::class)->deletePublicFile($oldImage);
+        }
 
         return redirect()->route('admin.banner.index')->with('success', 'Banner updated successfully.');
     }
 
     public function destroy(Banner $banner): RedirectResponse
     {
-        if ($banner->image && Storage::disk('public')->exists($banner->image)) {
-            Storage::disk('public')->delete($banner->image);
-        }
+        app(ProjectStorage::class)->deletePublicFile($banner->image);
 
         $banner->delete();
 

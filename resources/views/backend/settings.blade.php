@@ -91,7 +91,7 @@
             </div>
         </form>
 
-        <form action="{{ route('admin.setting.store') }}" method="POST">
+        <form action="{{ route('admin.setting.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="card mb-4">
                 <div class="card-header">Frontend Content, SEO & Results Chart</div>
@@ -113,6 +113,9 @@
                         'robots_default' => ['Default Robots Directive', 'select'],
                         'twitter_card' => ['Twitter Card Type', 'select'],
                         'app_download_url' => ['App Download URL (optional)', 'url'],
+                        'latest_url' => ['Latest Android APK URL (approved HTTPS host)', 'url'],
+                        'latest_version' => ['Latest App Version (optional)', 'text'],
+                        'update_date' => ['App Update Date (YYYY-MM-DD)', 'text'],
                         'copyright_text' => ['Copyright Text', 'text'],
                         'footer_description' => ['Footer Description', 'textarea'],
                         'contact_phone' => ['Public Contact Phone', 'text'],
@@ -144,9 +147,31 @@
                                 </select>
                             @else
                                 <input class="form-control" id="{{ $key }}" name="{{ $key }}" type="{{ $field[1] }}"
-                                    value="{{ old($key, optional($setting->firstWhere('option', $key))->value) }}">
+                                    value="{{ old($key, optional($setting->firstWhere('option', $key))->value ?? ($key === 'update_date' ? '2026-08-12' : null)) }}">
                             @endif
                             @error($key)<small class="text-danger">{{ $message }}</small>@enderror
+                        </div>
+                    @endforeach
+                    <div class="col-12 mt-2">
+                        <h6 class="fw-bold">Notification Sounds</h6>
+                        <p class="small text-muted">Choose a bundled default sound, silence a category, or upload a WAV/MP3/OGG file (maximum 2 MB). Uploaded sounds use the public storage disk; do not upload private or sensitive audio here.</p>
+                    </div>
+                    @foreach (['add_money' => 'Add money', 'withdraw' => 'Withdrawals', 'debit' => 'Debits / bets', 'credit' => 'Credits', 'winning' => 'Winnings', 'result' => 'Game results', 'chat' => 'Chat / support'] as $category => $label)
+                        @php($soundKey = 'notification_sound_' . $category)
+                        @php($soundValue = optional($setting->firstWhere('option', $soundKey))->value)
+                        <div class="col-lg-6 mb-3">
+                            <label class="small mb-1" for="{{ $soundKey }}_mode">{{ $label }} sound</label>
+                            <select class="form-select" id="{{ $soundKey }}_mode" name="{{ $soundKey }}_mode">
+                                <option value="default" {{ old($soundKey . '_mode', !$soundValue || $soundValue === 'default' ? 'default' : ($soundValue === 'mute' ? 'mute' : 'custom')) === 'default' ? 'selected' : '' }}>Bundled default</option>
+                                <option value="mute" {{ old($soundKey . '_mode', $soundValue === 'mute' ? 'mute' : '') === 'mute' ? 'selected' : '' }}>Silent</option>
+                                <option value="custom" {{ old($soundKey . '_mode', $soundValue && !in_array($soundValue, ['default', 'mute'], true) ? 'custom' : '') === 'custom' ? 'selected' : '' }}>Use uploaded sound</option>
+                            </select>
+                            <input class="form-control mt-2" id="{{ $soundKey }}_upload" name="{{ $soundKey }}_upload" type="file" accept=".wav,.mp3,.ogg,audio/wav,audio/mpeg,audio/ogg">
+                            @if ($soundValue && !in_array($soundValue, ['default', 'mute'], true))
+                                <small class="text-muted">A custom sound is currently stored.</small>
+                            @endif
+                            @error($soundKey . '_mode')<small class="text-danger">{{ $message }}</small>@enderror
+                            @error($soundKey . '_upload')<small class="text-danger">{{ $message }}</small>@enderror
                         </div>
                     @endforeach
                     <div class="col-lg-6 mb-3">
