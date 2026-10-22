@@ -5,5 +5,4 @@ return [
     // Set these disk names once to move new uploads to a configured compatible provider.
     'public_disk' => env('PROJECT_PUBLIC_STORAGE_DISK', 'public'),
     'private_disk' => env('PROJECT_PRIVATE_STORAGE_DISK', env('SUPPORT_CHAT_DISK', 'local')),
-    'max_upload_kb' => max(1024, (int) env('PROJECT_MAX_UPLOAD_KB', 20480)),
 ];
