@@ -44,7 +44,21 @@ class SettingController extends Controller
             'robots_default' => ['nullable', 'string', Rule::in(['index,follow', 'noindex,follow', 'index,nofollow', 'noindex,nofollow'])],
             'twitter_card' => ['nullable', 'string', 'in:summary,summary_large_image'],
             'app_download_url' => ['nullable', 'url', 'starts_with:https://', 'max:1000'],
-            'latest_url' => ['nullable', 'url', 'starts_with:https://', 'max:1000'],
+            'latest_url' => [
+                'nullable', 'url', 'starts_with:https://', 'max:1000',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (blank($value)) {
+                        return;
+                    }
+
+                    $host = strtolower((string) parse_url((string) $value, PHP_URL_HOST));
+                    $allowedHosts = config('app-update.allowed_hosts', []);
+                    if ($host === '' || !in_array($host, $allowedHosts, true)) {
+                        $fail('The APK URL host is not in the configured APP_UPDATE_ALLOWED_HOSTS allowlist.');
+                    }
+                },
+            ],
+            'latest_version' => ['nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9][A-Za-z0-9._+-]*$/'],
             'update_date' => ['nullable', 'date_format:Y-m-d'],
             'copyright_text' => ['nullable', 'string', 'max:255'],
             'footer_description' => ['nullable', 'string', 'max:1000'],
@@ -82,7 +96,7 @@ class SettingController extends Controller
 
         try {
             DB::transaction(function () use ($request, $validated, &$newFiles, &$oldFiles) {
-                foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'announcement_text', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'og_title', 'og_description', 'robots_default', 'twitter_card', 'app_download_url', 'latest_url', 'update_date', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'social_whatsapp', 'web_marquee', 'disclaimer_content', 'chart_chunk_size', 'community_post_approval', 'referral_percentage', 'referral_min_amount'] as $key) {
+                foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'announcement_text', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'og_title', 'og_description', 'robots_default', 'twitter_card', 'app_download_url', 'latest_url', 'latest_version', 'update_date', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'social_whatsapp', 'web_marquee', 'disclaimer_content', 'chart_chunk_size', 'community_post_approval', 'referral_percentage', 'referral_min_amount'] as $key) {
                     if (array_key_exists($key, $validated)) {
                         Setting::updateOrCreate(
                             ['option' => $key],
