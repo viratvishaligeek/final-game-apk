@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -304,6 +305,16 @@ class DashboardController extends Controller
         $data = collect($keys)
             ->mapWithKeys(fn($key) => [$key => $allSettings[$key] ?? null])
             ->all();
+
+        // Return a current public URL for custom sound files, never a stored
+        // temporary URL. Default/mute are stable control values.
+        foreach (['add_money', 'withdraw', 'debit', 'credit', 'winning', 'result', 'chat'] as $category) {
+            $key = 'notification_sound_' . $category;
+            $value = $data[$key] ?? null;
+            if (is_string($value) && $value !== '' && !in_array($value, ['default', 'mute'], true)) {
+                $data[$key] = Storage::disk('public')->url($value);
+            }
+        }
 
         return response()->json([
             'success' => true,
