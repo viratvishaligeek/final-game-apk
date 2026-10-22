@@ -201,10 +201,22 @@
    try { await request(root+'/'+active+'/send',{method:'POST',body:data}); body.value=''; file.value=''; recordedFile=null; recordingStatus.classList.add('d-none'); await loadMessages(true); await loadConversations(); }
    catch(error){ alert(error.message); }
  });
- async function tick(){ try { await loadConversations(); if(active) await loadMessages(); else {status.textContent='Connected';status.className='badge bg-success';} } catch(e) { status.textContent='Reconnecting…';status.className='badge bg-secondary'; } }
- loadConversations().then(()=>{status.textContent='Connected · refreshes automatically';status.className='badge bg-success';}).catch(()=>{status.textContent='Reconnecting…';});
- setInterval(tick,3000);
- window.addEventListener('beforeunload',()=>stream?.getTracks().forEach(t=>t.stop()));
+ async function tick(){
+   try {
+     await loadConversations();
+     if(active) await loadMessages();
+     else {status.textContent='Connected';status.className='badge bg-success';}
+     if(status.classList.contains('bg-success')) pollDelay=5000;
+   } catch(e) {
+     pollDelay=Math.min(30000,pollDelay*2);
+     status.textContent='Reconnecting…'; status.className='badge bg-secondary';
+   } finally {
+     pollTimer=window.setTimeout(tick,pollDelay);
+   }
+ }
+ loadConversations().then(()=>{status.textContent='Connected · refreshes automatically';status.className='badge bg-success';}).catch(()=>{status.textContent='Reconnecting…';status.className='badge bg-secondary';});
+ pollTimer=window.setTimeout(tick,pollDelay);
+ window.addEventListener('beforeunload',()=>{ if(pollTimer) clearTimeout(pollTimer); stream?.getTracks().forEach(t=>t.stop()); });
 })();
 </script>
 @endsection
