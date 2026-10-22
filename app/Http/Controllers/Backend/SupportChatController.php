@@ -40,11 +40,17 @@ class SupportChatController extends Controller
 
     public function messages(Request $request, SupportConversation $conversation)
     {
+        $request->validate(['after_id' => ['sometimes', 'nullable', 'integer', 'min:0']]);
         $conversation->messages()->where('sender_type', 'user')->whereNull('read_at')->update(['read_at' => now()]);
         $conversation->forceFill(['admin_last_read_at' => now(), 'assigned_admin_id' => auth('admin')->id()])->save();
 
         return response()->json([
-            'data' => $conversation->messages()->orderBy('id')->limit(200)->get()->map(fn ($message) => $this->formatMessage($message)),
+            'data' => $conversation->messages()
+                ->when($request->query('after_id') !== null, fn ($query) => $query->where('id', '>', (int) $request->query('after_id')))
+                ->orderBy('id')
+                ->limit(200)
+                ->get()
+                ->map(fn ($message) => $this->formatMessage($message)),
         ]);
     }
 
