@@ -465,7 +465,7 @@
                                         <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-start gap-2">
                                             <div>
                                                 <div class="fw-bold text-dark">
-                                                    {{ $firstBid?->game->name ?? 'Game Deleted' }}
+                                                    {{ $firstBid?->game?->name ?? 'Game Deleted' }}
                                                 </div>
                                                 <div class="small text-muted">
                                                     {{ $hasOrderNumber ? 'Play Order #' . $bidGroup->group_key : 'Individual Bid #' . $firstBid?->id }}
