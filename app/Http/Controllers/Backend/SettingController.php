@@ -75,9 +75,9 @@ class SettingController extends Controller
             'community_post_approval' => ['nullable', Rule::in(['manual', 'automatic'])],
             'referral_percentage' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100'],
             'referral_min_amount' => ['sometimes', 'required', 'numeric', 'min:0', 'max:1000000'],
-            'site_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'site_logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
             'site_favicon' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
-            'og_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:4096'],
+            'og_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
         ]);
 
         foreach ([
