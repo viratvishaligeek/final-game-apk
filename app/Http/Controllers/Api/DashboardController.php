@@ -292,6 +292,7 @@ class DashboardController extends Controller
             'min_bid_amount_haruf',
             'max_bid_amount_haruf',
             'add_money_notice',
+            'social_whatsapp',
             'withdraw_money_notice',
             'admin_notice',
             'marquee',
