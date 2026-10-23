@@ -63,10 +63,6 @@
                             <input class="form-control" id="city" name="city" type="text" value="{{ old('city', $user->city) }}" />
                         </div>
                         <div class="col-md-3 mb-3">
-                            <label class="small mb-1" for="balance">Balance <span class="text-danger">*</span></label>
-                            <input class="form-control" id="balance" name="balance" type="number" value="{{ old('balance', $user->balance) }}" required />
-                        </div>
-                        <div class="col-md-3 mb-3">
                             <label class="small mb-1" for="status">Status <span class="text-danger">*</span></label>
                             <select class="form-select" id="status" name="status" required>
                                 <option value="active" {{ old('status', $user->status) === 'active' ? 'selected' : '' }}>Active</option>
