@@ -223,20 +223,32 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        $perPage = min(
-            max((int) $request->input('per_page', 20), 1),
-            100
-        );
-
-        $notifications = Notification::query()
-            ->where(function ($query) use ($user) {
-                $query->where('user_id', $user->id)
-                    ->orWhereNull('user_id');
-            })
+        // Enforce independent caps: ten private notifications for this user
+        // and ten public notifications shared by all users. Never mix categories
+        // before applying their limits.
+        $privateNotifications = Notification::query()
+            ->where('user_id', $user->id)
             ->latest('created_at')
-            ->paginate($perPage);
+            ->latest('id')
+            ->limit(10)
+            ->get();
 
-        $data = $notifications->getCollection()->map(function ($notification) {
+        $publicNotifications = Notification::query()
+            ->whereNull('user_id')
+            ->latest('created_at')
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        $notifications = $privateNotifications
+            ->concat($publicNotifications)
+            ->sortByDesc(fn ($notification) => [
+                $notification->created_at?->getTimestamp() ?? 0,
+                $notification->id,
+            ])
+            ->values();
+
+        $data = $notifications->map(function ($notification) {
             return [
                 'id' => $notification->id,
                 'subject' => $notification->subject,
@@ -245,16 +257,15 @@ class DashboardController extends Controller
                 'updated_at' => $notification->updated_at?->toISOString(),
             ];
         });
-
         return response()->json([
             'success' => true,
             'data' => $data->values(),
             'meta' => [
-                'current_page' => $notifications->currentPage(),
-                'last_page' => $notifications->lastPage(),
-                'per_page' => $notifications->perPage(),
-                'total' => $notifications->total(),
-                'has_more' => $notifications->hasMorePages(),
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => 20,
+                'total' => $data->count(),
+                'has_more' => false,
             ],
         ]);
     }
