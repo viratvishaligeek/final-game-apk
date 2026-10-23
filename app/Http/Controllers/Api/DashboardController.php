@@ -249,7 +249,15 @@ class DashboardController extends Controller
             ))
             ->values();
 
-        $data = $notifications->map(function ($notification) {
+        // Preserve the existing paginated response contract while paginating
+        // only the capped set (at most 10 private + 10 public records).
+        $perPage = min(max((int) $request->input('per_page', 20), 1), 20);
+        $currentPage = max((int) $request->input('page', 1), 1);
+        $total = $notifications->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $pageNotifications = $notifications->forPage($currentPage, $perPage)->values();
+
+        $data = $pageNotifications->map(function ($notification) {
             return [
                 'id' => $notification->id,
                 'subject' => $notification->subject,
@@ -258,15 +266,16 @@ class DashboardController extends Controller
                 'updated_at' => $notification->updated_at?->toISOString(),
             ];
         });
+
         return response()->json([
             'success' => true,
             'data' => $data->values(),
             'meta' => [
-                'current_page' => 1,
-                'last_page' => 1,
-                'per_page' => 20,
-                'total' => $data->count(),
-                'has_more' => false,
+                'current_page' => $currentPage,
+                'last_page' => $lastPage,
+                'per_page' => $perPage,
+                'total' => $total,
+                'has_more' => $currentPage < $lastPage,
             ],
         ]);
     }
