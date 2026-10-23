@@ -93,7 +93,7 @@ class UserController extends Controller
             ->selectRaw("COALESCE(NULLIF(order_no, ''), CONCAT('bid-', id)) as group_key, MAX(id) as latest_id, COUNT(*) as item_count, SUM(amount) as total_amount")
             ->groupBy('group_key')
             ->orderByDesc('latest_id')
-            ->paginate(15, ['*'], 'bids_page');
+            ->paginate(15, null, 'bids_page');
 
         $groupKeys = $bids->getCollection()->pluck('group_key');
         $orderNumbers = $groupKeys
@@ -104,23 +104,25 @@ class UserController extends Controller
             ->map(fn ($key) => (int) substr((string) $key, 4))
             ->values();
 
-        $groupedBidRows = $user->bids()
-            ->with('game:id,name')
-            ->where(function ($query) use ($orderNumbers, $singleBidIds) {
-                if ($orderNumbers->isNotEmpty()) {
-                    $query->whereIn('order_no', $orderNumbers);
-                }
-                if ($singleBidIds->isNotEmpty()) {
+        $groupedBidRows = $groupKeys->isEmpty()
+            ? collect()
+            : $user->bids()
+                ->with('game:id,name')
+                ->where(function ($query) use ($orderNumbers, $singleBidIds) {
                     if ($orderNumbers->isNotEmpty()) {
-                        $query->orWhereIn('id', $singleBidIds);
-                    } else {
-                        $query->whereIn('id', $singleBidIds);
+                        $query->whereIn('order_no', $orderNumbers);
                     }
-                }
-            })
-            ->orderByDesc('id')
-            ->get()
-            ->groupBy(fn ($bid) => filled($bid->order_no) ? (string) $bid->order_no : 'bid-' . $bid->id);
+                    if ($singleBidIds->isNotEmpty()) {
+                        if ($orderNumbers->isNotEmpty()) {
+                            $query->orWhereIn('id', $singleBidIds);
+                        } else {
+                            $query->whereIn('id', $singleBidIds);
+                        }
+                    }
+                })
+                ->orderByDesc('id')
+                ->get()
+                ->groupBy(fn ($bid) => filled($bid->order_no) ? (string) $bid->order_no : 'bid-' . $bid->id);
 
         $bids->setCollection($bids->getCollection()->map(function ($group) use ($groupedBidRows) {
             $key = (string) $group->group_key;
