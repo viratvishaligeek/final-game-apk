@@ -290,7 +290,7 @@
 
                                         {{-- Reject --}}
                                         <button type="button" class="btn btn-sm btn-outline-danger reject-btn"
-                                            data-id="{{ $request->id }}" data-name="{{ $request->user->name ?? 'User' }}"
+                                            data-id="{{ $request->id }}" data-action="{{ route('admin.wallet.request.reject', $request->id) }}" data-name="{{ $request->user->name ?? 'User' }}"
                                             data-bs-toggle="modal" data-bs-target="#rejectModal">
 
                                             <i data-feather="x" class="me-1"></i>
@@ -499,7 +499,7 @@
                         .textContent = name;
 
                     document.getElementById('rejectForm').action =
-                        `{{ url('/wallet/request/reject') }}/${id}`;
+                        button.dataset.action;
 
                 });
 
