@@ -497,7 +497,7 @@ class WalletController extends Controller
         }
 
         $parts = parse_url($url);
-        if (($parts['scheme'] ?? '') !== 'https') {
+        if (($parts['scheme'] ?? '') !== 'https' || isset($parts['user']) || isset($parts['pass'])) {
             return false;
         }
 
