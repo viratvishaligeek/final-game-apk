@@ -449,7 +449,7 @@ class WalletController extends Controller
                 ], 422);
             }
             $paymentUrl = $result['data']['payment_url'] ?? null;
-            if (!is_string($paymentUrl) || !filter_var($paymentUrl, FILTER_VALIDATE_URL)) {
+            if (!is_string($paymentUrl) || !$this->isTrustedGatewayPaymentUrl($paymentUrl)) {
                 $walletRequest->update([
                     'status' => 'failed',
                     'gateway_status' => 'invalid_payment_url',
@@ -465,6 +465,8 @@ class WalletController extends Controller
                     'message' => 'Payment gateway returned an invalid payment link. Please try again.',
                 ], 502);
             }
+
+            $walletRequest->update(['gateway_payment_url' => $paymentUrl]);
 
             return response()->json([
                 'success' => true,
@@ -486,6 +488,77 @@ class WalletController extends Controller
                 'message' => 'Payment gateway is temporarily unavailable.',
             ], 500);
         }
+    }
+
+    private function isTrustedGatewayPaymentUrl(string $url): bool
+    {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $parts = parse_url($url);
+        if (($parts['scheme'] ?? '') !== 'https') {
+            return false;
+        }
+
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        foreach (['ekqr.in', 'upigateway.com'] as $domain) {
+            if ($host === $domain || str_ends_with($host, '.' . $domain)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Authoritative, user-owned payment status. Verification failures leave the
+     * request pending; a polling/network error is never interpreted as failure.
+     */
+    public function gatewayStatus(Request $request, int $requestId): JsonResponse
+    {
+        $walletRequest = WalletRequest::query()
+            ->where('id', $requestId)
+            ->where('user_id', $request->user()->id)
+            ->where('payment_method', 'gateway')
+            ->where('request_type', 'credit')
+            ->first();
+
+        if (!$walletRequest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment request not found.',
+            ], 404);
+        }
+
+        if (!in_array($walletRequest->status, ['approved', 'failed', 'rejected'], true)) {
+            try {
+                $this->verifyGatewayTransaction($walletRequest);
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        $walletRequest->refresh();
+        $freshUser = User::query()->findOrFail($request->user()->id);
+        $status = strtolower((string) $walletRequest->status);
+        $terminal = in_array($status, ['approved', 'failed', 'rejected'], true);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'request_id' => $walletRequest->id,
+                'status' => $status,
+                'amount' => (float) $walletRequest->amount,
+                'terminal' => $terminal,
+                'wallet_balance' => round((float) $freshUser->balance, 2),
+                'message' => match ($status) {
+                    'approved' => 'Payment verified successfully.',
+                    'failed', 'rejected' => 'The provider confirmed that payment failed.',
+                    default => 'Payment is still pending verification.',
+                },
+            ],
+        ]);
     }
 
     public function gatewayReturn(Request $request): Response
