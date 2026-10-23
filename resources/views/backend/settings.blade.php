@@ -104,6 +104,7 @@
                         'homepage_heading_line3' => ['Homepage Heading — Line 3', 'text'],
                         'homepage_intro' => ['Homepage Introduction', 'textarea'],
                         'announcement_text' => ['Announcement Text', 'textarea'],
+                        'add_money_notice' => ['Add Money Instruction (Hindi)', 'textarea'],
                         'meta_title' => ['Default SEO Title', 'text'],
                         'meta_description' => ['Default Meta Description', 'textarea'],
                         'meta_keywords' => ['Default SEO Keywords', 'textarea'],
