@@ -39,8 +39,8 @@
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-xl-4 col-md-6 mb-4">
+            <div class="row g-3 profit-loss-summary">
+                <div class="col-6 col-md-6 col-xl-4 mb-4">
                     <div class="card border-start-lg border-start-success h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between">
@@ -55,7 +55,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-xl-4 col-md-6 mb-4">
+                <div class="col-6 col-md-6 col-xl-4 mb-4">
                     <div class="card border-start-lg border-start-warning h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between">
