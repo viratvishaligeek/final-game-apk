@@ -287,7 +287,7 @@ class WalletController extends Controller
                 'file',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:5120',
+                'max:15360',
             ],
         ]);
         $user = $request->user();
@@ -784,7 +784,7 @@ class WalletController extends Controller
                 'file',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:2048',
+                'max:15360',
             ],
         ]);
         $user = $request->user();
