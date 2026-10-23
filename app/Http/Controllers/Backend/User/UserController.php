@@ -134,7 +134,6 @@ class UserController extends Controller
             'gender'     => 'nullable|string|in:Male,Female,Other',
             'city'       => 'nullable|string|max:200',
             'address'    => 'nullable|string|max:255',
-            'balance' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
             'bank'       => 'nullable|string|max:100',
             'acc'        => 'nullable|string|max:100',
             'ifsc'       => 'nullable|string|max:20',
@@ -156,9 +155,6 @@ class UserController extends Controller
             ]);
         }
 
-        $targetBalance = round((float) $validated['balance'], 2);
-        unset($validated['balance']);
-
         if (!empty($request->password)) {
             $validated['password'] = Hash::make($request->password);
         } else {
@@ -167,28 +163,12 @@ class UserController extends Controller
 
         $userData = $this->mapPaymentFields($validated);
 
-        DB::transaction(function () use ($id, $userData, $targetBalance) {
+        DB::transaction(function () use ($id, $userData) {
             $lockedUser = User::query()
                 ->lockForUpdate()
                 ->findOrFail($id);
 
             $lockedUser->update($userData);
-
-            $currentBalance = round((float) $lockedUser->balance, 2);
-
-            if ($targetBalance > $currentBalance) {
-                $this->walletService->credit(
-                    $lockedUser,
-                    round($targetBalance - $currentBalance, 2),
-                    'Wallet balance adjusted by admin through user edit'
-                );
-            } elseif ($targetBalance < $currentBalance) {
-                $this->walletService->debit(
-                    $lockedUser,
-                    round($currentBalance - $targetBalance, 2),
-                    'Wallet balance adjusted by admin through user edit'
-                );
-            }
         });
 
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
