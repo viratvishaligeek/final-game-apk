@@ -54,6 +54,8 @@ Route::prefix('v1')->group(function () {
             Route::put('/update-profile', 'updateProfile');
             Route::put('/update-password', 'changePassword');
             Route::get('/notifications', 'notificationList');
+            Route::get('/notifications/preference', 'notificationPreference');
+            Route::put('/notifications/preference', 'updateNotificationPreference')->middleware('throttle:30,1');
             Route::get('/notifications-count', 'unreadCount');
             Route::get('/settings', 'getSetting');
         });
@@ -62,7 +64,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/', 'index');
             Route::get('/payment-methods', 'paymentMethods');
             Route::post('/add-money-request', 'addMoneyRequest');
-            Route::post('/gateway/create-order', 'createGatewayOrder');
+            Route::post('/gateway/create-order', 'createGatewayOrder')->middleware('throttle:10,1');
+            Route::get('/gateway/{requestId}/status', 'gatewayStatus')->whereNumber('requestId')->middleware('throttle:30,1');
             Route::post('/withdraw', 'withdraw');
             Route::get('/get-money-request', 'getMoneyRequest');
             // Backward-compatible alias used by earlier mobile app builds.

@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\\Database\\Eloquent\\Model;
+use Illuminate\\Support\\Facades\\DB;
 
 class Notification extends Model
 {
@@ -23,20 +24,29 @@ class Notification extends Model
                 return;
             }
 
-            $oldIds = static::query()
-                ->where('user_id', $notification->user_id)
-                ->orderByDesc('created_at')
-                ->orderByDesc('id')
-                ->limit(1000000)
-                ->offset(10)
-                ->pluck('id');
+            // Serialize cleanup per user. The user-row lock coordinates concurrent
+            // notification inserts without blocking notifications for other users.
+            DB::transaction(function () use ($notification): void {
+                User::query()
+                    ->whereKey($notification->user_id)
+                    ->lockForUpdate()
+                    ->first();
 
-            if ($oldIds->isNotEmpty()) {
-                static::query()
+                $oldIds = static::query()
                     ->where('user_id', $notification->user_id)
-                    ->whereIn('id', $oldIds)
-                    ->delete();
-            }
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
+                    ->offset(10)
+                    ->limit(1000000)
+                    ->pluck('id');
+
+                if ($oldIds->isNotEmpty()) {
+                    static::query()
+                        ->where('user_id', $notification->user_id)
+                        ->whereIn('id', $oldIds)
+                        ->delete();
+                }
+            }, 3);
         });
     }
 }

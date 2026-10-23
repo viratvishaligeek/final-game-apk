@@ -193,6 +193,32 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function notificationPreference(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'notifications_enabled' => (bool) $request->user()->notifications_enabled,
+        ]);
+    }
+
+    public function updateNotificationPreference(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'enabled' => ['required', 'boolean'],
+        ]);
+
+        $user = $request->user();
+        $user->forceFill(['notifications_enabled' => (bool) $validated['enabled']])->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => $user->notifications_enabled
+                ? 'Notifications enabled.'
+                : 'Notifications disabled.',
+            'notifications_enabled' => (bool) $user->notifications_enabled,
+        ]);
+    }
+
     public function notificationList(Request $request)
     {
         $user = $request->user();
@@ -266,6 +292,7 @@ class DashboardController extends Controller
             'min_bid_amount_haruf',
             'max_bid_amount_haruf',
             'add_money_notice',
+            'social_whatsapp',
             'withdraw_money_notice',
             'admin_notice',
             'marquee',

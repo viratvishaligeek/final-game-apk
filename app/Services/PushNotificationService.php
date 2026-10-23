@@ -122,6 +122,14 @@ class PushNotificationService
         $sent = 0;
 
         foreach ($subscriptions as $subscription) {
+            // Account-level opt-out applies to individual and public push delivery.
+            if ($subscription->user_id !== null && User::query()
+                ->whereKey($subscription->user_id)
+                ->where('notifications_enabled', false)
+                ->exists()) {
+                continue;
+            }
+
             try {
                 if ($this->send($subscription->token, $title, $body, $subscription, $notificationType, $notificationId)) {
                     $sent++;
