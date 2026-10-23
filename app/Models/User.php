@@ -37,6 +37,7 @@ class User extends Authenticatable
         'referral_code',
         'referrer_user_id',
         'first_deposit_at',
+        'notifications_enabled',
     ];
 
 
@@ -115,6 +116,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notifications_enabled' => 'boolean',
         ];
     }
 }
