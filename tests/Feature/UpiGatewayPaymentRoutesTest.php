@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Http\\Controllers\\Api\\WalletController;
-use Illuminate\\Support\\Facades\\Route;
-use Tests\\TestCase;
+use App\Http\Controllers\Api\WalletController;
+use Illuminate\Support\Facades\Route;
+use Tests\TestCase;
 
 class UpiGatewayPaymentRoutesTest extends TestCase
 {
