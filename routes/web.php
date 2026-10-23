@@ -2,15 +2,7 @@
 
 use App\Http\Controllers\Frontend\MainController;
 use App\Http\Controllers\Frontend\AppDownloadController;
-use App\Http\Controllers\Frontend\CommunityAuthController;
-use App\Http\Controllers\Frontend\CommunityController;
-use App\Http\Middleware\EnsureCommunityUser;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Artisan;
-use App\Http\Controllers\WelcomeController;
-use App\Models\Game;
-use App\Models\Result;
-use Illuminate\Support\Facades\DB;
 
 
 require 'admin.php';

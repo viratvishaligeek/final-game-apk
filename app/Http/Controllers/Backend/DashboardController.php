@@ -24,7 +24,7 @@ class DashboardController extends Controller
         $now = now()->timezone(config('app.timezone'));
         $gameDates = Game::query()
             ->get(['id', 'name', 'slug', 'result_time'])
-            ->mapWithKeys(fn (Game $game) => [$game->id => $game->businessDate($now)])
+            ->mapWithKeys(fn(Game $game) => [$game->id => $game->businessDate($now)])
             ->all();
 
         $period = $request->input('period', '7days');
@@ -92,39 +92,7 @@ class DashboardController extends Controller
             ->limit(50)
             ->get();
 
-        [$chartStart, $chartEnd, $groupFormat] = $this->getChartRange($period);
-
-        $withdrawChart = $this->getWalletChartData(
-            requestType: 'debit',
-            start: $chartStart,
-            end: $chartEnd,
-            groupFormat: $groupFormat
-        );
-
-        $moneyAddedChart = $this->getWalletChartData(
-            requestType: 'credit',
-            start: $chartStart,
-            end: $chartEnd,
-            groupFormat: $groupFormat
-        );
-
-        $chartLabels = $this->getChartLabels(
-            $chartStart,
-            $chartEnd,
-            $period
-        );
-
-        $withdrawValues = $this->mapChartValues(
-            $chartLabels,
-            $withdrawChart,
-            $period
-        );
-
-        $moneyAddedValues = $this->mapChartValues(
-            $chartLabels,
-            $moneyAddedChart,
-            $period
-        );
+        $totalUserTable = $this->getTotalUserReport();
 
         return view('backend.dashboard', [
             'totalUsers' => $totalUsers,
@@ -132,19 +100,14 @@ class DashboardController extends Controller
             'todayTotalBids' => $todayTotalBids,
             'todayBidAmount' => $todayBidAmount,
             'totalPages' => $totalPages,
-
             'pendingWithdraw' => $pendingWithdraw,
             'completeWithdraw' => $completeWithdraw,
             'pendingAddMoney' => $pendingAddMoney,
-
             'todayWinnerCount' => $todayWinnerCount,
             'todayWinningAmount' => $todayWinningAmount,
             'todayWinners' => $todayWinners,
 
-            'period' => $period,
-            'chartLabels' => $chartLabels,
-            'withdrawValues' => $withdrawValues,
-            'moneyAddedValues' => $moneyAddedValues,
+            'totalUserTable' => $totalUserTable,
         ]);
     }
 
@@ -168,122 +131,87 @@ class DashboardController extends Controller
         });
     }
 
-    /**
-     * Get chart date range.
-     */
-    private function getChartRange(string $period): array
+
+    private function getTotalUserReport(): array
     {
-        $today = today();
+        $users = User::query()
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
 
-        return match ($period) {
-            '30days' => [
-                $today->copy()->subDays(29)->startOfDay(),
-                $today->copy()->endOfDay(),
-                'day',
-            ],
+        if ($users->isEmpty()) {
+            return [];
+        }
 
-            'month' => [
-                $today->copy()->startOfMonth()->startOfDay(),
-                $today->copy()->endOfDay(),
-                'day',
-            ],
-
-            '12months' => [
-                $today->copy()->subMonths(11)->startOfMonth()->startOfDay(),
-                $today->copy()->endOfMonth()->endOfDay(),
-                'month',
-            ],
-
-            default => [
-                $today->copy()->subDays(6)->startOfDay(),
-                $today->copy()->endOfDay(),
-                'day',
-            ],
-        };
-    }
-
-    /**
-     * Get approved wallet request chart data.
-     */
-    private function getWalletChartData(
-        string $requestType,
-        Carbon $start,
-        Carbon $end,
-        string $groupFormat
-    ) {
-        $query = WalletRequest::query()
-            ->where('request_type', $requestType)
+        $userIds = $users->pluck('id');
+        $totalAdded = WalletRequest::query()
+            ->whereIn('user_id', $userIds)
+            ->where('request_type', 'credit')
             ->where('status', 'approved')
-            ->whereBetween('processed_at', [$start, $end]);
+            ->selectRaw('user_id, COALESCE(SUM(amount), 0) AS total_added')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
 
-        if ($groupFormat === 'month') {
-            return $query
-                ->selectRaw("
-                    DATE_FORMAT(processed_at, '%Y-%m') as period,
-                    SUM(amount) as total
-                ")
-                ->groupBy('period')
-                ->orderBy('period')
-                ->pluck('total', 'period');
-        }
+        $betStats = Bid::query()
+            ->whereIn('user_id', $userIds)
+            ->selectRaw('
+            user_id,
+            COALESCE(SUM(amount), 0) AS total_bet,
+            COALESCE(SUM(winning_amount), 0) AS total_win,
+            MIN(game_date) AS first_played,
+            MAX(game_date) AS last_played
+        ')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
 
-        return $query
-            ->selectRaw("
-                DATE(processed_at) as period,
-                SUM(amount) as total
-            ")
-            ->groupBy('period')
-            ->orderBy('period')
-            ->pluck('total', 'period');
-    }
+        // Total withdrawals: approved withdrawal requests
+        $totalWithdrawals = WalletRequest::query()
+            ->whereIn('user_id', $userIds)
+            ->where('request_type', 'debit')
+            ->where('status', 'approved')
+            ->selectRaw('
+            user_id,
+            COALESCE(SUM(amount), 0) AS total_withdrawal
+        ')
+            ->groupBy('user_id')
+            ->get()
+            ->keyBy('user_id');
 
-    /**
-     * Generate chart labels.
-     */
-    private function getChartLabels(
-        Carbon $start,
-        Carbon $end,
-        string $period
-    ): array {
-        $labels = [];
+        // Return an array matching the report table
+        return $users->map(function ($user) use (
+            $totalAdded,
+            $betStats,
+            $totalWithdrawals
+        ) {
+            $added = $totalAdded->get($user->id);
+            $bets = $betStats->get($user->id);
+            $withdrawal = $totalWithdrawals->get($user->id);
 
-        if ($period === '12months') {
-            $cursor = $start->copy()->startOfMonth();
+            $firstPlayed = $bets?->first_played;
+            $lastPlayed = $bets?->last_played;
 
-            while ($cursor->lte($end)) {
-                $labels[] = $cursor->format('Y-m');
+            $playingPeriod = ($firstPlayed && $lastPlayed)
+                ? (
+                    Carbon::parse($firstPlayed)->format('d M Y')
+                    . ' - ' .
+                    Carbon::parse($lastPlayed)->format('d M Y')
+                )
+                : 'Not Played';
 
-                $cursor->addMonth();
-            }
-
-            return $labels;
-        }
-
-        $cursor = $start->copy()->startOfDay();
-
-        while ($cursor->lte($end)) {
-            $labels[] = $cursor->format('Y-m-d');
-
-            $cursor->addDay();
-        }
-
-        return $labels;
-    }
-
-    /**
-     * Map DB chart values to all labels.
-     */
-    private function mapChartValues(
-        array $labels,
-        $data,
-        string $period
-    ): array {
-        return collect($labels)
-            ->map(function ($label) use ($data) {
-                return round((float) ($data[$label] ?? 0), 2);
-            })
-            ->values()
-            ->all();
+            return [
+                'user_name' => $user->name,
+                'total_added' => round((float) ($added?->total_added ?? 0), 2),
+                'total_bet' => round((float) ($bets?->total_bet ?? 0), 2),
+                'total_win' => round((float) ($bets?->total_win ?? 0), 2),
+                'total_withdrawal' => round(
+                    (float) ($withdrawal?->total_withdrawal ?? 0),
+                    2
+                ),
+                'playing_period' => $playingPeriod,
+            ];
+        })->values()->all();
     }
 
     public function profile()
@@ -293,9 +221,6 @@ class DashboardController extends Controller
         return view('backend.profile', compact('admin', 'pageName'));
     }
 
-    /**
-     * Update basic profile information.
-     */
     public function update(Request $request)
     {
         $admin = auth('admin')->user();

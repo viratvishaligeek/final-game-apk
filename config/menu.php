@@ -52,6 +52,11 @@ return [
         'route' => 'admin.push-notifications.index',
     ],
     [
+        'text' => 'Live Support Chat',
+        'icon' => 'message-circle',
+        'route' => 'admin.support-chat.index',
+    ],
+    [
         'type'  => 'dropdown',
         'text'  => 'Users',
         'icon'  => 'users',

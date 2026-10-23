@@ -203,10 +203,8 @@ class BidController extends Controller
                 ]);
             }
             $orderNo =
-                'BET-'
-                . now()->format('YmdHis')
-                . '-'
-                . strtoupper(Str::random(6));
+                'BID-'
+                . now()->format('YmdHis');
 
             $transaction = $this->walletService->debit(
                 $lockedUser,

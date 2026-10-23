@@ -143,73 +143,59 @@
             </div>
         </a>
     </div>
-    <div class="row">
-        {{-- Withdraw Chart --}}
-        <div class="col-12 col-md-6  mb-4">
-            <div class="card card-header-actions h-100">
-                <div class="card-header">
-                    Withdraw Completed
-                    <div class="dropdown no-caret">
-                        <button class="btn text-white bg-primary btn-sm dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i data-feather="more-vertical"></i>
-                            Sort
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-end animated--fade-in-up">
-                            <a class="dropdown-item" href="{{ request()->fullUrlWithQuery(['period' => '12months']) }}">
-                                Last 12 Months
-                            </a>
-                            <a class="dropdown-item" href="{{ request()->fullUrlWithQuery(['period' => '30days']) }}">
-                                Last 30 Days
-                            </a>
-                            <a class="dropdown-item" href="{{ request()->fullUrlWithQuery(['period' => '7days']) }}">
-                                Last 7 Days
-                            </a>
-                            <a class="dropdown-item" href="{{ request()->fullUrlWithQuery(['period' => 'month']) }}">
-                                This Month
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="chart-area">
-                        <canvas id="withdrawChart" width="100%" height="30"></canvas>
-                    </div>
-                </div>
-            </div>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Today 10 Money Added User</span>
         </div>
-        {{-- Money Added Chart --}}
-        <div class="col-12 col-md-6  mb-4">
-            <div class="card card-header-actions h-100">
-                <div class="card-header">
-                    Money Added Completed
-                    <div class="dropdown no-caret">
-                        <button class="btn text-white bg-primary btn-sm dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i data-feather="more-vertical"></i>
-                            Sort
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-end animated--fade-in-up">
-                            <a class="dropdown-item" href="{{ request()->fullUrlWithQuery(['period' => '12months']) }}">
-                                Last 12 Months
-                            </a>
-                            <a class="dropdown-item" href="{{ request()->fullUrlWithQuery(['period' => '30days']) }}">
-                                Last 30 Days
-                            </a>
-                            <a class="dropdown-item" href="{{ request()->fullUrlWithQuery(['period' => '7days']) }}">
-                                Last 7 Days
-                            </a>
-                            <a class="dropdown-item" href="{{ request()->fullUrlWithQuery(['period' => 'month']) }}">
-                                This Month
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="chart-bar">
-                        <canvas id="moneyAddedChart" width="100%" height="30"></canvas>
-                    </div>
-                </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="totalUserTable">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Total Added</th>
+                            <th>Total Bet</th>
+                            <th>Total Win</th>
+                            <th>Total Withdrawal</th>
+                            <th>Playing Period</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Total Added</th>
+                            <th>Total Bet</th>
+                            <th>Total Win</th>
+                            <th>Total Withdrawal</th>
+                            <th>Playing Period</th>
+                        </tr>
+                    </tfoot>
+                    <tbody>
+                        @foreach ($totalUserTable as $tableUser)
+                        <tr>
+                            <td>
+                                {{ $tableUser['user_name'] }}
+                            </td>
+                            <td>
+                                {{ $tableUser['total_added'] }}
+                            </td>
+                            <td>
+                                {{ $tableUser['total_bet'] }}
+                            </td>
+                            <td>
+                                {{ $tableUser['total_win'] }}
+                            </td>
+                            <td>
+                                {{ $tableUser['total_withdrawal'] }}
+                            </td>
+                            <td>
+                                {{ $tableUser['playing_period'] }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -317,99 +303,13 @@
         crossorigin="anonymous"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const labels = @json($chartLabels);
-            const withdrawValues = @json($withdrawValues);
-            const moneyAddedValues = @json($moneyAddedValues);
-            const formattedLabels = labels.map(function(label) {
-                if (label.length === 7) {
-                    const parts = label.split('-');
-                    const date = new Date(
-                        parseInt(parts[0]),
-                        parseInt(parts[1]) - 1,
-                        1
-                    );
-                    return date.toLocaleDateString('en-IN', {
-                        month: 'short',
-                        year: 'numeric'
-                    });
-                }
-                const date = new Date(label + 'T00:00:00');
-                return date.toLocaleDateString('en-IN', {
-                    day: '2-digit',
-                    month: 'short'
-                });
-            });
-            const commonOptions = {
-                responsive: true,
-                maintainAspectRatio: false,
-                tooltips: {
-                    callbacks: {
-                        label: function(tooltipItem) {
-                            return ' ₹' +
-                                Number(tooltipItem.yLabel)
-                                .toLocaleString('en-IN', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                });
-                        }
-                    }
-                },
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true,
-                            callback: function(value) {
-                                return '₹' +
-                                    Number(value)
-                                    .toLocaleString('en-IN');
-                            }
-                        }
-                    }]
-                },
-                legend: {
-                    display: false
-                }
-            };
-            const withdrawCanvas =
-                document.getElementById('withdrawChart');
-            if (withdrawCanvas) {
-                new Chart(withdrawCanvas.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: formattedLabels,
-                        datasets: [{
-                            label: 'Withdraw Completed',
-                            data: withdrawValues,
-                            backgroundColor: 'rgba(220, 53, 69, 0.10)',
-                            borderColor: '#dc3545',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#dc3545',
-                            pointBorderColor: '#dc3545',
-                            pointRadius: 3,
-                            pointHoverRadius: 5,
-                            fill: true,
-                            lineTension: 0.3
-                        }]
-                    },
-                    options: commonOptions
-                });
-            }
-            const moneyAddedCanvas =
-                document.getElementById('moneyAddedChart');
-            if (moneyAddedCanvas) {
-                new Chart(moneyAddedCanvas.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: formattedLabels,
-                        datasets: [{
-                            label: 'Money Added',
-                            data: moneyAddedValues,
-                            backgroundColor: 'rgba(13, 110, 253, 0.75)',
-                            borderColor: '#0d6efd',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: commonOptions
+            const userTable =
+                document.getElementById('totalUserTable');
+            if (userTable && typeof simpleDatatables !== 'undefined') {
+                new simpleDatatables.DataTable(userTable, {
+                    searchable: true,
+                    perPage: 10,
+                    perPageSelect: [10, 25, 50]
                 });
             }
             const table =

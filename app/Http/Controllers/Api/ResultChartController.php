@@ -90,7 +90,7 @@ class ResultChartController extends Controller
 
             $data[] = [
                 'date' => $dateString,
-                'formatted_day' => $date->format('d M'),
+                'formatted_day' => $date->format('d'),
                 'is_today' => $isToday,
                 'results' => $rowResults,
             ];

@@ -38,8 +38,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admi
     Route::patch('guessing/{post}/moderate', [CommunityModerationController::class, 'update'])->name('guessing.moderate');
     Route::post('guessing/policy', [CommunityModerationController::class, 'updatePolicy'])->name('guessing.policy');
     Route::get('push-notifications', [PushNotificationController::class, 'index'])->name('push-notifications.index');
-    Route::get('notification-sounds', [NotificationSoundController::class, 'index'])->name('notification-sounds.index');
-    Route::post('notification-sounds', [NotificationSoundController::class, 'update'])->name('notification-sounds.update');
 
     Route::post('push-subscribe', [AdminPushSubscriptionController::class, 'subscribe'])->name('push-subscribe');
     Route::delete('push-subscribe', [AdminPushSubscriptionController::class, 'unsubscribe'])->name('push-unsubscribe');
@@ -102,13 +100,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admi
     Route::controller(MobileAppController::class)->prefix('mobile-app')->name('mobile-app.')->group(function () {
         Route::get('/marque', 'marque')->name('marque');
         Route::post('/marque', 'updateMarque')->name('update_marque');
-
         Route::get('/limits', 'limits')->name('limits');
         Route::post('/limits', 'updateLimits')->name('update_limits');
-
         Route::get('/notice', 'notice')->name('notice');
         Route::post('/notice', 'updateNotice')->name('update_notice');
-
         Route::get('/live-chat', 'liveChat')->name('live_chat');
         Route::post('/live-chat', 'updateLiveChat')->name('update_live_chat');
     });

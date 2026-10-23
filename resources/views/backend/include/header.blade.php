@@ -1,6 +1,6 @@
- <nav class="topnav navbar navbar-expand shadow justify-content-between justify-content-sm-start navbar-light bg-white"
+ <nav class="topnav navbar navbar-expand shadow justify-content-between justify-content-sm-start navbar-light bg-info"
      id="sidenavAccordion">
-     <button class="btn btn-icon btn-transparent-dark order-1 order-lg-0 me-2 ms-lg-2 me-lg-0" id="sidebarToggle">
+     <button class="btn btn-icon btn-transparent-dark me-2 ms-lg-2 me-lg-0" id="sidebarToggle">
          <i data-feather="menu">
          </i>
      </button>
