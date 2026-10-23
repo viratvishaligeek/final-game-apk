@@ -453,98 +453,76 @@
                                 </div>
                             </div>
                         </div>
-                        {{-- BIDS TABLE --}}
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>
-                                            #
-                                        </th>
-                                        <th>
-                                            Game
-                                        </th>
-                                        <th>
-                                            Number
-                                        </th>
-                                        <th>
-                                            Type
-                                        </th>
-                                        <th>
-                                            Amount
-                                        </th>
-                                        <th>
-                                            Date
-                                        </th>
-                                        <th>
-                                            Status
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($bids as $bid)
-                                        <tr>
-                                            <td class="text-muted">
-                                                {{ $bid->id }}
-                                            </td>
-                                            <td>
-                                                <div class="fw-semibold">
-                                                    {{ $bid->game->name ?? 'Game Deleted' }}
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="fw-bold">
-                                                    {{ $bid->number }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-primary-subtle text-primary">
-                                                    {{ strtoupper($bid->type) }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="fw-bold text-danger">
-                                                    ₹{{ number_format((float) $bid->amount, 2) }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="fw-semibold">
-                                                    {{ \Carbon\Carbon::parse($bid->time)->format('d M Y') }}
+                        {{-- PLAY SLIP CARDS --}}
+                        <div class="row g-3 play-history-groups">
+                            @forelse($bids as $bidGroup)
+                                @php
+                                    $firstBid = $bidGroup->bids->first();
+                                    $hasOrderNumber = !str_starts_with((string) $bidGroup->group_key, 'bid-');
+                                @endphp
+                                <div class="col-12 col-xl-6">
+                                    <article class="card h-100 border shadow-sm">
+                                        <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-start gap-2">
+                                            <div>
+                                                <div class="fw-bold text-dark">
+                                                    {{ $firstBid?->game->name ?? 'Game Deleted' }}
                                                 </div>
                                                 <div class="small text-muted">
-                                                    {{ \Carbon\Carbon::parse($bid->created_at)->format('h:i A') }}
+                                                    {{ $hasOrderNumber ? 'Play Order #' . $bidGroup->group_key : 'Individual Bid #' . $firstBid?->id }}
                                                 </div>
-                                            </td>
-                                            <td>
-                                                @if ((int) $bid->status === 1)
-                                                    <span class="badge bg-success">
-                                                        Active
-                                                    </span>
-                                                @else
-                                                    <span class="badge bg-secondary">
-                                                        {{ $bid->status }}
-                                                    </span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="8" class="text-center py-5">
-                                                <div class="text-muted">
-                                                    <i data-feather="target" style="width:40px;height:40px;"
-                                                        class="mb-2"></i>
-                                                    <div class="fw-semibold">
-                                                        No bidding history found
-                                                    </div>
-                                                    <div class="small">
-                                                        User's game activity will appear here.
-                                                    </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="small text-muted">Slip total</div>
+                                                <div class="fw-bold text-primary">₹{{ number_format($bidGroup->total_amount, 2) }}</div>
+                                                <span class="badge bg-primary-subtle text-primary">{{ $bidGroup->item_count }} {{ $bidGroup->item_count === 1 ? 'number' : 'numbers' }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            @if ($firstBid)
+                                                <div class="small text-muted mb-3">
+                                                    <span class="me-2"><strong>Play date:</strong> {{ optional($firstBid->game_date)->format('d M Y') ?? \Carbon\Carbon::parse($firstBid->game_date)->format('d M Y') }}</span>
+                                                    <span><strong>Placed:</strong> {{ $firstBid->created_at?->timezone(config('app.timezone'))->format('d M Y, h:i A') ?? '-' }}</span>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                                            @endif
+                                            <div class="list-group list-group-flush">
+                                                @foreach ($bidGroup->bids as $bid)
+                                                    <div class="list-group-item px-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                                        <div class="me-2">
+                                                            <div class="fw-bold text-dark">
+                                                                {{ $bid->number }}
+                                                                <span class="badge bg-primary-subtle text-primary ms-1">{{ strtoupper((string) $bid->type) }}</span>
+                                                            </div>
+                                                            @if ($bid->game && $firstBid && $bid->game_id !== $firstBid->game_id)
+                                                                <small class="text-muted">{{ $bid->game->name }}</small>
+                                                            @endif
+                                                            <div class="small text-muted">Bid #{{ $bid->id }}</div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <div class="fw-bold text-danger">₹{{ number_format((float) $bid->amount, 2) }}</div>
+                                                            @if ((int) $bid->status === 1)
+                                                                <span class="badge bg-success">Active</span>
+                                                            @else
+                                                                <span class="badge bg-secondary">{{ ucfirst((string) $bid->status) }}</span>
+                                                            @endif
+                                                            @if ((float) $bid->winning_amount > 0)
+                                                                <div class="small text-success fw-semibold">Won ₹{{ number_format((float) $bid->winning_amount, 2) }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </article>
+                                </div>
+                            @empty
+                                <div class="col-12">
+                                    <div class="text-center py-5 border rounded text-muted">
+                                        <i data-feather="target" style="width:40px;height:40px;" class="mb-2"></i>
+                                        <div class="fw-semibold">No bidding history found</div>
+                                        <div class="small">User's game activity will appear here.</div>
+                                    </div>
+                                </div>
+                            @endforelse
                         </div>
                         @if ($bids->hasPages())
                             <div class="mt-4">
