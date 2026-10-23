@@ -73,7 +73,7 @@ class SupportChatController extends Controller
     {
         $validated = $request->validate([
             'body' => ['nullable', 'string', 'max:5000', 'required_without:attachment'],
-            'attachment' => ['nullable', 'file', 'max:20480', 'mimetypes:image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/webm,audio/ogg,audio/mp4,audio/mpeg'],
+            'attachment' => ['nullable', 'file', 'max:15360', 'mimetypes:image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/webm,audio/ogg,audio/mp4,audio/mpeg'],
         ]);
         if (blank($validated['body'] ?? null) && !$request->hasFile('attachment')) {
             throw ValidationException::withMessages(['body' => 'Write a message or attach a supported file.']);
