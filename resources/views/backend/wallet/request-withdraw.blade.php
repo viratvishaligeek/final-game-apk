@@ -234,9 +234,9 @@
 
                                 {{-- Optional request proof image --}}
                                 <td>
-                                    @if ($request->screenshot)
+                                    @if ($request->qr_code_image || $request->screenshot)
                                         <button type="button" class="btn btn-sm btn-light text-primary view-proof-btn"
-                                            data-image="{{ \Illuminate\Support\Facades\Storage::disk('public')->url(preg_replace('#^(storage/|public/)#', '', ltrim((string) $request->screenshot, '/'))) }}"
+                                            data-image="{{ \Illuminate\Support\Facades\Storage::disk('public')->url(preg_replace('#^(storage/|public/)#', '', ltrim((string) ($request->qr_code_image ?? $request->screenshot), '/'))) }}"
                                             data-bs-toggle="modal" data-bs-target="#proofModal">
                                             <i data-feather="image" class="me-1"></i> View
                                         </button>
