@@ -150,6 +150,7 @@
                             <th>Amount</th>
                             <th>Destination</th>
                             <th>Account / UPI</th>
+                            <th>Proof</th>
                             <th>Status</th>
                             <th>Requested</th>
                             <th class="text-end">Actions</th>
@@ -229,6 +230,19 @@
                                         </div>
                                     @endif
 
+                                </td>
+
+                                {{-- Optional request proof image --}}
+                                <td>
+                                    @if ($request->screenshot)
+                                        <button type="button" class="btn btn-sm btn-light text-primary view-proof-btn"
+                                            data-image="{{ \Illuminate\Support\Facades\Storage::disk('public')->url(preg_replace('#^(storage/|public/)#', '', ltrim((string) $request->screenshot, '/'))) }}"
+                                            data-bs-toggle="modal" data-bs-target="#proofModal">
+                                            <i data-feather="image" class="me-1"></i> View
+                                        </button>
+                                    @else
+                                        <span class="text-muted small">No proof</span>
+                                    @endif
                                 </td>
 
                                 {{-- Status --}}
@@ -311,7 +325,7 @@
 
                             <tr>
 
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
 
                                     <div class="text-muted">
 
@@ -346,6 +360,21 @@
 
         </div>
 
+    </div>
+
+    {{-- Optional withdrawal proof modal --}}
+    <div class="modal fade" id="proofModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Withdrawal Proof</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center bg-light">
+                    <img id="proofImage" src="" alt="Withdrawal proof" class="img-fluid rounded shadow-sm" style="max-height:75vh;">
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Reject Modal --}}
@@ -421,6 +450,17 @@
         document.addEventListener('DOMContentLoaded', function() {
 
             feather.replace();
+
+            document.querySelectorAll('.view-proof-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const image = document.getElementById('proofImage');
+                    image.onerror = function() {
+                        this.onerror = null;
+                        this.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#64748b" font-family="Arial" font-size="22">Image unavailable</text></svg>');
+                    };
+                    image.src = this.dataset.image;
+                });
+            });
 
             /*
              * Approve Request
