@@ -70,20 +70,17 @@
                 </div>
             </div>
         </a>
-        {{-- Pages --}}
-        <a href="{{ route('admin.pages.index') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
+        {{-- profit loss --}}
+        <a href="{{ route('admin.bidding-desk.profit_loss') }}" class="col-lg-3 col-sm-6 col-6 col-xl-3 mb-2">
             <div class="card bg-white text-black h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="me-3">
                             <div class="text-dark small fw-bold">
-                                Pages
-                            </div>
-                            <div class="text-lg fw-bold">
-                                {{ number_format($totalPages) }}
+                                Profit / Loss
                             </div>
                         </div>
-                        <i class="feather-xl text-primary" data-feather="calendar"></i>
+                        <i class="feather-xl text-primary" data-feather="chrome"></i>
                     </div>
                 </div>
             </div>
