@@ -242,10 +242,11 @@ class DashboardController extends Controller
 
         $notifications = $privateNotifications
             ->concat($publicNotifications)
-            ->sortByDesc(fn ($notification) => [
+            ->sortByDesc(fn ($notification) => sprintf(
+                '%020d-%020d',
                 $notification->created_at?->getTimestamp() ?? 0,
-                $notification->id,
-            ])
+                $notification->id
+            ))
             ->values();
 
         $data = $notifications->map(function ($notification) {
@@ -278,12 +279,23 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        $count = Notification::query()
-            ->where(function ($query) use ($user) {
-                $query->where('user_id', $user->id)
-                    ->orWhereNull('user_id');
-            })
+        $privateCount = Notification::query()
+            ->where('user_id', $user->id)
+            ->latest('created_at')
+            ->latest('id')
+            ->limit(10)
+            ->pluck('id')
             ->count();
+
+        $publicCount = Notification::query()
+            ->whereNull('user_id')
+            ->latest('created_at')
+            ->latest('id')
+            ->limit(10)
+            ->pluck('id')
+            ->count();
+
+        $count = $privateCount + $publicCount;
 
         return response()->json([
             'success' => true,
