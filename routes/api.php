@@ -54,6 +54,8 @@ Route::prefix('v1')->group(function () {
             Route::put('/update-profile', 'updateProfile');
             Route::put('/update-password', 'changePassword');
             Route::get('/notifications', 'notificationList');
+            Route::get('/notifications/preference', 'notificationPreference');
+            Route::put('/notifications/preference', 'updateNotificationPreference')->middleware('throttle:30,1');
             Route::get('/notifications-count', 'unreadCount');
             Route::get('/settings', 'getSetting');
         });
