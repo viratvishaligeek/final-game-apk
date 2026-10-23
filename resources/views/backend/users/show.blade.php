@@ -495,7 +495,7 @@
                                                             @if ($bid->game && $firstBid && $bid->game_id !== $firstBid->game_id)
                                                                 <small class="text-muted">{{ $bid->game->name }}</small>
                                                             @endif
-                                                            <div class="small text-muted">Bid #{{ $bid->id }}</div>
+                                                            <div class="small text-muted">Bid #{{ $bid->id }} · {{ $bid->created_at?->timezone(config('app.timezone'))->format('h:i A') ?? '-' }}</div>
                                                         </div>
                                                         <div class="text-end">
                                                             <div class="fw-bold text-danger">₹{{ number_format((float) $bid->amount, 2) }}</div>
