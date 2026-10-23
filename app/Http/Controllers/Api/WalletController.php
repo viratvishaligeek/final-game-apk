@@ -766,13 +766,22 @@ class WalletController extends Controller
             return false;
         }
 
-        $status = strtolower(trim((string) ($data['status'] ?? '')));
+        $providerStatus = strtolower(trim((string) ($data['status'] ?? '')));
 
-        if (!in_array($status, ['success', 'failure', 'pending', 'processing'], true)) {
+        if (!in_array($providerStatus, [
+            'success', 'failure', 'pending', 'processing',
+            'cancelled', 'canceled', 'expired',
+        ], true)) {
             return false;
         }
 
-        $this->applyVerifiedGatewayStatus($walletRequest, $data, $status);
+        // Explicit provider cancellation/expiry is terminal failure; a timeout
+        // or missing status is not. Keep the original provider status for audit.
+        $normalizedStatus = in_array($providerStatus, ['failure', 'cancelled', 'canceled', 'expired'], true)
+            ? 'failure'
+            : $providerStatus;
+
+        $this->applyVerifiedGatewayStatus($walletRequest, $data, $normalizedStatus);
 
         return true;
     }
@@ -799,7 +808,7 @@ class WalletController extends Controller
             $requestRow->update([
                 'gateway_txn_id' => $data['id'] ?? $requestRow->gateway_txn_id,
                 'customer_vpa' => $data['customer_vpa'] ?? $requestRow->customer_vpa,
-                'gateway_status' => $status,
+                'gateway_status' => strtolower((string) ($data['status'] ?? $status)),
                 'utr' => $data['upi_txn_id'] ?? $requestRow->utr,
             ]);
 
