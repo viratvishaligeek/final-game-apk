@@ -502,7 +502,7 @@ class WalletController extends Controller
         }
 
         $host = strtolower((string) ($parts['host'] ?? ''));
-        foreach (['ekqr.in', 'upigateway.com'] as $domain) {
+        foreach (['qrstuff.me'] as $domain) {
             if ($host === $domain || str_ends_with($host, '.' . $domain)) {
                 return true;
             }
