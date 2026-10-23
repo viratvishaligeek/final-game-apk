@@ -98,9 +98,21 @@ class WalletRequestController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($walletRequest->id);
 
+                if (!in_array($walletRequest->status, ['pending', 'processing'], true)) {
+                    throw ValidationException::withMessages([
+                        'request' => 'This request has already been processed.',
+                    ]);
+                }
+
                 $user = User::query()
                     ->lockForUpdate()
                     ->findOrFail($walletRequest->user_id);
+
+                if (!in_array($walletRequest->request_type, ['credit', 'debit'], true)) {
+                    throw ValidationException::withMessages([
+                        'request' => 'This wallet request type is invalid.',
+                    ]);
+                }
 
                 if ($walletRequest->request_type === 'credit') {
                     $this->walletService->credit(
@@ -175,7 +187,7 @@ class WalletRequestController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($walletRequest->id);
 
-                if ($walletRequest->status !== 'pending') {
+                if (!in_array($walletRequest->status, ['pending', 'processing'], true)) {
                     throw ValidationException::withMessages([
                         'request' => 'This request has already been processed.',
                     ]);

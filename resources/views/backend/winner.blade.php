@@ -248,7 +248,10 @@
                             </td>
 
                             <td>
-                                {{ \Carbon\Carbon::parse($winner->game_date)->format('d M Y') }}
+                                <div>{{ \Carbon\Carbon::parse($winner->game_date)->format('d M Y') }}</div>
+                                @if ($winner->created_at)
+                                    <small class="text-muted">{{ $winner->created_at->timezone(config('app.timezone'))->format('h:i A') }}</small>
+                                @endif
                             </td>
                         </tr>
                     @empty

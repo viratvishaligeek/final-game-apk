@@ -26,6 +26,28 @@
 @endsection
 
 @section('content')
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if ($errors->any())
+        <div class="alert alert-danger" role="alert">
+            <strong>Please review the request:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
     <div class="card">
         <div class="card-header bg-white py-3">
             <div class="row align-items-center">
@@ -126,7 +148,7 @@
                                 <td>
                                     @if ($request->screenshot)
                                         <button type="button" class="btn btn-sm btn-light text-primary view-proof-btn"
-                                            data-image="{{ asset('storage/' . $request->screenshot) }}"
+                                            data-image="{{ \Illuminate\Support\Facades\Storage::disk('public')->url(preg_replace('#^(storage/|public/)#', '', ltrim((string) $request->screenshot, '/'))) }}"
                                             data-bs-toggle="modal" data-bs-target="#proofModal">
                                             <i data-feather="image" class="me-1"></i>
                                             View
@@ -179,7 +201,7 @@
                                         </form>
                                         {{-- Reject --}}
                                         <button type="button" class="btn btn-sm btn-outline-danger reject-btn"
-                                            data-id="{{ $request->id }}" data-name="{{ $request->user->name ?? 'User' }}"
+                                            data-id="{{ $request->id }}" data-action="{{ route('admin.wallet.request.reject', $request->id) }}" data-name="{{ $request->user->name ?? 'User' }}"
                                             data-bs-toggle="modal" data-bs-target="#rejectModal">
                                             <i data-feather="x" class="me-1"></i>
                                             Reject
@@ -284,8 +306,12 @@
              */
             document.querySelectorAll('.view-proof-btn').forEach(button => {
                 button.addEventListener('click', function() {
-                    document.getElementById('proofImage').src =
-                        this.dataset.image;
+                    const image = document.getElementById('proofImage');
+                    image.onerror = function() {
+                        this.onerror = null;
+                        this.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#64748b" font-family="Arial" font-size="22">Image unavailable</text></svg>');
+                    };
+                    image.src = this.dataset.image;
                 });
             });
             /*
@@ -337,7 +363,7 @@
                     const name = this.dataset.name;
                     document.getElementById('rejectUserName').textContent = name;
                     document.getElementById('rejectForm').action =
-                        `{{ url('/wallet/request/reject') }}/${id}`;
+                        button.dataset.action;
                 });
             });
         });

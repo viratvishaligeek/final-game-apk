@@ -800,8 +800,9 @@ class WalletController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($walletRequest->id);
 
-            // Approved is terminal: a delayed failure callback must not undo it.
-            if ($requestRow->status === 'approved') {
+            // All terminal states are immutable. In particular, a delayed
+            // provider success must never credit a request rejected by an admin.
+            if (in_array($requestRow->status, ['approved', 'rejected', 'failed'], true)) {
                 return;
             }
 

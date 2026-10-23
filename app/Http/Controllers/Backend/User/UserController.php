@@ -87,7 +87,53 @@ class UserController extends Controller
     {
         $transactions = $user->transactions()->latest('id')->paginate(15, ['*'], 'transactions_page');
 
-        $bids = $user->bids()->with('game:id,name')->latest('id')->paginate(15, ['*'], 'bids_page');
+        // Paginate play slips, not individual numbers, so one order is never
+        // split across pages. Bids without an order number remain individual slips.
+        $bids = $user->bids()
+            ->selectRaw("COALESCE(NULLIF(order_no, ''), CONCAT('bid-', id)) as group_key, MAX(id) as latest_id, COUNT(*) as item_count, SUM(amount) as total_amount")
+            ->groupBy('group_key')
+            ->orderByDesc('latest_id')
+            ->paginate(15, null, 'bids_page');
+
+        $groupKeys = $bids->getCollection()->pluck('group_key');
+        $orderNumbers = $groupKeys
+            ->filter(fn ($key) => !str_starts_with((string) $key, 'bid-'))
+            ->values();
+        $singleBidIds = $groupKeys
+            ->filter(fn ($key) => str_starts_with((string) $key, 'bid-'))
+            ->map(fn ($key) => (int) substr((string) $key, 4))
+            ->values();
+
+        $groupedBidRows = $groupKeys->isEmpty()
+            ? collect()
+            : $user->bids()
+                ->with('game:id,name')
+                ->where(function ($query) use ($orderNumbers, $singleBidIds) {
+                    if ($orderNumbers->isNotEmpty()) {
+                        $query->whereIn('order_no', $orderNumbers);
+                    }
+                    if ($singleBidIds->isNotEmpty()) {
+                        if ($orderNumbers->isNotEmpty()) {
+                            $query->orWhereIn('id', $singleBidIds);
+                        } else {
+                            $query->whereIn('id', $singleBidIds);
+                        }
+                    }
+                })
+                ->orderByDesc('id')
+                ->get()
+                ->groupBy(fn ($bid) => filled($bid->order_no) ? (string) $bid->order_no : 'bid-' . $bid->id);
+
+        $bids->setCollection($bids->getCollection()->map(function ($group) use ($groupedBidRows) {
+            $key = (string) $group->group_key;
+            return (object) [
+                'group_key' => $key,
+                'latest_id' => $group->latest_id,
+                'item_count' => (int) $group->item_count,
+                'total_amount' => (float) $group->total_amount,
+                'bids' => $groupedBidRows->get($key, collect())->sortByDesc('id')->values(),
+            ];
+        }));
 
         $walletStats = $user->completedTransactions()
             ->selectRaw("
@@ -134,7 +180,6 @@ class UserController extends Controller
             'gender'     => 'nullable|string|in:Male,Female,Other',
             'city'       => 'nullable|string|max:200',
             'address'    => 'nullable|string|max:255',
-            'balance' => ['required', 'numeric', 'decimal:0,2', 'min:0', 'max:1000000'],
             'bank'       => 'nullable|string|max:100',
             'acc'        => 'nullable|string|max:100',
             'ifsc'       => 'nullable|string|max:20',
@@ -156,9 +201,6 @@ class UserController extends Controller
             ]);
         }
 
-        $targetBalance = round((float) $validated['balance'], 2);
-        unset($validated['balance']);
-
         if (!empty($request->password)) {
             $validated['password'] = Hash::make($request->password);
         } else {
@@ -167,28 +209,12 @@ class UserController extends Controller
 
         $userData = $this->mapPaymentFields($validated);
 
-        DB::transaction(function () use ($id, $userData, $targetBalance) {
+        DB::transaction(function () use ($id, $userData) {
             $lockedUser = User::query()
                 ->lockForUpdate()
                 ->findOrFail($id);
 
             $lockedUser->update($userData);
-
-            $currentBalance = round((float) $lockedUser->balance, 2);
-
-            if ($targetBalance > $currentBalance) {
-                $this->walletService->credit(
-                    $lockedUser,
-                    round($targetBalance - $currentBalance, 2),
-                    'Wallet balance adjusted by admin through user edit'
-                );
-            } elseif ($targetBalance < $currentBalance) {
-                $this->walletService->debit(
-                    $lockedUser,
-                    round($currentBalance - $targetBalance, 2),
-                    'Wallet balance adjusted by admin through user edit'
-                );
-            }
         });
 
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
