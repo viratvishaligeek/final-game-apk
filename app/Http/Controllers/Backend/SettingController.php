@@ -35,6 +35,7 @@ class SettingController extends Controller
             'homepage_heading_line3' => ['nullable', 'string', 'max:120'],
             'homepage_intro' => ['nullable', 'string', 'max:2000'],
             'announcement_text' => ['nullable', 'string', 'max:500'],
+            'add_money_notice' => ['nullable', 'string', 'max:1000'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:1000'],
             'meta_keywords' => ['nullable', 'string', 'max:1000'],
@@ -96,7 +97,7 @@ class SettingController extends Controller
 
         try {
             DB::transaction(function () use ($request, $validated, &$newFiles, &$oldFiles) {
-                foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'announcement_text', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'og_title', 'og_description', 'robots_default', 'twitter_card', 'app_download_url', 'latest_url', 'latest_version', 'update_date', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'social_whatsapp', 'web_marquee', 'disclaimer_content', 'chart_chunk_size', 'community_post_approval', 'referral_percentage', 'referral_min_amount'] as $key) {
+                foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'announcement_text', 'add_money_notice', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'og_title', 'og_description', 'robots_default', 'twitter_card', 'app_download_url', 'latest_url', 'latest_version', 'update_date', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'social_whatsapp', 'web_marquee', 'disclaimer_content', 'chart_chunk_size', 'community_post_approval', 'referral_percentage', 'referral_min_amount'] as $key) {
                     if (array_key_exists($key, $validated)) {
                         Setting::updateOrCreate(
                             ['option' => $key],
