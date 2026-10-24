@@ -89,7 +89,7 @@
                             <td c="text-end">
                                 <a href="{{ route('admin.home-page.edit', $homePage->id) }}"
                                     class="btn btn-datatable btn-icon btn-transparent-dark me-2" title="Edit">
-                                    <i data-feather="edit"></i>
+                                    <i data-feather="edit" class="text-primary"></i>
                                     <a>
                                         <form action="{{ route('admin.home-page.destroy', $homePage->id) }}" method="POST"
                                             class="d-inline" id="delete-form-{{ $homePage->id }}">
@@ -99,7 +99,7 @@
                                                 class="btn btn-datatable btn-icon btn-transparent-dark delete-home-page"
                                                 data-id="{{ $homePage->id }}" data-title="{{ $homePage->title }}"
                                                 title="Delete">
-                                                <i data-feather="trash-2"></i>
+                                                <i data-feather="trash-2" class="text-danger"></i>
                                             </button>
                                         </form>
                             </td>

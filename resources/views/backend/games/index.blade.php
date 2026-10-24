@@ -53,10 +53,14 @@
                             <td>#{{ $loop->iteration }}</td>
                             <td>
                                 <div class="fw-bold">{{ $game->name }}</div>
-                                <div class=" text-muted">Play: {{ $game->play_start }} - {{ $game->play_end }}</div>
+                                <div class="text-muted">
+                                    {{ date('h A', strtotime($game->play_start)) }} -
+                                    {{ date('h A', strtotime($game->play_end)) }}
+                                </div>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border">{{ $game->result_time }}</span>
+                                <span
+                                    class="badge bg-light text-dark border">{{ date('h A', strtotime($game->result_time)) }}</span>
                             </td>
                             <td>
                                 @if ($game->status === 'active')
@@ -73,7 +77,7 @@
                                 {{-- Edit Button --}}
                                 <a class="btn btn-datatable btn-icon btn-transparent-dark me-2"
                                     href="{{ route('admin.games.edit', $game->id) }}" title="Edit Game">
-                                    <i data-feather="edit"></i>
+                                    <i data-feather="edit" class="text-primary"></i>
                                 </a>
                                 {{-- Delete Form with SweetAlert --}}
                                 <form action="{{ route('admin.games.destroy', $game->id) }}" method="POST"
@@ -83,7 +87,7 @@
                                     <button type="button"
                                         class="btn btn-datatable btn-icon btn-transparent-dark delete-game-btn"
                                         data-id="{{ $game->id }}" data-name="{{ $game->name }}" title="Delete Game">
-                                        <i data-feather="trash-2"></i>
+                                        <i data-feather="trash-2" class="text-danger"></i>
                                     </button>
                                 </form>
                             </td>
@@ -101,9 +105,9 @@
     <script src="{{ URL::asset('backend') }}/js/datatables/datatables-simple-demo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
 
-            document.addEventListener('click', function (event) {
+            document.addEventListener('click', function(event) {
                 const button = event.target.closest('.delete-game-btn');
                 if (!button) {
                     return;
@@ -133,7 +137,7 @@
                     cancelButtonText: 'Cancel',
                     reverseButtons: true,
                     focusCancel: true
-                }).then(function (result) {
+                }).then(function(result) {
                     if (result.isConfirmed) {
                         deleteForm.submit();
                     }

@@ -149,8 +149,6 @@ class WalletRequestController extends Controller
             });
 
             $walletRequest->refresh();
-            $this->notifyWalletRequest($walletRequest, 'approved');
-
             return back()->with(
                 'success',
                 'Wallet request approved successfully.'

@@ -8,7 +8,7 @@
                     <div class="col-auto mb-3">
                         <h1 class="page-header-title">
                             <div class="page-header-icon">
-                                <i data-feather="edit"></i>
+                                <i data-feather="edit" class="text-primary"></i>
                             </div>
                             {{ $pageName }}
                         </h1>

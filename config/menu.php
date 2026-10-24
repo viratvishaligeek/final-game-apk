@@ -219,13 +219,6 @@ return [
                 'route_name' => 'admin.mobile-app.notice',
                 'permission' => '',
             ],
-            [
-                'text'  => 'Live Chat',
-                'icon'  => 'message-square',
-                'route' => 'admin.mobile-app.live_chat',
-                'route_name' => 'admin.mobile-app.live_chat',
-                'permission' => '',
-            ],
         ],
     ],
     [

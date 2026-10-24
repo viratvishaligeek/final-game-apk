@@ -62,7 +62,7 @@
                                 <td>
                                     <a class="btn btn-datatable btn-icon btn-transparent-dark me-1"
                                         href="{{ route('admin.faqs.edit', $faq->id) }}" title="Edit FAQ">
-                                        <i data-feather="edit"></i>
+                                        <i data-feather="edit" class="text-primary"></i>
                                     </a>
                                     <form action="{{ route('admin.faqs.destroy', $faq->id) }}" method="POST"
                                         id="delete-form-{{ $faq->id }}" class="d-inline">
@@ -71,7 +71,7 @@
                                         <button type="button"
                                             class="btn btn-datatable btn-icon btn-transparent-dark text-danger delete-faq-btn"
                                             data-id="{{ $faq->id }}" title="Delete FAQ">
-                                            <i data-feather="trash-2"></i>
+                                            <i data-feather="trash-2" class="text-danger"></i>
                                         </button>
                                     </form>
                                 </td>

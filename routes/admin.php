@@ -104,7 +104,5 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admi
         Route::post('/limits', 'updateLimits')->name('update_limits');
         Route::get('/notice', 'notice')->name('notice');
         Route::post('/notice', 'updateNotice')->name('update_notice');
-        Route::get('/live-chat', 'liveChat')->name('live_chat');
-        Route::post('/live-chat', 'updateLiveChat')->name('update_live_chat');
     });
 });

@@ -62,7 +62,7 @@
                                 <td>
                                     <a class="btn btn-datatable btn-icon btn-transparent-dark me-1"
                                         href="{{ route('admin.roles.edit', $role->id) }}" title="Edit Role & Permissions">
-                                        <i data-feather="edit"></i>
+                                        <i data-feather="edit" class="text-primary"></i>
                                     </a>
 
                                     @if ($role->name !== 'super-admin')
@@ -74,7 +74,7 @@
                                                 class="btn btn-datatable btn-icon btn-transparent-dark text-danger delete-role-btn"
                                                 data-id="{{ $role->id }}" data-name="{{ $role->name }}"
                                                 title="Delete Role">
-                                                <i data-feather="trash-2"></i>
+                                                <i data-feather="trash-2" class="text-danger"></i>
                                             </button>
                                         </form>
                                     @endif

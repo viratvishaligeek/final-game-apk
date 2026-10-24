@@ -46,18 +46,10 @@ class SettingController extends Controller
             'twitter_card' => ['nullable', 'string', 'in:summary,summary_large_image'],
             'app_download_url' => ['nullable', 'url', 'starts_with:https://', 'max:1000'],
             'latest_url' => [
-                'nullable', 'url', 'starts_with:https://', 'max:1000',
-                function (string $attribute, mixed $value, \Closure $fail): void {
-                    if (blank($value)) {
-                        return;
-                    }
-
-                    $host = strtolower((string) parse_url((string) $value, PHP_URL_HOST));
-                    $allowedHosts = config('app-update.allowed_hosts', []);
-                    if ($host === '' || !in_array($host, $allowedHosts, true)) {
-                        $fail('The APK URL host is not in the configured APP_UPDATE_ALLOWED_HOSTS allowlist.');
-                    }
-                },
+                'nullable',
+                'url',
+                'starts_with:https://',
+                'max:1000'
             ],
             'latest_version' => ['nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9][A-Za-z0-9._+-]*$/'],
             'update_date' => ['nullable', 'date_format:Y-m-d'],
@@ -81,12 +73,14 @@ class SettingController extends Controller
             'og_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:15360'],
         ]);
 
-        foreach ([
-            'title' => 'Play Online Khaiwal',
-            'canonical_url' => 'https://playonlinekhaiwal.com',
-            'robots_default' => 'index,follow',
-            'twitter_card' => 'summary_large_image',
-        ] as $key => $default) {
+        foreach (
+            [
+                'title' => 'Play Online Khaiwal',
+                'canonical_url' => 'https://playonlinekhaiwal.com',
+                'robots_default' => 'index,follow',
+                'twitter_card' => 'summary_large_image',
+            ] as $key => $default
+        ) {
             if (!isset($validated[$key]) || trim((string) $validated[$key]) === '') {
                 $validated[$key] = $default;
             }

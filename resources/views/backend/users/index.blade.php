@@ -73,13 +73,13 @@
                                 {{-- Show View --}}
                                 <a class="btn btn-datatable btn-icon btn-transparent-dark me-1"
                                     href="{{ route('admin.users.show', $user->id) }}" title="View User">
-                                    <i data-feather="eye"></i>
+                                    <i data-feather="eye" class="text-success"></i>
                                 </a>
 
                                 {{-- Edit --}}
                                 <a class="btn btn-datatable btn-icon btn-transparent-dark me-1"
                                     href="{{ route('admin.users.edit', $user->id) }}" title="Edit User">
-                                    <i data-feather="edit"></i>
+                                    <i data-feather="edit" class="text-primary"></i>
                                 </a>
 
                                 {{-- Block / Unblock Button --}}
@@ -92,14 +92,14 @@
                                             class="btn btn-datatable btn-icon btn-transparent-dark text-warning toggle-status-btn"
                                             data-id="{{ $user->id }}" data-name="{{ $user->name }}"
                                             data-action="block" title="Block User">
-                                            <i data-feather="slash"></i>
+                                            <i data-feather="slash" class="text-warning"></i>
                                         </button>
                                     @else
                                         <button type="button"
                                             class="btn btn-datatable btn-icon btn-transparent-dark text-success toggle-status-btn"
                                             data-id="{{ $user->id }}" data-name="{{ $user->name }}"
                                             data-action="unblock" title="Unblock User">
-                                            <i data-feather="check-circle"></i>
+                                            <i data-feather="check-circle" class="text-info"></i>
                                         </button>
                                     @endif
                                 </form>
@@ -112,7 +112,7 @@
                                     <button type="button"
                                         class="btn btn-datatable btn-icon btn-transparent-dark text-danger delete-user-btn"
                                         data-id="{{ $user->id }}" data-name="{{ $user->name }}" title="Delete User">
-                                        <i data-feather="trash-2"></i>
+                                        <i data-feather="trash-2" class="text-danger"></i>
                                     </button>
                                 </form>
                             </td>

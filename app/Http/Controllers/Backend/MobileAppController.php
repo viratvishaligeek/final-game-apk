@@ -204,9 +204,4 @@ class MobileAppController extends Controller
             ['value' => $filename]
         );
     }
-
-    public function liveChat()
-    {
-        // code will be here
-    }
 }

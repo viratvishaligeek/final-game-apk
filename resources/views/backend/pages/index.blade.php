@@ -62,7 +62,7 @@
                                 {{-- Edit Button --}}
                                 <a class="btn btn-datatable btn-icon btn-transparent-dark me-2"
                                     href="{{ route('admin.pages.edit', $page->id) }}" title="Edit page">
-                                    <i data-feather="edit"></i>
+                                    <i data-feather="edit" class="text-primary"></i>
                                 </a>
 
                                 {{-- Delete Form with SweetAlert --}}
@@ -73,7 +73,7 @@
                                     <button type="button"
                                         class="btn btn-datatable btn-icon btn-transparent-dark delete-page-btn"
                                         data-id="{{ $page->id }}" data-name="{{ $page->name }}" title="Delete page">
-                                        <i data-feather="trash-2"></i>
+                                        <i data-feather="trash-2" class="text-danger"></i>
                                     </button>
                                 </form>
                             </td>

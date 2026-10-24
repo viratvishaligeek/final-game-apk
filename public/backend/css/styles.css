@@ -10532,6 +10532,8 @@ textarea.form-control-lg {
 
 .fw-bold {
   font-weight: bold !important;
+  font-size: 16px;
+  color: black;
 }
 
 .fw-semibold {
@@ -16910,8 +16912,8 @@ body {
 
 .btn .feather {
   margin-top: -1px;
-  height: 0.875rem;
-  width: 0.875rem;
+  height: 2rem;
+  width: 2rem;
 }
 
 .btn-lg .feather, .btn-group-lg > .btn .feather {
@@ -19354,8 +19356,8 @@ body {
 }
 
 .btn-datatable {
-  height: 20px !important;
-  width: 20px !important;
+  height: 28px !important;
+  width: 28px !important;
   font-size: 0.75rem;
   border-radius: 0.35rem !important;
 }
