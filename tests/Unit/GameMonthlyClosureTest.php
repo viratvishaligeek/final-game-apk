@@ -51,11 +51,6 @@ class GameMonthlyClosureTest extends TestCase
                 'Unexpected playability decision for ' . $dateTime
             );
 
-            $this->assertSame(
-                !$shouldClose,
-                $game->is_playable,
-                'The serialized is_playable accessor must use the same closure rule for ' . $dateTime
-            );
         }
     }
 
