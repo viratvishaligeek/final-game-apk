@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Transaction;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -111,7 +112,7 @@ class WalletController extends Controller
             }
 
             return back()->withErrors($e->errors())->withInput();
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             // A concurrent retry may lose the unique-key race after the first
             // request has committed. Resolve it as the same successful request.
             if ($idempotencyKey) {
