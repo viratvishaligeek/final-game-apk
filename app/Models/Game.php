@@ -125,10 +125,6 @@ class Game extends Model
 
     public function getIsPlayableAttribute(): bool
     {
-        if ($this->isMonthlyClosureDate()) {
-            return false;
-        }
-
         if ($this->status !== 'active') {
             return false;
         }
