@@ -171,7 +171,7 @@
 
                         <div class="mb-2">
                             <label for="creditRemark" class="form-label fw-bold">Remark / Reason (optional)</label>
-                            <textarea class="form-control" id="creditRemark" name="remark" rows="2" maxlength="500"
+                            <textarea class="form-control" id="creditRemark" name="remark" rows="2" maxlength="255"
                                 placeholder="Reason for admin credit"></textarea>
                         </div>
                     </div>
