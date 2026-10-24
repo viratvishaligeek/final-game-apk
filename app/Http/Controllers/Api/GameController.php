@@ -203,6 +203,13 @@ class GameController extends Controller
                     ? 'running'
                     : 'closed',
 
+                'monthly_closure' => $game->isMonthlyClosureDate($now),
+                'play_status_message' => $game->isMonthlyClosureDate($now)
+                    ? $game->monthlyClosureMessage()
+                    : ($game->status !== 'active'
+                        ? 'This game is currently inactive.'
+                        : (!$isPlayable ? 'Betting time for this game is closed.' : null)),
+
                 'remaining_seconds' => $remainingSeconds,
 
                 /*
