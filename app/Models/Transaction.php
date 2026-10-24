@@ -20,6 +20,9 @@ class Transaction extends Model
         'status',
         'game_id',
         'bid_id',
+        'previous_balance',
+        'admin_id',
+        'idempotency_key',
     ];
 
     protected $casts = [
