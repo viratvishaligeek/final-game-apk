@@ -27,6 +27,7 @@ class Transaction extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'previous_balance' => 'decimal:2',
         'balance' => 'decimal:2',
     ];
 
