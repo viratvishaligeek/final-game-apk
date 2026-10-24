@@ -332,7 +332,7 @@
                 creditSuccess.classList.add('d-none');
 
                 const amount = creditAmount.value.trim();
-                if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0 || !/^\\d+(?:\\.\\d{1,2})?$/.test(amount)) {
+                if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0 || !/^\d+(?:\.\d{1,2})?$/.test(amount)) {
                     showCreditError('Enter a valid positive amount with no more than two decimal places.');
                     creditAmount.focus();
                     return;
