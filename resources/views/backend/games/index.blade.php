@@ -31,6 +31,7 @@
                         <th>Name</th>
                         <th>Result Time</th>
                         <th>Status</th>
+                        <th>Play Availability</th>
                         <th>Sequence</th>
                         <th>Created At</th>
                         <th>Actions</th>
@@ -42,6 +43,7 @@
                         <th>Name</th>
                         <th>Result Time</th>
                         <th>Status</th>
+                        <th>Play Availability</th>
                         <th>Sequence</th>
                         <th>Created At</th>
                         <th>Actions</th>
@@ -63,6 +65,17 @@
                                     <span class="badge bg-success-soft text-success">Active</span>
                                 @else
                                     <span class="badge bg-danger-soft text-danger">Inactive</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if ($game->isMonthlyClosureDate())
+                                    <span class="badge bg-danger-soft text-danger">Closed — month-end</span>
+                                @elseif ($game->status !== 'active')
+                                    <span class="badge bg-light text-muted border">Inactive</span>
+                                @elseif ($game->isPlayableAt())
+                                    <span class="badge bg-success-soft text-success">Open now</span>
+                                @else
+                                    <span class="badge bg-light text-muted border">Outside schedule</span>
                                 @endif
                             </td>
                             <td>
