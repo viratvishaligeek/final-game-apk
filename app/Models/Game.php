@@ -63,6 +63,22 @@ class Game extends Model
     }
 
     /**
+     * Monthly closure is based on the application's local calendar date,
+     * deliberately separate from Disawar's business-date boundary.
+     */
+    public function isMonthlyClosureDate(?Carbon $now = null): bool
+    {
+        $localNow = ($now ?: now())->copy()->timezone(config('app.timezone'));
+
+        return $localNow->isSameDay($localNow->copy()->endOfMonth());
+    }
+
+    public function monthlyClosureMessage(): string
+    {
+        return 'Games are unavailable on the last calendar day of the month. Please try again next month.';
+    }
+
+    /**
      * Resolve the date used to group bets and results for this game.
      *
      * Disawar's business day starts at its configured result_time. All other
@@ -218,6 +234,10 @@ class Game extends Model
 
     public function isPlayableAt(?Carbon $now = null): bool
     {
+        if ($this->isMonthlyClosureDate($now)) {
+            return false;
+        }
+
         if ($this->status !== 'active') {
             return false;
         }

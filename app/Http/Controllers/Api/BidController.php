@@ -39,6 +39,12 @@ class BidController extends Controller
             'crossing_jodis.*' => ['required', 'digits:2'],
             'crossing_amount_per_jodi' => ['nullable', 'numeric', 'decimal:0,2', 'min:1'],
         ]);
+        if ($game->isMonthlyClosureDate()) {
+            throw ValidationException::withMessages([
+                'game' => [$game->monthlyClosureMessage()],
+            ]);
+        }
+
         if ($game->status !== 'active') {
             throw ValidationException::withMessages([
                 'game' => [
@@ -166,6 +172,14 @@ class BidController extends Controller
             $lockedGame = Game::query()
                 ->lockForUpdate()
                 ->findOrFail($game->id);
+
+            // Recheck using the locked game and the current application-local
+            // date to close the midnight race without touching existing bets.
+            if ($lockedGame->isMonthlyClosureDate()) {
+                throw ValidationException::withMessages([
+                    'game' => [$lockedGame->monthlyClosureMessage()],
+                ]);
+            }
 
             if ($lockedGame->status !== 'active' || !$lockedGame->isPlayableAt()) {
                 throw ValidationException::withMessages([

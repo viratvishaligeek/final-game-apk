@@ -20,10 +20,14 @@ class Transaction extends Model
         'status',
         'game_id',
         'bid_id',
+        'previous_balance',
+        'admin_id',
+        'idempotency_key',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'previous_balance' => 'decimal:2',
         'balance' => 'decimal:2',
     ];
 

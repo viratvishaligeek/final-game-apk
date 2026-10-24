@@ -59,7 +59,12 @@
                             </td>
                             <td>{{ $user->phone }}</td>
                             <td>{{ $user->city ?? 'N/A' }}</td>
-                            <td><span class="badge bg-primary-soft text-primary">₹{{ number_format($user->balance) }}</span>
+                            <td>
+                                <span class="badge bg-primary-soft text-primary user-balance"
+                                    data-user-id="{{ $user->id }}"
+                                    data-balance="{{ number_format((float) $user->balance, 2, '.', '') }}">
+                                    ₹{{ number_format((float) $user->balance, 2) }}
+                                </span>
                             </td>
                             <td>
                                 @if ($user->status === 'active')
@@ -70,6 +75,16 @@
                             </td>
                             <td>{{ $user->created_at ? $user->created_at->format('d M Y') : 'N/A' }}</td>
                             <td>
+                                <button type="button"
+                                    class="btn btn-sm btn-success add-money-btn me-1 mb-1"
+                                    data-user-id="{{ $user->id }}"
+                                    data-user-name="{{ $user->name }}"
+                                    data-balance="{{ number_format((float) $user->balance, 2, '.', '') }}"
+                                    data-action="{{ route('admin.wallet.credit', $user->id) }}"
+                                    title="Add Money / Credit">
+                                    <i data-feather="plus-circle" class="me-1"></i> Add Money
+                                </button>
+
                                 {{-- Show View --}}
                                 <a class="btn btn-datatable btn-icon btn-transparent-dark me-1"
                                     href="{{ route('admin.users.show', $user->id) }}" title="View User">
@@ -122,6 +137,54 @@
             </table>
         </div>
     </div>
+
+    {{-- Admin credit modal: remains on the User List page. --}}
+    <div class="modal fade" id="addMoneyModal" tabindex="-1" aria-labelledby="addMoneyModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="addMoneyForm">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addMoneyModalLabel">Add Money to User</h5>
+                        <button type="button" class="btn-close" id="closeAddMoneyModal" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="addMoneyError" class="alert alert-danger d-none" role="alert"></div>
+                        <div id="addMoneySuccess" class="alert alert-success d-none" role="alert"></div>
+
+                        <div class="rounded border bg-light p-3 mb-3">
+                            <div class="small text-muted">Selected User</div>
+                            <div class="fw-bold" id="creditUserName">—</div>
+                            <div class="small text-muted">User ID: <span id="creditUserId">—</span></div>
+                            <div class="mt-2">Current Balance: <strong id="creditCurrentBalance">₹0.00</strong></div>
+                        </div>
+
+                        <input type="hidden" id="creditActionUrl" value="">
+                        <input type="hidden" name="idempotency_key" id="creditIdempotencyKey" value="">
+
+                        <div class="mb-3">
+                            <label for="creditAmount" class="form-label fw-bold">Amount (₹)</label>
+                            <input type="number" class="form-control" id="creditAmount" name="amount"
+                                min="0.01" max="1000000" step="0.01" inputmode="decimal" required>
+                            <div class="form-text">Enter a positive amount, up to two decimal places.</div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label for="creditRemark" class="form-label fw-bold">Remark / Reason (optional)</label>
+                            <textarea class="form-control" id="creditRemark" name="remark" rows="2" maxlength="255"
+                                placeholder="Reason for admin credit"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" id="cancelAddMoneyModal" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success" id="submitCreditButton">
+                            <i data-feather="plus-circle" class="me-1"></i> Add Money
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('script')
@@ -131,8 +194,60 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const creditModalElement = document.getElementById('addMoneyModal');
+            const creditModal = bootstrap.Modal.getOrCreateInstance(creditModalElement);
+            const creditForm = document.getElementById('addMoneyForm');
+            const creditAmount = document.getElementById('creditAmount');
+            const creditRemark = document.getElementById('creditRemark');
+            const creditActionUrl = document.getElementById('creditActionUrl');
+            const creditIdempotencyKey = document.getElementById('creditIdempotencyKey');
+            const creditError = document.getElementById('addMoneyError');
+            const creditSuccess = document.getElementById('addMoneySuccess');
+            const creditSubmitButton = document.getElementById('submitCreditButton');
+            const creditCancelButton = document.getElementById('cancelAddMoneyModal');
+            const creditCloseButton = document.getElementById('closeAddMoneyModal');
+
+            const createRequestKey = () => {
+                if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                    return window.crypto.randomUUID();
+                }
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                    const r = Math.random() * 16 | 0;
+                    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                });
+            };
+
+            const showCreditError = (message) => {
+                creditError.textContent = message;
+                creditError.classList.remove('d-none');
+                creditSuccess.classList.add('d-none');
+            };
 
             document.addEventListener('click', function(event) {
+                const creditButton = event.target.closest('.add-money-btn');
+                if (creditButton) {
+                    event.preventDefault();
+                    document.getElementById('creditUserName').textContent = creditButton.dataset.userName || '—';
+                    document.getElementById('creditUserId').textContent = creditButton.dataset.userId || '—';
+                    const balance = Number(creditButton.dataset.balance || 0);
+                    document.getElementById('creditCurrentBalance').textContent = '₹' + balance.toLocaleString('en-IN', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    creditActionUrl.value = creditButton.dataset.action;
+                    creditIdempotencyKey.value = createRequestKey();
+                    creditAmount.value = '';
+                    creditRemark.value = '';
+                    creditError.classList.add('d-none');
+                    creditSuccess.classList.add('d-none');
+                    creditSubmitButton.disabled = false;
+                    creditCancelButton.disabled = false;
+                    creditCloseButton.disabled = false;
+                    creditSubmitButton.innerHTML = '<i data-feather="plus-circle" class="me-1"></i> Add Money';
+                    if (window.feather) feather.replace();
+                    creditModal.show();
+                    return;
+                }
 
                 // Block / Unblock User
                 const statusButton = event.target.closest('.toggle-status-btn');
@@ -213,6 +328,86 @@
                     });
                 }
 
+            });
+
+            creditForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+                creditError.classList.add('d-none');
+                creditSuccess.classList.add('d-none');
+
+                const amount = creditAmount.value.trim();
+                if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0 || !/^\d+(?:\.\d{1,2})?$/.test(amount)) {
+                    showCreditError('Enter a valid positive amount with no more than two decimal places.');
+                    creditAmount.focus();
+                    return;
+                }
+
+                creditSubmitButton.disabled = true;
+                creditCancelButton.disabled = true;
+                creditCloseButton.disabled = true;
+                creditSubmitButton.textContent = 'Processing…';
+
+                try {
+                    const response = await fetch(creditActionUrl.value, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': creditForm.querySelector('input[name="_token"]').value
+                        },
+                        body: new FormData(creditForm)
+                    });
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        let message = result.message || 'Unable to credit wallet. Please try again.';
+                        if (result.errors) {
+                            const firstError = Object.values(result.errors).flat()[0];
+                            if (firstError) message = firstError;
+                        }
+                        showCreditError(message);
+                        creditSubmitButton.disabled = false;
+                        creditCancelButton.disabled = false;
+                        creditCloseButton.disabled = false;
+                        creditSubmitButton.innerHTML = '<i data-feather="plus-circle" class="me-1"></i> Retry Add Money';
+                        if (window.feather) feather.replace();
+                        return;
+                    }
+
+                    const updatedBalance = Number(result.data.balance || 0);
+                    const rowBalance = document.querySelector('.user-balance[data-user-id="' + result.data.user_id + '"]');
+                    if (rowBalance) {
+                        rowBalance.dataset.balance = updatedBalance.toFixed(2);
+                        rowBalance.textContent = '₹' + updatedBalance.toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+
+                    creditSuccess.textContent = result.message || 'Wallet credited successfully.';
+                    creditSuccess.classList.remove('d-none');
+                    creditError.classList.add('d-none');
+                    creditModal.hide();
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Credit successful',
+                            text: result.message || 'Wallet credited successfully.',
+                            timer: 1800,
+                            showConfirmButton: false
+                        });
+                    }
+                } catch (error) {
+                    // Reuse the same idempotency key when retrying an uncertain
+                    // network response, so a committed credit cannot be repeated.
+                    showCreditError('Network error. Please retry without closing this modal.');
+                    creditSubmitButton.disabled = false;
+                    creditSubmitButton.innerHTML = '<i data-feather="plus-circle" class="me-1"></i> Retry Add Money';
+                } finally {
+                    if (window.feather) feather.replace();
+                }
             });
 
         });
