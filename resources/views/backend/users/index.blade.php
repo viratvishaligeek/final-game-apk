@@ -139,14 +139,14 @@
     </div>
 
     {{-- Admin credit modal: remains on the User List page. --}}
-    <div class="modal fade" id="addMoneyModal" tabindex="-1" aria-labelledby="addMoneyModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addMoneyModal" tabindex="-1" aria-labelledby="addMoneyModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <form id="addMoneyForm">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title" id="addMoneyModalLabel">Add Money to User</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" id="closeAddMoneyModal" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div id="addMoneyError" class="alert alert-danger d-none" role="alert"></div>
@@ -176,7 +176,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-light" id="cancelAddMoneyModal" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-success" id="submitCreditButton">
                             <i data-feather="plus-circle" class="me-1"></i> Add Money
                         </button>
@@ -204,6 +204,8 @@
             const creditError = document.getElementById('addMoneyError');
             const creditSuccess = document.getElementById('addMoneySuccess');
             const creditSubmitButton = document.getElementById('submitCreditButton');
+            const creditCancelButton = document.getElementById('cancelAddMoneyModal');
+            const creditCloseButton = document.getElementById('closeAddMoneyModal');
 
             const createRequestKey = () => {
                 if (window.crypto && typeof window.crypto.randomUUID === 'function') {
@@ -239,6 +241,8 @@
                     creditError.classList.add('d-none');
                     creditSuccess.classList.add('d-none');
                     creditSubmitButton.disabled = false;
+                    creditCancelButton.disabled = false;
+                    creditCloseButton.disabled = false;
                     creditSubmitButton.innerHTML = '<i data-feather="plus-circle" class="me-1"></i> Add Money';
                     if (window.feather) feather.replace();
                     creditModal.show();
@@ -339,6 +343,8 @@
                 }
 
                 creditSubmitButton.disabled = true;
+                creditCancelButton.disabled = true;
+                creditCloseButton.disabled = true;
                 creditSubmitButton.textContent = 'Processing…';
 
                 try {
@@ -362,6 +368,8 @@
                         }
                         showCreditError(message);
                         creditSubmitButton.disabled = false;
+                        creditCancelButton.disabled = false;
+                        creditCloseButton.disabled = false;
                         creditSubmitButton.innerHTML = '<i data-feather="plus-circle" class="me-1"></i> Retry Add Money';
                         if (window.feather) feather.replace();
                         return;
