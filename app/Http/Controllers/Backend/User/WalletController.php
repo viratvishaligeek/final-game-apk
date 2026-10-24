@@ -20,7 +20,7 @@ class WalletController extends Controller
         try {
             $validated = $request->validate([
                 'amount' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:1000000'],
-                'remark' => ['nullable', 'string', 'max:500'],
+                'remark' => ['nullable', 'string', 'max:255'],
                 'idempotency_key' => ['nullable', 'uuid'],
             ]);
         } catch (ValidationException $e) {
