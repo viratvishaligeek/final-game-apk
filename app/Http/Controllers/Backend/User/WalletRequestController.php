@@ -136,7 +136,7 @@ class WalletRequestController extends Controller
                     $this->walletService->debit(
                         $user,
                         (float) $walletRequest->amount,
-                        $walletRequest->remark ?: 'Wallet withdrawal approved'
+                        $walletRequest->remark ?: 'Wallet withdrawal success'
                     );
                 }
 

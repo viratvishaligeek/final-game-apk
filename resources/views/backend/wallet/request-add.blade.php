@@ -26,28 +26,6 @@
 @endsection
 
 @section('content')
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    @if ($errors->any())
-        <div class="alert alert-danger" role="alert">
-            <strong>Please review the request:</strong>
-            <ul class="mb-0 mt-2">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
     <div class="card">
         <div class="card-header bg-white py-3">
             <div class="row align-items-center">
@@ -100,11 +78,11 @@
                             <th>#</th>
                             <th>User</th>
                             <th>Amount</th>
-                            <th>UTR / Transaction ID</th>
-                            <th>Payment Method</th>
+                            <th>UTR ID</th>
+                            <th>Mode</th>
                             <th>Proof</th>
                             <th>Status</th>
-                            <th>Requested</th>
+                            <th>Time</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -112,10 +90,10 @@
                         @forelse ($requests as $request)
                             <tr>
                                 <td>
-                                    #{{ $requests->firstItem() + $loop->index }}
+                                    {{ $loop->iteration }}
                                 </td>
-                                <td>
-                                    <div class="fw-bold text-dark">
+                                <td style="min-width: 150px">
+                                    <div class="fw-bold">
                                         {{ $request->user->name ?? 'N/A' }}
                                     </div>
                                     <small class="text-muted">

@@ -413,7 +413,7 @@ class ResultController extends Controller
                 }
 
                 $amount = number_format((float) $winner->total_won, 2);
-                $title = 'Game reward credited';
+                $title = 'Game Winning amount credited';
                 $body = sprintf('You won ₹%s in %s for %s.', $amount, $game->name, $gameDate);
 
                 $notification = Notification::query()->create([

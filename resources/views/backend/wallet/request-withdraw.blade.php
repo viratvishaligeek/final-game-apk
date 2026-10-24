@@ -177,7 +177,7 @@
 
                                 {{-- Serial --}}
                                 <td>
-                                    #{{ $requests->firstItem() + $loop->index }}
+                                    #{{ $loop->iteration }}
                                 </td>
 
                                 {{-- User --}}

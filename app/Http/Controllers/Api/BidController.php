@@ -223,7 +223,7 @@ class BidController extends Controller
             $transaction = $this->walletService->debit(
                 $lockedUser,
                 $calculatedTotal,
-                "Bet placed - {$lockedGame->name}",
+                "Bet played in - {$lockedGame->name}",
                 false
             );
 

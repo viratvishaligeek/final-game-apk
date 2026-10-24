@@ -76,28 +76,25 @@
                             <td>{{ $user->created_at ? $user->created_at->format('d M Y') : 'N/A' }}</td>
                             <td>
                                 <button type="button"
-                                    class="btn btn-sm btn-success add-money-btn me-1 mb-1"
+                                    class="btn btn-success add-money-btn "
                                     data-user-id="{{ $user->id }}"
                                     data-user-name="{{ $user->name }}"
                                     data-balance="{{ number_format((float) $user->balance, 2, '.', '') }}"
                                     data-action="{{ route('admin.wallet.credit', $user->id) }}"
                                     title="Add Money / Credit">
-                                    <i data-feather="plus-circle" class="me-1"></i> Add Money
+                                    <i data-feather="plus-circle"></i>
                                 </button>
 
-                                {{-- Show View --}}
                                 <a class="btn btn-datatable btn-icon btn-transparent-dark me-1"
                                     href="{{ route('admin.users.show', $user->id) }}" title="View User">
                                     <i data-feather="eye" class="text-success"></i>
                                 </a>
 
-                                {{-- Edit --}}
                                 <a class="btn btn-datatable btn-icon btn-transparent-dark me-1"
                                     href="{{ route('admin.users.edit', $user->id) }}" title="Edit User">
                                     <i data-feather="edit" class="text-primary"></i>
                                 </a>
 
-                                {{-- Block / Unblock Button --}}
                                 <form action="{{ route('admin.users.toggle-status', $user->id) }}" method="POST"
                                     id="status-form-{{ $user->id }}" class="d-inline">
                                     @csrf
@@ -119,7 +116,6 @@
                                     @endif
                                 </form>
 
-                                {{-- Delete --}}
                                 <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
                                     id="delete-form-{{ $user->id }}" class="d-inline">
                                     @csrf
