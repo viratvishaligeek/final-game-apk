@@ -26,36 +26,36 @@
     @endsection
 @endif
 @section('content')
-    <div class="bg-primary text-white py-5">
-        <div class="container">
-            <div class="small mb-3"><a href="{{ route('index') }}">Home</a><span>/</span><b>{{ $title }}</b></div>
-            <p class="small text-uppercase fw-bold text-primary mb-2">SITE INFORMATION</p>
+    <div class="page-banner">
+        <div class="wrap">
+            <div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><b>{{ $title }}</b></div>
+            <p class="eyebrow">SITE INFORMATION</p>
             <h1>{{ $title }}</h1>
             <p>Helpful information about published records and responsible use.</p>
         </div>
     </div>
-    <section class="py-5 bg-light">
-        <div class="container card p-4">
-            <p class="small text-uppercase fw-bold text-primary mb-2">PLAY ONLINE KHAIWAL · INFORMATION DESK</p>
+    <section class="section-block section-light">
+        <div class="wrap information-panel">
+            <p class="eyebrow">PLAY ONLINE KHAIWAL · INFORMATION DESK</p>
             <h2>{{ $title }}</h2>
             @if ($page === 'disclaimer')
-                <div class="mb-3">{!! $copy !!}</div>
+                <div class="homepage-managed-content">{!! $copy !!}</div>
             @else
                 <p>{{ $copy }}</p>
             @endif
 
             @if (session('notice'))
-                <div class="alert alert-light">
+                <div class="empty-state">
                     <p>{{ session('notice') }}</p>
                 </div>
             @endif
 
             @if ($page === 'faq')
-                <div class="col-lg-8">
+                <div class="faq-list faq-list-light">
                     @forelse ($faqs as $faq)
-                        <details class="accordion-item">
+                        <details class="faq-item">
                             <summary>{{ $faq->question }}<span>+</span></summary>
-                            <div class="accordion-body">{{ $faq->answer }}</div>
+                            <div class="faq-answer">{{ $faq->answer }}</div>
                         </details>
                     @empty
                         <p>No frequently asked questions have been added yet.</p>
@@ -63,7 +63,7 @@
                 </div>
             @endif
 
-            <a class="btn btn btn-warning" href="{{ route('index') }}">Back to results board ↗</a>
+            <a class="button button-gold" href="{{ route('index') }}">Back to results board ↗</a>
         </div>
     </section>
 @endsection
