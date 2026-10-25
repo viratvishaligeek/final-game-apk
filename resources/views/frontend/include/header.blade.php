@@ -8,7 +8,7 @@
             @endif
             <span>{{ setting('title', 'Play Online Khaiwal') }}</span>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#primary-nav" aria-controls="primary-nav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <button class="navbar-toggler" type="button" data-menu-toggle data-bs-toggle="collapse" data-bs-target="#primary-nav" aria-controls="primary-nav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
         <div class="collapse navbar-collapse" id="primary-nav">
             <div class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 <a class="nav-link" href="{{ route('index') }}">Home</a>
