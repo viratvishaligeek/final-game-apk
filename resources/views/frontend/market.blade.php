@@ -20,20 +20,20 @@
 @section('robots_content', request()->query->count() > 0 ? 'noindex,follow' : setting('robots_default', 'index,follow'))
 @section('content')
 
-    <section class="page-banner page-banner--blue">
-        <div class="wrap">
-            <div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><a
+    <section class="bg-primary text-white py-5 bg-primary text-white py-5">
+        <div class="container">
+            <div class="small mb-3"><a href="{{ route('index') }}">Home</a><span>/</span><a
                     href="{{ route('index') }}#markets">Markets</a><span>/</span><b>{{ $game->name }}</b></div>
-            <p class="eyebrow">GAME RESULT</p>
+            <p class="small text-uppercase fw-bold text-primary mb-2">GAME RESULT</p>
             <h1>{{ $game->name }} <span>{{ $monthLabel }}</span></h1>
             <p>Monthly results are loaded from saved records. Missing values are shown as a dash.</p>
         </div>
     </section>
-    <section class="section-block section-light">
-        <div class="wrap">
-            <div class="page-toolbar result-month-toolbar">
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4 mb-4">
                 <form method="GET" action="{{ route('frontend.market', ['slug' => $game->slug]) }}"
-                    class="monthly-chart-filter result-month-filter" data-result-filter
+                    class="row g-3 align-items-end row g-3 align-items-end" data-result-filter
                     data-endpoint="{{ route('frontend.chart') }}">
                     <input type="hidden" data-csrf-token value="{{ csrf_token() }}">
                     <label for="result-year">Year</label>
@@ -53,14 +53,14 @@
                     </select>
                 </form>
             </div>
-            <p class="result-fetch-status" data-result-status role="status" aria-live="polite" hidden></p>
-            <div class="empty-state" data-result-empty
+            <p  data-result-status role="status" aria-live="polite" hidden></p>
+            <div class="alert alert-info" data-result-empty
                 {{ $results->contains(fn(array $row) => $row['status'] === 'published') ? 'hidden' : '' }}>
                 <b>No published results for this month.</b>
                 <p>Choose another month or year to review saved records.</p>
             </div>
-            <div class="table-shell light-table result-table-compact">
-                <table class="quick-record-table monthly-result-table">
+            <div class="card p-3">
+                <table class="table table-striped table-hover align-middle">
                     <thead>
                         <tr>
                             <th scope="col">Date</th>
@@ -71,7 +71,7 @@
                     <tbody data-result-body>
                         @foreach ($results as $entry)
                             <tr data-result-row="{{ $entry['date']->day }}">
-                                <th scope="row" style="text-align: center; font-weight:bold">
+                                <th scope="row">
                                     {{ $entry['date']->format('d') }}
                                 </th>
                                 <td data-result-cell>
