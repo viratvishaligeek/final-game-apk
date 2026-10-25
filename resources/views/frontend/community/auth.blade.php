@@ -21,8 +21,11 @@
             @if ($mode === 'register')
                 <div class="mb-3"><label class="form-label" for="password_confirmation">Confirm password</label><input class="form-control" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required></div>
             @endif
-            @if ($mode === 'login' && $errors->any())
-                <div class="alert alert-danger">{{ $errors->first() }}</div>
+            @if ($mode === 'login')
+                <div class="form-check mb-3">
+                    <input class="form-check-input" id="remember" type="checkbox" name="remember" value="1">
+                    <label class="form-check-label" for="remember">Remember me</label>
+                </div>
             @endif
             <button class="btn btn-warning w-100" type="submit">{{ $mode === 'login' ? 'Sign in' : 'Create account' }} ↗</button>
             <p class="text-center mt-3 mb-0">{{ $mode === 'login' ? 'Need an account?' : 'Already registered?' }} <a href="{{ route($mode === 'login' ? 'community.register' : 'community.login') }}">{{ $mode === 'login' ? 'Register' : 'Sign in' }}</a></p>
