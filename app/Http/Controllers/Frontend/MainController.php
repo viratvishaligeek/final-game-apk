@@ -175,35 +175,10 @@ class MainController extends Controller
     {
         $page = Page::query()->where('slug', $slug)->where('status', 'active')->firstOrFail();
 
-        return view('frontend.page', compact('page'));
-    }
+        $title = $page->meta_title;
+        $meta_description = $page->meta_description;
 
-    public function information(string $page)
-    {
-        $pageAliases = [
-            'about' => 'about-us',
-            'contact' => 'whatsapp',
-            'terms-and-conditions' => 'terms-conditions',
-        ];
-        $databaseSlug = $pageAliases[$page] ?? $page;
-        $databasePage = Page::query()->where('slug', $databaseSlug)->where('status', 'active')->first();
-        if ($databasePage && $page !== 'faq') {
-            return view('frontend.page', ['page' => $databasePage]);
-        }
-
-        $pages = [
-            'about' => ['About this site', 'Play Online Khaiwal organizes stored Satta King results and historical monthly charts for reference. It does not publish predictions or guarantee future outcomes.'],
-            'contact' => ['Contact', (string) app(AppSettingsService::class)->value('contact_address', 'For website or data-correction questions, use the contact channel configured by the site administrator.')],
-            'faq' => ['Frequently asked questions', 'Use the market board to find published results. A dash means no result is available for the selected business date. Historical charts list stored records by market and month.'],
-            'privacy-policy' => ['Privacy policy', 'This site should collect only the information needed to operate its features. Consult the site operator for details about deployment-specific logs, cookies, and retention practices.'],
-            'terms-and-conditions' => ['Terms and conditions', 'Information is provided for reference only. Availability and correctness can vary; users are responsible for following applicable local laws.'],
-            'disclaimer' => ['Disclaimer', (string) app(AppSettingsService::class)->value('disclaimer_content', 'Historical results are records, not predictions. No result or financial gain is guaranteed. Please follow applicable local laws and make responsible choices.')],
-        ];
-        abort_unless(isset($pages[$page]), 404);
-        [$title, $copy] = $pages[$page];
-        $faqs = $page === 'faq' ? Faq::query()->latest('id')->get() : collect();
-
-        return view('frontend.information', compact('page', 'title', 'copy', 'faqs'));
+        return view('frontend.page', compact('page','title','meta_description'));
     }
 
     private function getFrontendResults(): array

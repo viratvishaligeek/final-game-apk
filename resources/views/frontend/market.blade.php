@@ -64,7 +64,7 @@
                     <thead>
                         <tr>
                             <th scope="col">Date</th>
-                            <th scope="col">Result</th>
+                            <th scope="col">{{ $game->name }}</th>
                         </tr>
                     </thead>
 

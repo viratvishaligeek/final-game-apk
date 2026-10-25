@@ -24,7 +24,7 @@
 
                 </i>
                 {{ setting('announcement_text', "Records shown are read from the site's published result database") }}</span>
-            <a href="{{ route('information', ['page' => 'disclaimer']) }}">legal notice ↗</a>
+            <a href="{{ route('page', ['page' => 'disclaimer']) }}">legal notice ↗</a>
         </div>
     </div>
 
@@ -44,7 +44,7 @@
                     {{ setting('homepage_intro', 'Find published results, compare recent records, and move straight into the chart you need. Clear status labels separate available results from pending records.') }}
                 </p>
                 <div class="hero-actions">
-                    <a class="button button-gold" href="{{ route('frontend.app-download') }}">Download
+                    <a class="button button-gold" href="{{ setting('app_download_url') }}" target="_blank">Download
                         App
                         <span>↓</span>
                     </a>
@@ -75,15 +75,15 @@
                 @php($featured = $featuredGame)
                 @if ($featured)
                     <div class="spotlight-market">{{ $featured['name'] }}</div>
-                    <div class="spotlight-date">{{ now()->timezone(config('app.timezone'))->format('d F Y') }}
-                        <span>•</span> Scheduled {{ $featured['time'] }}
+                    <div class="spotlight-date">🗓️ {{ now()->timezone(config('app.timezone'))->format('d F Y') }} |
+                        <span>🕓</span> {{ $featured['time'] }}
+                    </div>
+                    <div class="spotlight-caption">
+                        {{ $featured['today'] === '--' ? 'NO RESULT PUBLISHED FOR CURRENT BUSINESS DATE' : '🔴 LIVE RESULT' }}
                     </div>
                     <div class="spotlight-number">{{ $featured['today'] }}</div>
-                    <div class="spotlight-caption">
-                        {{ $featured['today'] === '--' ? 'NO RESULT PUBLISHED FOR CURRENT BUSINESS DATE' : 'Live Result' }}
-                    </div>
                     <div class="spotlight-bottom">
-                        <span>कल आया था <b>{{ $featured['yesterday'] }}</b></span>
+                        <span>🕓 कल आया था <b>{{ $featured['yesterday'] }}</b></span>
                         <a href="{{ route('frontend.market', ['slug' => $featured['slug']]) }}">View market history ↗</a>
                     </div>
                 @else
@@ -148,27 +148,18 @@
             @include('frontend.partial.section-heading', [
                 'eyebrow' => 'THE DAILY RESULT BOARD',
                 'title' => 'Today’s <span>market results</span>',
-                'description' =>
-                    'Values are taken from stored records for each market’s current business date. A dash means no result is published for that date.',
             ])
             <div class="result-board-grid">
                 @forelse($remainingFrontendResults as $index => $game)
                     <article class="result-board-card">
-                        <div class="result-board-head">
-                            <span
-                                class="market-index">{{ str_pad((string) ($game['serial'] ?? $index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                            <span class="result-state {{ $game['today'] === '--' ? 'is-pending' : 'is-published' }}">
-                                <i>
-                                </i>{{ $game['today'] === '--' ? 'PENDING' : 'PUBLISHED' }}</span>
-                        </div>
                         <h3>{{ $game['name'] }}</h3>
+                        <span>( {{ $game['time'] }} )</span>
+                        <hr class="m-1">
+                        <span>
+                            आज का रिजल्ट
+                        </span>
                         <div class="result-big {{ $game['today'] === '--' ? 'result-big--pending' : '' }}">
                             {{ $game['today'] }}
-                        </div>
-                        <div class="result-meta">
-                            <span>Scheduled {{ $game['time'] }}</span>
-                            <span>Prev.
-                                {{ $game['yesterday'] }}</span>
                         </div>
                         <a href="{{ route('frontend.market', ['slug' => $game['slug']]) }}">Full result history
                             <b>↗</b>
@@ -188,34 +179,13 @@
     @include('frontend.partial.homepage-sections', [
         'sections' => $homepageSections->where('location', 'second_place_another'),
     ])
-
-    <section class="info-ribbon">
-        <div class="wrap ribbon-inner">
-            <div>
-                <p class="eyebrow">NEED A QUICK REFERENCE?</p>
-                <h2>Schedules, records and context.<br>
-                    <span>Without the guesswork.</span>
-                </h2>
-                <p>Use the schedule displayed on each market card, then open its chart to browse stored dates. The page
-                    never predicts missing results.</p>
-            </div>
-            <div class="ribbon-actions">
-                <a class="button button-gold" href="#records">Go to record center ↗</a>
-                <a class="button button-light" href="{{ route('information', ['page' => 'faq']) }}">Read the guide</a>
-            </div>
-            <div class="ribbon-stamp">RECORD<br>
-                <b>DESK</b>
-                <span>POK</span>
-            </div>
-        </div>
-    </section>
     <section class="section-block section-light" id="markets">
         <div class="wrap">
             @include('frontend.partial.section-heading', [
                 'eyebrow' => 'MARKET DIRECTORY',
                 'title' => 'Choose your <span>market</span>',
                 'description' =>
-                    'Open an individual market page to browse its latest stored records and historical chart years.',
+                    'Check today`s and yesterday`s Matka results with market-wise numbers and previous records.',
             ])
             <div class="market-tools">
                 <label class="market-search">
@@ -242,23 +212,14 @@
         'sections' => $homepageSections->where('location', 'third_place'),
     ])
 
-    <section class="info-ribbon">
+    <section class="info-ribbon py-2" style="border: 2px solid goldenrod">
         <div class="wrap ribbon-inner">
             <div>
-                <p class="eyebrow">NEED A QUICK REFERENCE?</p>
-                <h2>Schedules, records and context.<br>
-                    <span>Without the guesswork.</span>
+                <p class="eyebrow">MARKET DIRECTORY</p>
+                <h2>Today's & Yesterday's Satta Results<br>
                 </h2>
-                <p>Use the schedule displayed on each market card, then open its chart to browse stored dates. The page
-                    never predicts missing results.</p>
-            </div>
-            <div class="ribbon-actions">
-                <a class="button button-gold" href="#records">Go to record center ↗</a>
-                <a class="button button-light" href="{{ route('information', ['page' => 'faq']) }}">Read the guide</a>
-            </div>
-            <div class="ribbon-stamp">RECORD<br>
-                <b>DESK</b>
-                <span>POK</span>
+                <p>Explore today's and yesterday's market-wise Satta results on Play Online Khaiwal. Check published
+                    results, compare previous-day records and browse historical charts for each market.</p>
             </div>
         </div>
     </section>
@@ -284,7 +245,7 @@
                         <table class="quick-record-table homepage-results-table">
                             <thead>
                                 <tr>
-                                    <th scope="col">Date</th>
+                                    <th scope="col" class="text-white">Date</th>
                                     @foreach ($table['games'] as $game)
                                         <th scope="col">
                                             <a
@@ -315,88 +276,26 @@
         </div>
     </section>
 
-    @include('frontend.partial.homepage-sections', [
-        'sections' => $homepageSections->where('location', 'before_footer'),
-    ])
-
-    <section class="section-block section-light" id="records">
+    <section class="section-block p-0 section-light" id="records">
         <div class="wrap">
             <div class="arch">
                 <div class="archive-feature">
                     <p class="eyebrow">HISTORICAL REGISTER</p>
-                    <h3>Old results.<br>
-                        <span>Clear chronology.</span>
-                    </h3>
+                    <h3>Old Monthly Results.</h3>
                     <br>
                     @foreach ($games as $game)
-                        <a class="button button-gold" style="padding: 10px; margin: 5px"
-                            href="{{ route('frontend.market', ['slug' => $game->slug]) }}"> {{ $game->name }} Result
+                        <a class="btn btn-sm button-gold  m-1"
+                            href="{{ route('frontend.market', ['slug' => $game->slug]) }}"> {{ $game->name }}
                             ↗</a>
                     @endforeach
                 </div>
             </div>
     </section>
 
-    <section class="section-block section-light" id="about">
-        <div class="wrap learn-grid">
-            <div>@include('frontend.partial.section-heading', [
-                'eyebrow' => 'RESULT READING GUIDE',
-                'title' => 'Read the board <span>with clarity</span>',
-                'description' => 'A quick guide to the labels and tools used across this result directory.',
-            ])
-                <div class="guide-list">
-                    <article>
-                        <span>01</span>
-                        <div>
-                            <h3>Published result</h3>
-                            <p>A number stored for that market and business date. The displayed value reflects the saved
-                                record.</p>
-                        </div>
-                    </article>
-                    <article>
-                        <span>02</span>
-                        <div>
-                            <h3>Pending result</h3>
-                            <p>A dash (—) means no result was found for the relevant date. It is not a prediction or an
-                                estimated value.</p>
-                        </div>
-                    </article>
-                    <article>
-                        <span>03</span>
-                        <div>
-                            <h3>Historical chart</h3>
-                            <p>Open a market chart to review saved records by date and use the year links to narrow the
-                                archive.</p>
-                        </div>
-                    </article>
-                    <article>
-                        <span>04</span>
-                        <div>
-                            <h3>Corrected records</h3>
-                            <p>If a record is corrected in the source system, the page reflects the database value on the
-                                next request. This page does not independently verify a result.</p>
-                        </div>
-                    </article>
-                </div>
-            </div>
-            <aside class="glossary-panel">
-                <p class="eyebrow">QUICK GLOSSARY</p>
-                <h3>Terms you’ll see</h3>
-                <dl>
-                    <dt>Jodi</dt>
-                    <dd>A two-digit result value recorded by the system.</dd>
-                    <dt>Market time</dt>
-                    <dd>The configured schedule for a market's result.</dd>
-                    <dt>Business date</dt>
-                    <dd>The date assigned to a result by that market’s date rules.</dd>
-                    <dt>Archive year</dt>
-                    <dd>A year discovered from saved result dates.</dd>
-                </dl>
-                <div class="glossary-note">Historical patterns do not guarantee or reliably predict future results.</div>
-            </aside>
-        </div>
-    </section>
-
+    @include('frontend.partial.homepage-sections', [
+        'sections' => $homepageSections->where('location', 'before_footer'),
+    ])
+    <br>
     <section class="section-block section-dark faq-section" id="faq">
         <div class="wrap">
             @include('frontend.partial.section-heading', [
@@ -405,21 +304,19 @@
                 'description' =>
                     'Practical answers about records, status labels, and the information shown on this site.',
                 'class' => 'heading-on-dark',
-                'action' => ['url' => route('information', ['page' => 'faq']), 'label' => 'Full FAQ page'],
             ])
             <div class="faq-layout">
-                <div class="faq-lead">
-                    <span class="faq-mark">?</span>
-                    <h3>Need to find<br>a specific record?</h3>
-                    <p>Start with the market board or use the year-wise chart finder to narrow your search.</p>
-                    <a href="#markets" class="text-action">Find a market ↗</a>
-                </div>
                 <div class="faq-list">
                     @forelse ($faqs as $faq)
                         <details class="faq-item">
                             <summary>{{ $faq->question }}<span>+</span>
                             </summary>
-                            <div class="faq-answer">{{ $faq->answer }}</div>
+                            <div class="faq-answer bg-warning fs-6 text-dark">
+                                <span class=" text-danger">
+                                    Ans:
+                                </span>
+                                {{ $faq->answer }}
+                            </div>
                         </details>
                     @empty
                         <p class="faq-answer">No frequently asked questions have been added yet.</p>
@@ -433,17 +330,17 @@
         <div class="wrap disclaimer-inner">
             <div class="disclaimer-icon">!</div>
             <div>
-                <p class="eyebrow">IMPORTANT INFORMATION</p>
-                <h2>Records are information — <span>not promises.</span>
+                <h2>Disclaimer & Records are information — <span>not promises.</span>
                 </h2>
-                <p>{{ setting('disclaimer_content', 'This website presents stored result information for reference. It does not guarantee accuracy, predict future outcomes, or promise financial gains. Follow applicable local laws and make responsible decisions.') }}
+                <p>{{ Str::limit(setting('disclaimer_content'), 100, '...') }}
                 </p>
             </div>
-            <a class="button button-dark" href="{{ route('information', ['page' => 'disclaimer']) }}">Full
+            <a class="button button-dark" href="{{ route('page', ['page' => 'disclaimer']) }}">Full
                 disclaimer
                 ↗</a>
         </div>
     </section>
+
     <div class="jump-bar">
         <div class="wrap">
             <span>QUICK JUMP</span>

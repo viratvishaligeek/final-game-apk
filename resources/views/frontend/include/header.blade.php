@@ -1,16 +1,14 @@
 <header class="site-header">
     <div class="header-main wrap">
-        <a class="brand" href="{{ route('index') }}" aria-label="{{ setting('title', 'Play Online Khaiwal') }} home">
+        <a class="brand" href="{{ route('index') }}" aria-label="{{ setting('title') }} home">
             @if (filled(setting('site_logo')) && is_file(public_path('logos/' . basename(setting('site_logo')))))
                 <img class="brand-emblem" src="{{ asset('logos/' . basename(setting('site_logo'))) }}"
-                    alt="{{ setting('title', 'Play Online Khaiwal') }}" loading="eager">
+                    alt="{{ setting('title') }}" loading="eager">
             @else
                 <span class="brand-emblem">POK</span>
             @endif
-            <span
-                class="brand-word">{{ setting('title', 'Play Online Khaiwal') }}<small>
-                    {{-- {{ setting('site_tagline', 'SATTA KING RESULTS • MONTHLY CHARTS • HISTORICAL RECORDS') }}</small> --}}
-                </span>
+            <span class="brand-word">{{ setting('title') }}<small>
+            </span>
         </a>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"
             data-menu-toggle><span></span><span></span><span></span><b class="sr-only">Toggle navigation</b></button>
@@ -20,11 +18,10 @@
             <a href="{{ route('index') }}#market-charts">Monthly charts</a>
             <a href="{{ route('community.index') }}">Guessing</a>
             <a href="{{ route('index') }}#records">Records</a>
-            <a href="{{ route('information', ['page' => 'faq']) }}">Help / FAQ</a>
             @foreach ($navPages ?? collect() as $navPage)
-                <a href="{{ route('information', ['page' => $navPage->slug]) }}">{{ $navPage->name }}</a>
+                <a href="{{ route('page', ['page' => $navPage->slug]) }}">{{ $navPage->name }}</a>
             @endforeach
-            <a class="nav-search" href="{{ route('frontend.app-download') }}" aria-label="Download App">↓
+            <a class="nav-search" href="{{ setting('app_download_url') }}" target="_blank" aria-label="Download App">↓
                 <span>Download App</span></a>
         </nav>
     </div>

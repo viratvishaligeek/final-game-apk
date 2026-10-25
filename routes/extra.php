@@ -48,41 +48,29 @@ Route::get('/optimize-clear', function () {
     ]);
 });
 
-Route::get('/storage-link', function () {
-    Artisan::call('storage:link');
+// Route::get('/storage-link', function () {
+//     Artisan::call('storage:link');
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Storage link created successfully.',
-    ]);
-});
-
-
-Route::get('/storage-link', function () {
-    Artisan::call('migrate --force');
-    return response()->json([
-        'success' => true,
-        'message' => 'Forcly Migrated Successfully.',
-    ]);
-});
+//     return response()->json([
+//         'success' => true,
+//         'message' => 'Storage link created successfully.',
+//     ]);
+// });
 
 
-Route::get('/fresh-db', function () {
-    Artisan::call('migrate:fresh');
-    Artisan::call('db:seed');
-    Artisan::call('permissions:setup');
-    return response()->json([
-        'success' => true,
-        'message' => 'New Migration, New Seed, New Permissions setuped successfully.',
-    ]);
-});
+// Route::get('/fresh-db', function () {
+//     Artisan::call('migrate:fresh');
+//     Artisan::call('db:seed');
+//     Artisan::call('permissions:setup');
+//     return response()->json([
+//         'success' => true,
+//         'message' => 'New Migration, New Seed, New Permissions setuped successfully.',
+//     ]);
+// });
 
 $buildPublicSitemapEntries = function (): array {
     $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('app.url', 'https://playonlinekhaiwal.com')), '/');
     $entries = [$base . '/' => null];
-    foreach (['about', 'contact', 'faq', 'privacy-policy', 'terms-and-conditions', 'disclaimer'] as $informationSlug) {
-        $entries[$base . '/' . $informationSlug] = null;
-    }
 
     $latestResultUpdates = Result::query()
         ->where('type', 'jodi')
@@ -117,7 +105,7 @@ $buildPublicSitemapEntries = function (): array {
         ->orderBy('id')
         ->get(['slug', 'updated_at'])
         ->each(function (Page $page) use (&$entries, $base) {
-            $entries[$base . '/pages/' . rawurlencode($page->slug)] = $page->updated_at;
+            $entries[$base . '/' . rawurlencode($page->slug)] = $page->updated_at;
         });
 
     return $entries;
@@ -148,7 +136,7 @@ Route::get('/sitemap-{part}.xml', function (string $part) use ($buildPublicSitem
 
 Route::get('/sitemap.xml', function () use ($buildPublicSitemapEntries, $renderSitemapUrlSet) {
     $entries = $buildPublicSitemapEntries();
-    $chunks = array_chunk($entries, 50000, true);
+    $chunks = array_chunk($entries, 5000, true);
     if (count($chunks) <= 1) {
         return $renderSitemapUrlSet($entries);
     }
