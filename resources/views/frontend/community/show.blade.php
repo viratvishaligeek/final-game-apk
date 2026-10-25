@@ -3,23 +3,12 @@
 @section('meta_description', \Illuminate\Support\Str::limit($post->body, 155))
 @section('robots_content', 'index,follow')
 @section('content')
-<section class="bg-primary text-white py-5"><div class="container py-3">
-    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a class="link-light" href="{{ route('community.index') }}">Guessing</a></li><li class="breadcrumb-item active text-white" aria-current="page">{{ $post->game->name }}</li></ol></nav>
-    <p class="small fw-bold text-uppercase mb-2">Game topic · {{ $post->game->name }}</p><h1 class="display-6 fw-bold">{{ $post->title }}</h1><p class="mb-0">Posted by {{ $post->author->name }} · {{ $post->created_at->timezone(config('app.timezone'))->format('d M Y, h:i A') }}</p>
-</div></section>
-<section class="py-5 bg-light"><div class="container">
-    @if (session('success'))<div class="alert alert-success" role="status">{{ session('success') }}</div>@endif
-    <article class="card p-4 mb-4"><p class="fs-5 mb-0">{{ $post->body }}</p></article>
-    <h2 class="h4 mb-3">Replies ({{ $post->replies_count }})</h2>
-    @forelse ($post->replies as $reply)
-        <article class="card p-3 mb-3"><p class="mb-2">{{ $reply->body }}</p><small class="text-secondary">{{ $reply->author->name }} · {{ $reply->created_at->timezone(config('app.timezone'))->format('d M Y, h:i A') }}</small></article>
-    @empty
-        <div class="alert alert-light">No replies yet. Be the first to join the discussion.</div>
-    @endforelse
-    <form class="card p-4 mt-4" method="POST" action="{{ route('community.reply', $post->id) }}">
-        @csrf
-        <div class="mb-3"><label class="form-label" for="body">Add a reply</label><textarea class="form-control" id="body" name="body" rows="4" minlength="2" maxlength="2000" required>{{ old('body') }}</textarea>@error('body')<div class="text-danger small mt-1">{{ $message }}</div>@enderror</div>
-        <button class="btn btn-warning align-self-start" type="submit">Post reply ↗</button>
-    </form>
+<section class="page-banner page-banner--blue"><div class="wrap"><div class="breadcrumbs"><a href="{{ route('community.index') }}">Guessing</a><span>/</span><b>{{ $post->game->name }}</b></div><p class="eyebrow">GAME TOPIC · {{ $post->game->name }}</p><h1>{{ $post->title }}</h1><p>Posted by {{ $post->author->name }} · {{ $post->created_at->timezone(config('app.timezone'))->format('d M Y, h:i A') }}</p></div></section>
+<section class="section-block section-light"><div class="wrap community-form-wrap">
+    @if (session('success'))<p class="community-notice" role="status">{{ session('success') }}</p>@endif
+    <article class="community-post community-post-detail"><p class="community-post-body">{{ $post->body }}</p></article>
+    <h2 class="community-replies-heading">Replies ({{ $post->replies_count }})</h2>
+    @forelse ($post->replies as $reply)<article class="community-reply"><p>{{ $reply->body }}</p><small>{{ $reply->author->name }} · {{ $reply->created_at->timezone(config('app.timezone'))->format('d M Y, h:i A') }}</small></article>@empty<p class="empty-state">No replies yet. Be the first to join the discussion.</p>@endforelse
+    <form class="community-form" method="POST" action="{{ route('community.reply', $post->id) }}">@csrf<label for="body">Add a reply</label><textarea id="body" name="body" rows="4" minlength="2" maxlength="2000" required>{{ old('body') }}</textarea>@error('body')<small class="community-error">{{ $message }}</small>@enderror<button class="button button-gold" type="submit">Post reply ↗</button></form>
 </div></section>
 @endsection

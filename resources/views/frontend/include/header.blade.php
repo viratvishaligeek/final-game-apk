@@ -1,38 +1,48 @@
-<header class="bg-white border-bottom">
-    <nav class="navbar navbar-expand-lg container py-3" aria-label="Main navigation">
-        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-primary text-wrap" href="{{ route('index') }}" aria-label="{{ setting('title', 'Play Online Khaiwal') }} home">
+<header class="site-header">
+    <div class="header-main wrap">
+        <a class="brand" href="{{ route('index') }}" aria-label="{{ setting('title', 'Play Online Khaiwal') }} home">
             @if (filled(setting('site_logo')) && is_file(public_path('logos/' . basename(setting('site_logo')))))
-                <img class="rounded-circle" src="{{ asset('logos/' . basename(setting('site_logo'))) }}" alt="{{ setting('title', 'Play Online Khaiwal') }}" loading="eager">
+                <img class="brand-emblem" src="{{ asset('logos/' . basename(setting('site_logo'))) }}"
+                    alt="{{ setting('title', 'Play Online Khaiwal') }}" loading="eager">
             @else
-                <span class="rounded-circle bg-primary text-white p-2">POK</span>
+                <span class="brand-emblem">POK</span>
             @endif
-            <span>{{ setting('title', 'Play Online Khaiwal') }}</span>
+            <span
+                class="brand-word">{{ setting('title', 'Play Online Khaiwal') }}<small>
+                    {{-- {{ setting('site_tagline', 'SATTA KING RESULTS • MONTHLY CHARTS • HISTORICAL RECORDS') }}</small> --}}
+                </span>
         </a>
-        <button class="navbar-toggler" type="button" data-menu-toggle data-bs-toggle="collapse" data-bs-target="#primary-nav" aria-controls="primary-nav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-        <div class="collapse navbar-collapse" id="primary-nav">
-            <div class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-                <a class="nav-link" href="{{ route('index') }}">Home</a>
-                <a class="nav-link" href="{{ route('index') }}#today-results">Results</a>
-                <a class="nav-link" href="{{ route('index') }}#market-charts">Monthly charts</a>
-                <a class="nav-link" href="{{ route('community.index') }}">Guessing</a>
-                <a class="nav-link" href="{{ route('index') }}#records">Records</a>
-                <a class="nav-link" href="{{ route('information', ['page' => 'faq']) }}">Help / FAQ</a>
-                @foreach ($navPages ?? collect() as $navPage)
-                    <a class="nav-link" href="{{ route('information', ['page' => $navPage->slug]) }}">{{ $navPage->name }}</a>
-                @endforeach
-                <a class="btn btn-primary ms-lg-2" href="{{ route('frontend.app-download') }}">Download App ↓</a>
-            </div>
-        </div>
-    </nav>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"
+            data-menu-toggle><span></span><span></span><span></span><b class="sr-only">Toggle navigation</b></button>
+        <nav class="primary-nav" id="primary-nav" aria-label="Main navigation">
+            <a href="{{ route('index') }}">Home</a>
+            <a href="{{ route('index') }}#today-results">Results</a>
+            <a href="{{ route('index') }}#market-charts">Monthly charts</a>
+            <a href="{{ route('community.index') }}">Guessing</a>
+            <a href="{{ route('index') }}#records">Records</a>
+            <a href="{{ route('information', ['page' => 'faq']) }}">Help / FAQ</a>
+            @foreach ($navPages ?? collect() as $navPage)
+                <a href="{{ route('information', ['page' => $navPage->slug]) }}">{{ $navPage->name }}</a>
+            @endforeach
+            <a class="nav-search" href="{{ route('frontend.app-download') }}" aria-label="Download App">↓
+                <span>Download App</span></a>
+        </nav>
+    </div>
 </header>
-<div class="bg-primary text-white py-2">
-    <div class="container d-flex flex-wrap align-items-center gap-2">
-        <span class="fw-bold">📢</span><span class="small">
+<div class="ticker" aria-label="Quick navigation ticker">
+    <span class="ticker-label">📢</span>
+    <div class="ticker-window">
+        <div class="ticker-track">
             @if (filled(setting('web_marquee')))
-                {{ setting('web_marquee') }}
+                @for ($tickerCopy = 0; $tickerCopy < 2; $tickerCopy++)
+                    <span>{{ setting('web_marquee') }}</span><i>✦</i>
+                @endfor
             @else
-                Today's results · Previous results · Market schedules · Historical charts · Year-wise records
+                <span>Today's results</span><i>✦</i><span>Previous results</span><i>✦</i><span>Market
+                    schedules</span><i>✦</i><span>Historical charts</span><i>✦</i><span>Year-wise records</span><i>✦</i>
+                <span>Today's results</span><i>✦</i><span>Previous results</span><i>✦</i><span>Market
+                    schedules</span><i>✦</i><span>Historical charts</span><i>✦</i><span>Year-wise records</span>
             @endif
-        </span>
+        </div>
     </div>
 </div>
