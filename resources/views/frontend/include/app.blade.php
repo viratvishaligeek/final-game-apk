@@ -10,6 +10,7 @@
     @include('frontend.include.header')
     <main id="main-content">@yield('content')</main>
     @include('frontend.include.footer')
+    <button class="btn btn-primary rounded-circle position-fixed bottom-0 end-0 m-3 shadow" type="button" aria-label="Back to top" data-back-top>↑</button>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     @yield('script')
 </body>
