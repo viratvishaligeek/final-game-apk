@@ -157,7 +157,7 @@
                         <div class="d-flex justify-content-between align-items-center gap-2">
                             <span
                                 class="badge text-bg-secondary">{{ str_pad((string) ($game['serial'] ?? $index + 1), 2, '0', STR_PAD_LEFT) }}</span>
-                            <span class="badge rounded-pill text-bg-secondary{{ $game['today'] === '--' ? 'text-bg-warning' : 'text-bg-success' }}">
+                            <span class="badge rounded-pill {{ $game['today'] === '--' ? 'text-bg-warning' : 'text-bg-success' }}">
                                 <i>
                                 </i>{{ $game['today'] === '--' ? 'PENDING' : 'PUBLISHED' }}</span>
                         </div>
