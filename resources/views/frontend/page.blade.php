@@ -25,20 +25,20 @@
     <script type="application/ld+json">@json($pageSchema, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT)</script>
 @endsection
 @section('content')
-    <section class="page-banner">
-        <div class="wrap">
-            <div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><b>{{ $page->name }}</b></div>
-            <p class="eyebrow">SITE INFORMATION</p>
+    <section class="bg-primary text-white py-5">
+        <div class="container">
+            <div class="small mb-3"><a href="{{ route('index') }}">Home</a><span>/</span><b>{{ $page->name }}</b></div>
+            <p class="small text-uppercase fw-bold text-primary mb-2">SITE INFORMATION</p>
             <h1>{{ $page->name }}</h1>
         </div>
     </section>
-    <section class="section-block section-light">
-        <div class="wrap">
-            <article class="market-card">
+    <section class="py-5 bg-light">
+        <div class="container">
+            <article class="card p-4">
                 @if (session('notice'))
-                    <div class="empty-state"><p>{{ session('notice') }}</p></div>
+                    <div class="alert alert-light"><p>{{ session('notice') }}</p></div>
                 @endif
-                <div class="homepage-managed-content">{!! $page->content !!}</div>
+                <div class="mb-3">{!! $page->content !!}</div>
             </article>
         </div>
     </section>
