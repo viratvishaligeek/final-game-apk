@@ -162,7 +162,7 @@
                                 </i>{{ $game['today'] === '--' ? 'PENDING' : 'PUBLISHED' }}</span>
                         </div>
                         <h3>{{ $game['name'] }}</h3>
-                        <div class="display-5 fw-bold text-center{{ $game['today'] === '--' ? 'display-5 fw-bold text-center--pending' : '' }}">
+                        <div class="display-5 fw-bold text-center {{ $game['today'] === '--' ? 'text-secondary' : 'text-primary' }}">
                             {{ $game['today'] }}
                         </div>
                         <div class="d-flex flex-wrap justify-content-between gap-2 small text-secondary">
