@@ -2,5 +2,5 @@
     <div class="d-flex justify-content-between gap-2"><span class="badge text-bg-primary">MARKET {{ str_pad((string)($game['serial'] ?? (($index ?? 0)+1)),2,'0',STR_PAD_LEFT) }}</span><span class="small text-secondary">◷ {{ $game['time'] }}</span></div>
     <h3>{{ $game['name'] }}</h3>
     <div class="d-flex justify-content-between align-items-center gap-3 my-3"><div><small>YESTERDAY</small><strong>{{ $game['yesterday'] }}</strong></div><span class="text-secondary">→</span><div class="text-primary"><small>TODAY</small><strong>{{ $game['today'] }}</strong></div></div>
-    <div class="d-flex flex-wrap justify-content-between gap-2 mt-3"><span class="badge rounded-pill text-bg-secondary{{ $game['today'] === '--' ? 'text-bg-warning' : 'text-bg-success' }}"><i></i>{{ $game['today'] === '--' ? 'Awaiting publication' : 'Published record' }}</span><a href="{{ route('frontend.market',['slug'=>$game['slug']]) }}">Open chart <span>↗</span></a></div>
+    <div class="d-flex flex-wrap justify-content-between gap-2 mt-3"><span class="badge rounded-pill {{ $game['today'] === '--' ? 'text-bg-warning' : 'text-bg-success' }}"><i></i>{{ $game['today'] === '--' ? 'Awaiting publication' : 'Published record' }}</span><a href="{{ route('frontend.market',['slug'=>$game['slug']]) }}">Open chart <span>↗</span></a></div>
 </article>
