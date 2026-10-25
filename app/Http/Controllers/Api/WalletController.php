@@ -914,7 +914,7 @@ class WalletController extends Controller
                     'ifsc' => strtoupper($validated['ifsc'] ?? '') ?: null,
                     'upi_id' => $validated['upi_id'] ?? null,
                     'qr_code_image' => $qrPath,
-                    'remark' => 'Wallet withdrawal request',
+                    'remark' => 'Withdrawal Complete',
                 ]);
             });
         } catch (Throwable $exception) {

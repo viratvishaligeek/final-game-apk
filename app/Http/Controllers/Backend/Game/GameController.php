@@ -27,7 +27,7 @@ class GameController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'        => 'required|string|max:255|unique:games,name',
+            'name'        => 'required|string|max:255',
             'result_time' => ['required', 'date_format:H:i,H:i:s'],
             'play_start'  => ['required', 'date_format:H:i,H:i:s'],
             'play_end'    => ['required', 'date_format:H:i,H:i:s'],
@@ -71,7 +71,7 @@ class GameController extends Controller
         $game = Game::findOrFail($id);
 
         $request->validate([
-            'name'        => 'required|string|max:255|unique:games,name,' . $game->id,
+            'name'        => 'required|string|max:255',
             'result_time' => ['required', 'date_format:H:i,H:i:s'],
             'play_start'  => ['required', 'date_format:H:i,H:i:s'],
             'play_end'    => ['required', 'date_format:H:i,H:i:s'],
