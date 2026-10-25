@@ -9,15 +9,19 @@
                     <span class="brand-emblem">POK</span>
                 @endif
                 <span
-                    class="brand-word">{{ setting('title', 'Play Online Khaiwal') }}<small>{{ setting('site_tagline', 'SATTA KING RESULTS • MONTHLY CHARTS • HISTORICAL RECORDS') }}</small></span>
+                    class="brand-word">{{ setting('title', 'Play Online Khaiwal') }}<small>{{ setting('site_tagline', 'SATTA KING RESULTS • MONTHLY CHARTS • HISTORICAL RECORDS') }}</small>
+                </span>
             </a>
             <p>{{ setting('footer_description', setting('site_description', 'A structured reference for published market results, schedules, and historical records.')) }}
             </p>
             @if (filled(setting('email')))
-                <p><a href="mailto:{{ setting('email') }}">{{ setting('email') }}</a></p>
+                <p>
+                    <a href="mailto:{{ setting('email') }}">{{ setting('email') }}</a>
+                </p>
             @endif
             @if (filled(setting('contact_phone')))
-                <p><a
+                <p>
+                    <a
                         href="tel:{{ preg_replace('/[^0-9+]/', '', setting('contact_phone')) }}">{{ setting('contact_phone') }}</a>
                 </p>
             @endif
@@ -36,31 +40,37 @@
             </div>
         </div>
         <div>
-            <h3>Explore</h3><a href="{{ route('index') }}#today-results">Today's results</a><a
-                href="{{ route('index') }}#markets">Market board</a><a href="{{ route('index') }}#records">Old
-                records</a><a href="{{ route('index') }}#market-charts">Monthly charts</a>
+            <h3>Explore</h3>
+            <a href="{{ route('index') }}#today-results">Today's results</a>
+            <a href="{{ route('index') }}#markets">Market board</a>
+            <a href="{{ route('index') }}#records">Old Records</a>
+            <a href="{{ route('index') }}#market-charts">Monthly charts</a>
+            <a href="{{ route('information', ['page' => 'terms-and-conditions']) }}">Terms &
+                conditions</a>
+            <a href="{{ route('information', ['page' => 'disclaimer']) }}">Disclaimer</a>
         </div>
         <div>
-            <h3>Information</h3><a href="{{ route('information', ['page' => 'about']) }}">About</a><a
-                href="{{ route('information', ['page' => 'faq']) }}">FAQ</a><a
-                href="{{ route('information', ['page' => 'contact']) }}">Contact</a><a
-                href="{{ route('information', ['page' => 'privacy-policy']) }}">Privacy policy</a>
+            <h3>Information</h3>
+            <a href="{{ route('information', ['page' => 'about']) }}">About</a>
+            <a href="{{ route('information', ['page' => 'faq']) }}">FAQ</a>
+            <a href="{{ route('information', ['page' => 'contact']) }}">Contact</a>
+            <a href="{{ route('information', ['page' => 'privacy-policy']) }}">Privacy policy</a>
             @foreach ($navPages ?? collect() as $navPage)
                 <a href="{{ route('information', ['page' => $navPage->slug]) }}">{{ $navPage->name }}</a>
             @endforeach
         </div>
         <div>
-            <h3>Policies</h3><a href="{{ route('information', ['page' => 'terms-and-conditions']) }}">Terms &
-                conditions</a><a href="{{ route('information', ['page' => 'disclaimer']) }}">Disclaimer</a>
-            <p class="footer-note">{!! setting(
+
+            {{-- <p class="footer-note">{!! setting(
                 'disclaimer_content',
                 'Historical records are for information only and do not predict or guarantee future outcomes.',
-            ) !!}</p>
+                ) !!}</p> --}}
         </div>
     </div>
     <div class="footer-bottom">
         <div class="wrap">
-            <span>{{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Play Online Khaiwal')) }}</span><span>Use
+            <span>{{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Play Online Khaiwal')) }}</span>
+            <span>Use
                 responsibly • Follow applicable local laws</span>
         </div>
     </div>
