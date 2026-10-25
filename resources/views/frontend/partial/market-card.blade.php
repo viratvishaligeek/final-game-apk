@@ -1,4 +1,4 @@
-<article class="card p-4{{ ($index ?? 0) % 6 }}">
+<article class="card p-4">
     <div class="d-flex justify-content-between gap-2"><span class="badge text-bg-primary">MARKET {{ str_pad((string)($game['serial'] ?? (($index ?? 0)+1)),2,'0',STR_PAD_LEFT) }}</span><span class="small text-secondary">◷ {{ $game['time'] }}</span></div>
     <h3>{{ $game['name'] }}</h3>
     <div class="d-flex justify-content-between align-items-center gap-3 my-3"><div><small>YESTERDAY</small><strong>{{ $game['yesterday'] }}</strong></div><span class="text-secondary">→</span><div class="text-primary"><small>TODAY</small><strong>{{ $game['today'] }}</strong></div></div>
