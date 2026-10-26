@@ -131,8 +131,7 @@
         <div class="modal-content border-0 rounded-4 overflow-hidden shadow-lg">
             <div class="modal-header bg-success text-white border-0 p-4">
                 <div class="d-flex align-items-center gap-3">
-                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-success"
-                        class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-success p-3 flex-shrink-0">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-success p-3 flex-shrink-0">
                         <i class="bi bi-whatsapp fs-3" aria-hidden="true"></i>
                     </span>
                     <div>
