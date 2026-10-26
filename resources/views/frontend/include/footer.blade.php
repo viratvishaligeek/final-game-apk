@@ -150,27 +150,13 @@
                         <span>Disawar</span><strong>05:15 AM</strong>
                     </div>
                 </div>
-                <div class="row g-3">
-                    <div class="col-6">
-                        <div class="rounded-3 bg-light p-3 h-100">
-                            <span class="d-block small text-secondary mb-1">Jodi</span>
-                            <strong>10 Ka 950</strong>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="rounded-3 bg-light p-3 h-100">
-                            <span class="d-block small text-secondary mb-1">Haruf</span>
-                            <strong>100 Ka 950</strong>
-                        </div>
-                    </div>
-                </div>
             </div>
             <div class="modal-footer border-0 p-4 pt-0">
-                <a class="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center gap-2"
-                    href="https://wa.me/919589836730?text=Namaste%21%20Main%20sattakhaiwal%20se%20online%20game%20ke%20baare%20mein%20jaankari%20chahta%20hoon."
+                <a class="btn btn-danger btn-md w-100 d-flex align-items-center justify-content-center gap-2"
+                    href="{{ setting('social_whatsapp') }}"
                     target="_blank" rel="noopener noreferrer">
                     <i class="bi bi-whatsapp" aria-hidden="true"></i>
-                    Online Khelne Ke Liye Contact Karein
+                    Game ki jaankaari k liye contact kare
                 </a>
             </div>
         </div>

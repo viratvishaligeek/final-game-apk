@@ -22,7 +22,7 @@
     </div>
     <section class="bg-light" id="home">
         <div class="container text-center ">
-            <div class="row align-items-center g-5">
+            <div class="row align-items-center">
                 <div class="col-lg-7">
                     <h1 class="display-4 fw-bold text-danger mb-4">
                         {{ setting('homepage_heading_line1', 'Every market.') }}
@@ -36,7 +36,7 @@
                         </span>
                     </h1>
 
-                    <p class="lead  mb-4">
+                    <p class="mb-4">
                         {{ setting('homepage_intro', 'Find published results, compare recent records, and move straight into the chart you need. Clear status labels separate available results from pending records.') }}
                     </p>
                     <style>
@@ -274,7 +274,7 @@
                                     @foreach ($table['games'] as $game)
                                         <th scope="col">
                                             <a
-                                                href="{{ route('frontend.market', ['slug' => $game->slug]) }}">{{ Str::limit($game->name, 7, '..') }}</a>
+                                                href="{{ route('frontend.market', ['slug' => $game->slug]) }}">{{ Str::limit($game->name, 10, '..') }}</a>
                                         </th>
                                     @endforeach
                                 </tr>

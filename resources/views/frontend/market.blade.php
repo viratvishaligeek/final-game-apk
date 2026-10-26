@@ -25,7 +25,7 @@
             <div class="breadcrumbs"><a href="{{ route('index') }}">Home</a><span>/</span><a
                     href="{{ route('index') }}#markets">Markets</a><span>/</span><b>{{ $game->name }}</b></div>
             <p class="eyebrow">GAME RESULT</p>
-            <h1>{{ $game->name }} <span>{{ $monthLabel }}</span></h1>
+            <h1>{{ $game->name }} <br> <span>{{ $monthLabel }}</span></h1>
             <p>Monthly results are loaded from saved records. Missing values are shown as a dash.</p>
         </div>
     </section>
