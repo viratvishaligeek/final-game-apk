@@ -13,12 +13,29 @@
       nav.classList.remove('is-open');
       document.body.classList.remove('nav-open');
     }));
+    const closeMenu = () => {
+      toggle.setAttribute('aria-expanded', 'false');
+      nav.classList.remove('is-open');
+      document.body.classList.remove('nav-open');
+    };
+
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') {
-        toggle.setAttribute('aria-expanded', 'false');
-        nav.classList.remove('is-open');
-        document.body.classList.remove('nav-open');
-      }
+      if (event.key === 'Escape') closeMenu();
+    });
+
+    // A restored mobile page can retain an open navigation state in the
+    // back-forward cache. Reset only the menu state; never lock document scroll.
+    window.addEventListener('pageshow', closeMenu);
+    window.addEventListener('resize', () => {
+      if (window.matchMedia('(min-width: 781px)').matches) closeMenu();
+    }, { passive: true });
+
+    // Tapping the page outside the mobile navigation should return control
+    // to the document so normal vertical scrolling remains available.
+    document.addEventListener('click', (event) => {
+      if (toggle.getAttribute('aria-expanded') !== 'true') return;
+      if (nav.contains(event.target) || toggle.contains(event.target)) return;
+      closeMenu();
     });
   }
 
