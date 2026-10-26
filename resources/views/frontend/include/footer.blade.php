@@ -132,7 +132,7 @@
             <div class="modal-header bg-success text-white border-0 p-4">
                 <div class="d-flex align-items-center gap-3">
                     <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-success"
-                        style="width:48px;height:48px;flex:0 0 48px">
+                        class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-success p-3 flex-shrink-0">
                         <i class="bi bi-whatsapp fs-3" aria-hidden="true"></i>
                     </span>
                     <div>
