@@ -2282,6 +2282,12 @@ svg {
         opacity: 0;
         visibility: hidden;
         transform: translateY(-8px);
+        max-height: calc(100vh - 70px);
+        max-height: calc(100dvh - 70px);
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
         transition: opacity var(--medium), transform var(--medium), visibility var(--medium)
     }
 
