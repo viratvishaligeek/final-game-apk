@@ -45,14 +45,7 @@
                                     <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control " id="title" name="title"
-                                    value="{{ old('title', $homePage->title) }}" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="short_desc" class="small mb-1">
-                                    Short Description
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <textarea class="form-control " id="short_desc" name="short_desc" rows="5">{{ old('short_desc', $homePage->short_desc) }}</textarea>
+                                    value="{{ old('title', $homePage->title) }}">
                             </div>
                             <div class="mb-3">
                                 <label for="content" class="small mb-1">
@@ -76,7 +69,7 @@
                                         <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control " id="phone" name="phone"
-                                        value="{{ old('phone', $homePage->phone) }}" required>
+                                        value="{{ old('phone', $homePage->phone) }}">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="whatsapp" class="small mb-1">
@@ -84,7 +77,7 @@
                                         <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control " id="whatsapp" name="whatsapp"
-                                        value="{{ old('whatsapp', $homePage->whatsapp) }}" required>
+                                        value="{{ old('whatsapp', $homePage->whatsapp) }}">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="telegram" class="small mb-1">
@@ -92,7 +85,7 @@
                                         <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" class="form-control " id="telegram" name="telegram"
-                                        value="{{ old('telegram', $homePage->telegram) }}" required>
+                                        value="{{ old('telegram', $homePage->telegram) }}">
                                 </div>
                             </div>
                         </div>
@@ -109,7 +102,7 @@
                                 <label for="location" class="small mb-1">
                                     Location <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-select" id="location" name="location" required>
+                                <select class="form-select" id="location" name="location">
                                     <option value="">Select Location</option>
                                     @foreach ($locations as $slug => $title)
                                         <option value="{{ $slug }}"
@@ -125,7 +118,7 @@
                                     Status
                                     <span class="text-danger">*</span>
                                 </label>
-                                <select class="form-select " id="status" name="status" required>
+                                <select class="form-select " id="status" name="status">
                                     <option value="active"
                                         {{ old('status', $homePage->status) === 'active' ? 'selected' : '' }}>
                                         Active
@@ -142,7 +135,7 @@
                                     <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control " id="background" name="background"
-                                    value="{{ old('background', $homePage->background) }}" required>
+                                    value="{{ old('background', $homePage->background) }}">
                                 <div class="form-text">
                                     Enter a color, CSS value, class name, or background identifier.
                                 </div>
@@ -183,23 +176,6 @@
     <script>
         $(document).ready(function() {
             $('#content').summernote({
-                placeholder: 'Enter page content here...',
-                height: 300,
-                minHeight: 300,
-                dialogsInBody: true,
-                toolbar: [
-                    ['style', ['style']],
-                    ['font', ['bold', 'italic', 'underline', 'clear']],
-                    ['fontname', ['fontname']],
-                    ['color', ['color']],
-                    ['para', ['ul', 'ol', 'paragraph']],
-                    ['table', ['table']],
-                    ['insert', ['link', 'picture', 'hr']],
-                    ['view', ['fullscreen', 'codeview', 'help']]
-                ]
-            });
-
-            $('#short_desc').summernote({
                 placeholder: 'Enter page content here...',
                 height: 300,
                 minHeight: 300,

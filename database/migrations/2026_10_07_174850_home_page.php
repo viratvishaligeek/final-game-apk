@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('home_pages', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->longText('short_desc')->nullable();
             $table->longText('content')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->string('location')->nullable();

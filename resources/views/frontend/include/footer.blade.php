@@ -3,19 +3,16 @@
         'sections' => ($homepageSections ?? collect())->where('location', 'after_footer'),
     ])
 @endif
-<footer class="site-footer bg-dark text-light pt-5">
+<footer class="site-footer bg-dark text-center text-light pt-5">
     <div class="container">
         <div class="row g-4 g-lg-5 pb-4">
-
             <div class="col-lg-5 col-md-6">
                 <a class="d-inline-flex align-items-center gap-3 text-decoration-none text-white mb-3"
                     href="{{ route('index') }}">
-
                     @if (filled(setting('site_logo')) && is_file(public_path('logos/' . basename(setting('site_logo')))))
                         <img src="{{ asset('logos/' . basename(setting('site_logo'))) }}" alt="{{ setting('title') }}"
                             width="55" height="55" class="rounded-3 object-fit-contain" loading="lazy">
                     @endif
-
                     <span class="fs-4 fw-bold">
                         {{ setting('title') }}
                         <small class="d-block text-secondary fs-6 fw-normal">
@@ -23,22 +20,18 @@
                         </small>
                     </span>
                 </a>
-
                 @if (filled(setting('footer_description')))
                     <p class="text-white-50 lh-lg mb-4 footer-description">
                         {{ setting('footer_description') }}
                     </p>
                 @endif
-
                 <div class="d-flex flex-column gap-3">
-
                     @if (filled(setting('email')))
                         <a href="mailto:{{ setting('email') }}" class="footer-contact-link">
                             <span class="footer-icon">✉</span>
                             <span>{{ setting('email') }}</span>
                         </a>
                     @endif
-
                     @if (filled(setting('contact_phone')))
                         <a href="tel:{{ preg_replace('/[^0-9+]/', '', setting('contact_phone')) }}"
                             class="footer-contact-link">
@@ -46,19 +39,15 @@
                             <span>{{ setting('contact_phone') }}</span>
                         </a>
                     @endif
-
                     @if (filled(setting('contact_address')))
                         <div class="footer-contact-link">
                             <span class="footer-icon">⌖</span>
                             <span>{{ setting('contact_address') }}</span>
                         </div>
                     @endif
-
                 </div>
-
                 <div class="mt-4">
                     <h6 class="fw-semibold mb-3">Follow Us</h6>
-
                     <div class="d-flex flex-wrap gap-2">
                         @foreach ([
         'facebook' => 'Facebook',
@@ -73,37 +62,35 @@
                                 <a href="{{ setting('social_' . $socialKey) }}" target="_blank"
                                     rel="noopener noreferrer" class="footer-social-link"
                                     aria-label="{{ $socialLabel }}" title="{{ $socialLabel }}">
-                                    {{ $socialLabel }}
+                                    <i class="bi bi-{{ $socialKey }} fs-4"></i>
+                                    {{-- {{ $socialLabel }} --}}
                                 </a>
                             @endif
                         @endforeach
                     </div>
                 </div>
             </div>
-
-
             <div class="d-flex flex-row flex-wrap gap-2">
                 <a class="btn btn-outline-light btn-sm" href="{{ route('index') }}#today-results">
                     Today's Results
                 </a>
-
                 <a class="btn btn-outline-light btn-sm" href="{{ route('index') }}#markets">
                     Market Board
                 </a>
-
                 <a class="btn btn-outline-light btn-sm" href="{{ route('index') }}#records">
                     Old Records
                 </a>
-
                 <a class="btn btn-outline-light btn-sm" href="{{ route('index') }}#market-charts">
                     Monthly Charts
                 </a>
-
                 @forelse ($navPages ?? collect() as $navPage)
                     <a class="btn btn-outline-light btn-sm" href="{{ route('page', ['page' => $navPage->slug]) }}">
                         {{ $navPage->name }}
                     </a>
                 @endforeach
+                <a class="btn btn-outline-light btn-sm" target="_blank" href="{{ route('sitemap') }}">
+                    Sitemap
+                </a>
             </div>
         </div>
     </div>
@@ -131,7 +118,8 @@
         <div class="modal-content border-0 rounded-4 overflow-hidden shadow-lg">
             <div class="modal-header bg-success text-white border-0 p-4">
                 <div class="d-flex align-items-center gap-3">
-                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-success p-3 flex-shrink-0">
+                    <span
+                        class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white text-success p-3 flex-shrink-0">
                         <i class="bi bi-whatsapp fs-3" aria-hidden="true"></i>
                     </span>
                     <div>
@@ -145,12 +133,22 @@
             <div class="modal-body p-4">
                 <p class="small text-uppercase fw-bold text-secondary mb-3">Game schedule</p>
                 <div class="list-group list-group-flush mb-4">
-                    <div class="list-group-item d-flex justify-content-between gap-3 px-0"><span>Delhi Bazaar</span><strong>03:15 PM</strong></div>
-                    <div class="list-group-item d-flex justify-content-between gap-3 px-0"><span>Shree Ganesh</span><strong>04:45 PM</strong></div>
-                    <div class="list-group-item d-flex justify-content-between gap-3 px-0"><span>Faridabad</span><strong>06:15 PM</strong></div>
-                    <div class="list-group-item d-flex justify-content-between gap-3 px-0"><span>Ghaziabad</span><strong>10:00 PM</strong></div>
-                    <div class="list-group-item d-flex justify-content-between gap-3 px-0"><span>Gali</span><strong>11:50 PM</strong></div>
-                    <div class="list-group-item d-flex justify-content-between gap-3 px-0"><span>Disawar</span><strong>05:15 AM</strong></div>
+                    <div class="list-group-item d-flex justify-content-between gap-3 px-0"><span>Delhi
+                            Bazaar</span><strong>03:15 PM</strong></div>
+                    <div class="list-group-item d-flex justify-content-between gap-3 px-0"><span>Shree
+                            Ganesh</span><strong>04:45 PM</strong></div>
+                    <div class="list-group-item d-flex justify-content-between gap-3 px-0">
+                        <span>Faridabad</span><strong>06:15 PM</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between gap-3 px-0">
+                        <span>Ghaziabad</span><strong>10:00 PM</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between gap-3 px-0">
+                        <span>Gali</span><strong>11:50 PM</strong>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between gap-3 px-0">
+                        <span>Disawar</span><strong>05:15 AM</strong>
+                    </div>
                 </div>
                 <div class="row g-3">
                     <div class="col-6">
@@ -202,7 +200,23 @@
         padding: 0;
     }
 
-    .wa-float:focus-visible {\n        outline: 3px solid #128c4a;\n        outline-offset: 4px;\n    }\n\n    @media (max-width: 575.98px) {\n        .wa-float {\n            left: 14px;\n            bottom: calc(14px + env(safe-area-inset-bottom, 0px));\n            width: 54px;\n            height: 54px;\n        }\n    }\n\n    /* ==============================
+    .wa-float:focus-visible {
+        outline: 3px solid #128c4a;
+        outline-offset: 4px;
+
+    }
+
+    @media (max-width: 575.98px) {
+        .wa-float {
+            left: 14px;
+            bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+            width: 54px;
+            height: 54px;
+
+        }
+    }
+
+    /* ==============================
    Premium Bootstrap Footer
 ================================ */
 

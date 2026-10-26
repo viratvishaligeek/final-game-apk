@@ -1,10 +1,11 @@
 <?php
 
-use App\Models\Game;
 use App\Models\CommunityPost;
+use App\Models\Game;
 use App\Models\Page;
 use App\Models\Result;
 use App\Services\AppSettingsService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -56,7 +57,6 @@ Route::get('/optimize-clear', function () {
 //         'message' => 'Storage link created successfully.',
 //     ]);
 // });
-
 
 // Route::get('/fresh-db', function () {
 //     Artisan::call('migrate:fresh');
@@ -116,7 +116,7 @@ $renderSitemapUrlSet = function (array $entries) {
     foreach ($entries as $loc => $lastmod) {
         $xml .= '<url><loc>' . htmlspecialchars($loc, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc>';
         if ($lastmod) {
-            $xml .= '<lastmod>' . htmlspecialchars((is_string($lastmod) ? \Carbon\Carbon::parse($lastmod) : $lastmod)->copy()->utc()->toAtomString(), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</lastmod>';
+            $xml .= '<lastmod>' . htmlspecialchars((is_string($lastmod) ? Carbon::parse($lastmod) : $lastmod)->copy()->utc()->toAtomString(), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</lastmod>';
         }
         $xml .= '</url>';
     }

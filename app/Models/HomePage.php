@@ -14,7 +14,6 @@ class HomePage extends Model
 
     protected $fillable = [
         'title',
-        'short_desc',
         'content',
         'status',
         'location',

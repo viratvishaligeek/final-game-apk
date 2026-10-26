@@ -3,9 +3,6 @@
         id="homepage-section-{{ $section->id }}">
         <div class="wrap">
             <article class="market-card" style="background: {{ $section->background }}">
-                @if (filled($section->short_desc))
-                    <div class="homepage-managed-content">{!! $section->short_desc !!}</div>
-                @endif
                 @if (filled($section->content))
                     <div class="homepage-managed-content">{!! $section->content !!}</div>
                 @endif
@@ -14,7 +11,7 @@
                         @if ($section->phone)
                             <a class="button btn-sm m-1 text-white" style="background: brown"
                                 href="tel:{{ preg_replace('/[^0-9+]/', '', $section->phone) }}"><i
-                                    class="bi bi-phone fs-3"></i> Call</a>
+                                    class="bi bi-telephone fs-3"></i> Call</a>
                         @endif
                         @if ($section->whatsapp)
                             @php($whatsappDigits = preg_replace('/\D/', '', $section->whatsapp))
@@ -34,8 +31,8 @@
                                     rel="noopener noreferrer">
                                     <i class="bi bi-telegram fs-3"></i> Telegram</a>
                             @else
-                                <span><i class="bi bi-telegram fs-3"></i>
-                                    {{ $section->telegram }}</span>
+                                {{-- <span><i class="bi bi-telegram fs-3"></i>
+                                    {{ $section->telegram }}</span> --}}
                             @endif
                         @endif
                     </div>

@@ -104,7 +104,6 @@
                         'homepage_heading_line3' => ['Homepage Heading — Line 3', 'text'],
                         'homepage_intro' => ['Homepage Introduction', 'textarea'],
                         'announcement_text' => ['Announcement Text', 'textarea'],
-                        'add_money_notice' => ['Add Money Instruction (Hindi)', 'textarea'],
                         'meta_title' => ['Default SEO Title', 'text'],
                         'meta_description' => ['Default Meta Description', 'textarea'],
                         'meta_keywords' => ['Default SEO Keywords', 'textarea'],
@@ -172,35 +171,6 @@
                 </div>
                 <div class="card-footer text-end">
                     <button class="btn btn-primary" type="submit"><i class="me-1" data-feather="save"></i> Save Frontend Settings</button>
-                </div>
-            </div>
-        </form>
-
-        <form action="{{ route('admin.update-password') }}" method="POST">
-            @csrf
-            <div class="card mb-4">
-                <div class="card-header">Change Admin Password</div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label class="small mb-1" for="current_password">Current Password <span class="text-danger">*</span></label>
-                        <input class="form-control" id="current_password" name="current_password" type="password"
-                            autocomplete="current-password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small mb-1" for="password">New Password <span class="text-danger">*</span></label>
-                        <input class="form-control" id="password" name="password" type="password"
-                            autocomplete="new-password" minlength="8" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="small mb-1" for="password_confirmation">Confirm New Password <span class="text-danger">*</span></label>
-                        <input class="form-control" id="password_confirmation" name="password_confirmation" type="password"
-                            autocomplete="new-password" minlength="8" required>
-                    </div>
-                </div>
-                <div class="card-footer text-end">
-                    <button class="btn btn-primary" type="submit">
-                        <i class="me-1" data-feather="key"></i> Update Password
-                    </button>
                 </div>
             </div>
         </form>

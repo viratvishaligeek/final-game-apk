@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Controllers\Backend\AdminPushSubscriptionController;
 use App\Http\Controllers\Backend\Auth\AuthController;
 use App\Http\Controllers\Backend\BannerController;
-use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\CommunityModerationController;
+use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\FaqController;
 use App\Http\Controllers\Backend\Game\BiddingDeskController;
 use App\Http\Controllers\Backend\Game\GameController;
@@ -15,8 +16,6 @@ use App\Http\Controllers\Backend\PagesController;
 use App\Http\Controllers\Backend\PushNotificationController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\SupportChatController;
-use App\Http\Controllers\Backend\AdminPushSubscriptionController;
-use App\Http\Controllers\Backend\NotificationSoundController;
 use App\Http\Controllers\Backend\User\MemberController;
 use App\Http\Controllers\Backend\User\RoleController;
 use App\Http\Controllers\Backend\User\UserController;

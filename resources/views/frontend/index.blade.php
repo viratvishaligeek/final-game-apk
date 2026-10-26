@@ -6,13 +6,8 @@
     Monthly Charts')
 @section('robots_content', request()->hasAny(['year', 'month']) || (int) request()->query('page', 1) > 1 ?
     'noindex,follow' : setting('robots_default', 'index,follow'))
-@section('meta_description',
-    filled(setting('meta_description'))
-    ? setting('meta_description')
-    : (filled(setting('site_description'))
-    ? setting('site_description')
-    : 'Browse Satta King results, Satta Matka market
-    records, and game-wise monthly charts on Play Online Khaiwal.'))
+@section('meta_description', filled(setting('meta_description')) ? setting('meta_description') :
+    (filled(setting('site_description')) ? setting('site_description') : 'Browse Satta King results'))
 @section('content')
     <div class="freshness-bar">
         <div class="wrap freshness-inner">
@@ -20,35 +15,64 @@
                 <b>DATE DESK</b>
                 {{ now()->timezone(config('app.timezone'))->format('D, d M Y') }}</span>
             <span class="freshness-note">
-                <i>
-
-                </i>
-                {{ setting('announcement_text', "Records shown are read from the site's published result database") }}</span>
+                <i></i>
+                {{ setting('announcement_text') }}</span>
             <a href="{{ route('page', ['page' => 'disclaimer']) }}">legal notice ↗</a>
         </div>
     </div>
+    <section class="bg-light" id="home">
+        <div class="container text-center ">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-7">
+                    <h1 class="display-4 fw-bold text-danger mb-4">
+                        {{ setting('homepage_heading_line1', 'Every market.') }}
+                        <br>
+                        <span class="text-primary">
+                            {{ setting('homepage_heading_line2', 'Every record.') }}
+                        </span>
+                        <br>
+                        <span class="text-secondary">
+                            {{ setting('homepage_heading_line3', 'One clear board.') }}
+                        </span>
+                    </h1>
 
-    <section class="hero-shell" id="home">
+                    <p class="lead  mb-4">
+                        {{ setting('homepage_intro', 'Find published results, compare recent records, and move straight into the chart you need. Clear status labels separate available results from pending records.') }}
+                    </p>
+                    <style>
+                        @keyframes blink {
+                                0%,
+                            100% {
+                                opacity: 1;
+                            }
+                            50% {
+                                opacity: 0;
+                            }
+                        }
+                        .animate-blink {
+                            animation: blink 1300ms infinite;
+                        }
+                    </style>
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-3" style="place-content: center">
+                        <a href="{{ setting('app_download_url') }}" target="_blank" rel="noopener noreferrer"
+                            class="btn btn-lg px-5" style="background: brown">
+                            <span class="animate-blink text-light">
+                                <i class="bi bi-arrow-down"></i>
+                                Download App
+                            </span>
+                        </a>
+                        <span class="text-secondary small">
+                            Explore results and market history
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="hero-shell py-1" id="home">
         <div class="hero-grid wrap">
             <div class="hero-copy">
-                <p class="hero-kicker">
-                    <span class="kicker-line">
-                    </span> THE RESULT & RECORD CENTER
-                </p>
-                <h1>{{ setting('homepage_heading_line1', 'Every market.') }}<br>
-                    <span>{{ setting('homepage_heading_line2', 'Every record.') }}</span>
-                    <br>
-                    <em>{{ setting('homepage_heading_line3', 'One clear board.') }}</em>
-                </h1>
-                <p class="hero-intro">
-                    {{ setting('homepage_intro', 'Find published results, compare recent records, and move straight into the chart you need. Clear status labels separate available results from pending records.') }}
-                </p>
-                <div class="hero-actions">
-                    <a class="button button-gold" href="{{ setting('app_download_url') }}" target="_blank">Download
-                        App
-                        <span>↓</span>
-                    </a>
-                </div>
                 <div class="hero-facts">
                     <div>
                         <strong>{{ count($frontendResults) }}</strong>
@@ -66,22 +90,24 @@
                 </div>
             </div>
             <div class="hero-spotlight">
-                <div class="spotlight-orbit orbit-a">
-
-                </div>
-                <div class="spotlight-orbit orbit-b">
-
-                </div>
+                <div class="spotlight-orbit orbit-a"></div>
+                <div class="spotlight-orbit orbit-b"></div>
                 @php($featured = $featuredGame)
                 @if ($featured)
                     <div class="spotlight-market">{{ $featured['name'] }}</div>
                     <div class="spotlight-date">🗓️ {{ now()->timezone(config('app.timezone'))->format('d F Y') }} |
                         <span>🕓</span> {{ $featured['time'] }}
                     </div>
-                    <div class="spotlight-caption">
-                        {{ $featured['today'] === '--' ? 'NO RESULT PUBLISHED FOR CURRENT BUSINESS DATE' : '🔴 LIVE RESULT' }}
-                    </div>
-                    <div class="spotlight-number">{{ $featured['today'] }}</div>
+                    @if ($featured['today'] === '--')
+                        <div class="spotlight-caption animate-blink">
+                            <h3>WAIT</h3>
+                        </div>
+                    @else
+                        <div class="spotlight-caption animate-blink">
+                            🔴 LIVE RESULT
+                        </div>
+                        <div class="spotlight-number">{{ $featured['today'] }}</div>
+                    @endif
                     <div class="spotlight-bottom">
                         <span>🕓 कल आया था <b>{{ $featured['yesterday'] }}</b></span>
                         <a href="{{ route('frontend.market', ['slug' => $featured['slug']]) }}">View market history ↗</a>
@@ -92,12 +118,8 @@
                 @endif
             </div>
         </div>
-        <div class="hero-decor hero-decor-one">
-
-        </div>
-        <div class="hero-decor hero-decor-two">
-
-        </div>
+        <div class="hero-decor hero-decor-one"></div>
+        <div class="hero-decor hero-decor-two"></div>
     </section>
 
     @include('frontend.partial.homepage-sections', [
@@ -105,8 +127,8 @@
     ])
 
     <div class="quick-paths wrap">
-        <a href="#today-results">
-            <span class="path-icon path-red">01</span>
+        <a href="#today-results" class="btn btn-outline-success">
+            <i class="bi bi-trophy fs-3"></i>
             <span>
                 <b>Today's
                     Result</b>
@@ -114,8 +136,8 @@
             </span>
             <strong>↗</strong>
         </a>
-        <a href="#markets">
-            <span class="path-icon path-cyan">02</span>
+        <a href="#markets" class="btn btn-outline-primary">
+            <i class="bi bi-file-diff fs-3"></i>
             <span>
                 <b>Compare records</b>
                 <small>Yesterday vs
@@ -123,8 +145,8 @@
             </span>
             <strong>↗</strong>
         </a>
-        <a href="#records">
-            <span class="path-icon path-gold">03</span>
+        <a href="#records" class="btn btn-outline-danger">
+            <i class="bi bi-archive-fill fs-3"></i>
             <span>
                 <b>Old Result</b>
                 <small>Years and
@@ -132,8 +154,8 @@
             </span>
             <strong>↗</strong>
         </a>
-        <a href="#faq">
-            <span class="path-icon path-green">04</span>
+        <a href="#faq" class="btn btn-outline-warning">
+            <i class="bi bi-question-circle fs-3"></i>
             <span>
                 <b>FAQ's</b>
                 <small>Guide and
@@ -155,13 +177,17 @@
                         <h3>{{ $game['name'] }}</h3>
                         <span>( {{ $game['time'] }} )</span>
                         <hr class="m-1">
-                        <span>
+                        <span class="text-success ">
                             आज का रिजल्ट
+                            <span class="animate-blink small">🔴
+                            </span>
                         </span>
-                        <div class="result-big {{ $game['today'] === '--' ? 'result-big--pending' : '' }}">
+                        <div
+                            class="result-big border border-warning rounded {{ $game['today'] === '--' ? 'result-big--pending' : '' }}">
                             {{ $game['today'] }}
                         </div>
-                        <a href="{{ route('frontend.market', ['slug' => $game['slug']]) }}">Full result history
+                        <a class="text-success" href="{{ route('frontend.market', ['slug' => $game['slug']]) }}">Full
+                            result history
                             <b>↗</b>
                         </a>
                 </article>@empty<div class="empty-state">
@@ -212,10 +238,9 @@
         'sections' => $homepageSections->where('location', 'third_place'),
     ])
 
-    <section class="info-ribbon py-2" style="border: 2px solid goldenrod">
+    <section class="info-ribbon py-3" style="border: 2px solid goldenrod">
         <div class="wrap ribbon-inner">
-            <div>
-                <p class="eyebrow">MARKET DIRECTORY</p>
+            <div class="text-center">
                 <h2>Today's & Yesterday's Satta Results<br>
                 </h2>
                 <p>Explore today's and yesterday's market-wise Satta results on Play Online Khaiwal. Check published
@@ -249,7 +274,7 @@
                                     @foreach ($table['games'] as $game)
                                         <th scope="col">
                                             <a
-                                                href="{{ route('frontend.market', ['slug' => $game->slug]) }}">{{ $game->name }}</a>
+                                                href="{{ route('frontend.market', ['slug' => $game->slug]) }}">{{ Str::limit($game->name, 7, '..') }}</a>
                                         </th>
                                     @endforeach
                                 </tr>
@@ -327,9 +352,8 @@
     </section>
 
     <section class="disclaimer-section" id="disclaimer">
-        <div class="wrap disclaimer-inner">
-            <div class="disclaimer-icon">!</div>
-            <div>
+        <div class="wrap disclaimer-inner  bg-light">
+            <div class="text-dark">
                 <h2>Disclaimer & Records are information — <span>not promises.</span>
                 </h2>
                 <p>{{ Str::limit(setting('disclaimer_content'), 100, '...') }}
@@ -340,22 +364,7 @@
                 ↗</a>
         </div>
     </section>
-
-    <div class="jump-bar">
-        <div class="wrap">
-            <span>QUICK JUMP</span>
-            <a href="#today-results">Today's results</a>
-            <a href="#markets">Markets</a>
-            <a href="#today-results">Comparison</a>
-            <a href="#records">Archives</a>
-            <a href="#market-charts">Charts</a>
-            <a href="#faq">FAQs</a>
-            <a href="#disclaimer">Disclaimer</a>
-        </div>
-    </div>
 @endsection
-
-
 @section('structured_data')
     <script
     type="application/ld+json">@json($homeSchema, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT)</script>

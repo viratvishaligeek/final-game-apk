@@ -32,7 +32,7 @@
         <div class="ticker-track">
             @if (filled(setting('web_marquee')))
                 @for ($tickerCopy = 0; $tickerCopy < 2; $tickerCopy++)
-                    <span>{{ setting('web_marquee') }}</span><i>✦</i>
+                    <span>{{ setting('web_marquee') }}</span>
                 @endfor
             @else
                 <span>Today's results</span><i>✦</i><span>Previous results</span><i>✦</i><span>Market

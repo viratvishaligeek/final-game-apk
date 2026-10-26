@@ -8,10 +8,15 @@
             <p class="mb-0 text-danger fs-4">{ कल }</p>
             <strong>{{ $game['yesterday'] }}</strong>
         </div>
-        <span class="badge bg-success">LIVE</span>
+        <span class="animate-blink fs-6">🔴</span>
         <div class="today-value">
-            <p class="mb-0 text-success fs-4">{ आज }</p>
-            <strong>{{ $game['today'] }}</strong>
+            <p class="mb-0 text-success fs-4">{ आज  }</p>
+            <div class="d-flex" style="align-items: center;justify-content: space-between;">
+                <strong class="me-1 ">{{ $game['today'] }}</strong>
+                @if ($game['today'] !== '--')
+                <span class="ms-1 badge bg-success badge-sm">LIVE</span>
+                @endif
+            </div>
         </div>
     </div>
     <div class="market-card-foot">

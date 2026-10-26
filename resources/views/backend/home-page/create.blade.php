@@ -33,11 +33,6 @@
                                     value="{{ old('title') }}" placeholder="Enter section title" required>
                             </div>
                             <div class="mb-3">
-                                <label for="short_desc" class="small mb-1"> Short Description <span
-                                        class="text-danger">*</span> </label>
-                                <textarea class="form-control " id="short_desc" name="short_desc" rows="5" placeholder="Enter short description">{{ old('short_desc') }}</textarea>
-                            </div>
-                            <div class="mb-3">
                                 <label for="content" class="small mb-1"> Content <span class="text-danger">*</span>
                                 </label>
                                 <textarea id="content" name="content" class="form-control ">{{ old('content') }}</textarea>
@@ -137,23 +132,6 @@
     <script>
         $(document).ready(function() {
             $('#content').summernote({
-                placeholder: 'Enter page content here...',
-                height: 300,
-                minHeight: 300,
-                dialogsInBody: true,
-                toolbar: [
-                    ['style', ['style']],
-                    ['font', ['bold', 'italic', 'underline', 'clear']],
-                    ['fontname', ['fontname']],
-                    ['color', ['color']],
-                    ['para', ['ul', 'ol', 'paragraph']],
-                    ['table', ['table']],
-                    ['insert', ['link', 'picture', 'hr']],
-                    ['view', ['fullscreen', 'codeview', 'help']]
-                ]
-            });
-
-            $('#short_desc').summernote({
                 placeholder: 'Enter page content here...',
                 height: 300,
                 minHeight: 300,
