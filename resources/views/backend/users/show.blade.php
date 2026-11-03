@@ -442,6 +442,30 @@
                                 </div>
                             </div>
                         </div>
+                        {{-- BID TYPE BREAKDOWN --}}
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="small text-muted mb-1">Jodi Bets</div>
+                                    <div class="fs-4 fw-bold">{{ number_format((int) $bidTypeStats->jodi_count) }}</div>
+                                    <div class="small text-muted">Invested ₹{{ number_format((float) $bidTypeStats->jodi_amount, 2) }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="small text-muted mb-1">Haruf Bets</div>
+                                    <div class="fs-4 fw-bold">{{ number_format((int) $bidTypeStats->haruf_count) }}</div>
+                                    <div class="small text-muted">Invested ₹{{ number_format((float) $bidTypeStats->haruf_amount, 2) }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="small text-muted mb-1">Crossing Bets</div>
+                                    <div class="fs-4 fw-bold">{{ number_format((int) $bidTypeStats->crossing_count) }}</div>
+                                    <div class="small text-muted">Invested ₹{{ number_format((float) $bidTypeStats->crossing_amount, 2) }}</div>
+                                </div>
+                            </div>
+                        </div>
                         {{-- BID TABLE HEADER --}}
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
