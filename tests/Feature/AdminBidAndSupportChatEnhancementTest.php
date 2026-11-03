@@ -18,6 +18,8 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Broadcast;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -324,6 +326,34 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         ]);
         $paymentChannels = (new AdminPaymentFailedPaymentAlert($alert->id))->broadcastOn();
         $this->assertSame('private-admin.payment-alerts.' . $alert->site_key, $paymentChannels[0]->name);
+    }
+
+    public function test_admin_private_channel_authorization_rejects_a_different_site(): void
+    {
+        config([
+            'sites.current_key' => 'galidisawar',
+            'broadcasting.default' => 'pusher',
+            'broadcasting.connections.pusher.app_id' => 'test-app',
+            'broadcasting.connections.pusher.key' => 'test-key',
+            'broadcasting.connections.pusher.secret' => 'test-secret',
+            'broadcasting.connections.pusher.options.cluster' => 'ap2',
+        ]);
+
+        $admin = Admin::query()->create([
+            'name' => 'Site Scoped Admin',
+            'email' => 'site-scoped-admin@example.test',
+            'password' => 'test-password',
+            'status' => 'active',
+        ]);
+        Auth::guard('admin')->setUser($admin);
+
+        $request = Request::create('/broadcasting/auth', 'POST', [
+            'socket_id' => '123.456',
+            'channel_name' => 'private-admin.support-chat.play-online-khaiwal',
+        ]);
+
+        $this->expectException(AccessDeniedHttpException::class);
+        Broadcast::auth($request);
     }
 
 }
