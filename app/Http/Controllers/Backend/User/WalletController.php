@@ -194,7 +194,9 @@ class WalletController extends Controller
             $this->walletService->debit(
                 $user,
                 (float) $validated['amount'],
-                $validated['remark'] ?? null
+                $validated['remark'] ?? null,
+                true,
+                ['admin_id' => auth('admin')->id()]
             );
 
             return back()->with(

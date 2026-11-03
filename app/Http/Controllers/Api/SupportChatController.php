@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Events\SupportMessageCreated;
 use App\Models\SupportConversation;
 use App\Models\SupportMessage;
 use App\Services\PushNotificationService;
@@ -65,6 +66,7 @@ class SupportChatController extends Controller
         $conversation = SupportConversation::firstOrCreate(['user_id' => $request->user()->id]);
         $message = $this->persistMessage($request, $conversation, 'user', (int) $request->user()->id, $validated);
         $conversation->touch();
+        SupportMessageCreated::dispatch($message->id);
 
         app(PushNotificationService::class)->sendToAdmins(
             'New support message',

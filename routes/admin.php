@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Backend\AdminPushSubscriptionController;
+use App\Http\Controllers\Backend\AdminPaymentAlertController;
 use App\Http\Controllers\Backend\Auth\AuthController;
 use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\CommunityModerationController;
@@ -33,6 +34,8 @@ Route::controller(AuthController::class)->group(function () {
 
 // After Login
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admin', 'admin.site']], function () {
+    Route::get('payment-alerts/pending', [AdminPaymentAlertController::class, 'pending'])->name('payment-alerts.pending');
+    Route::post('payment-alerts/{alert}/acknowledge', [AdminPaymentAlertController::class, 'acknowledge'])->name('payment-alerts.acknowledge');
     Route::get('guessing', [CommunityModerationController::class, 'index'])->name('guessing.index');
     Route::patch('guessing/{post}/moderate', [CommunityModerationController::class, 'update'])->name('guessing.moderate');
     Route::post('guessing/policy', [CommunityModerationController::class, 'updatePolicy'])->name('guessing.policy');
@@ -92,6 +95,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admi
         Route::get('/data', 'data')->name('data');
         Route::get('/details', 'details')->name('details');
         Route::get('/profit-loss', 'profitLoss')->name('profit_loss');
+        Route::get('/profit-loss/transactions', 'profitLossTransactions')->name('profit_loss_transactions');
     });
 
     Route::resource('setting', SettingController::class);

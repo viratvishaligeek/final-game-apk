@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Models\SupportConversation;
 use App\Models\SupportMessage;
+use App\Models\SupportConversationAdminRead;
 use App\Services\NotificationService;
 use App\Services\ProjectStorage;
 use Illuminate\Http\Request;
@@ -20,12 +21,25 @@ class SupportChatController extends Controller
         return view('backend.support-chat.index', compact('chatSoundEnabled'));
     }
 
-    public function conversations()
+    public function conversations(Request $request)
     {
+        $adminId = (int) auth('admin')->id();
+        $validated = $request->validate([
+            'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
+        ]);
+        $phone = trim((string) ($validated['phone'] ?? ''));
+
         return response()->json([
             'data' => SupportConversation::query()
-                ->with(['user:id,name,phone'])
-                ->withCount(['messages as unread_count' => fn ($q) => $q->where('sender_type', 'user')->whereNull('read_at')])
+                ->with(['user:id,name,phone', 'latestMessage:id,conversation_id,body,sender_type,created_at'])
+                ->when($phone !== '', fn ($query) => $query->whereHas('user', fn ($userQuery) => $userQuery->where('phone', 'like', '%' . $phone . '%')))
+                ->withCount(['messages as unread_count' => function ($query) use ($adminId) {
+                    $query->where('sender_type', 'user')
+                        ->whereRaw(
+                            'id > COALESCE((SELECT last_read_message_id FROM support_conversation_admin_reads WHERE support_conversation_admin_reads.conversation_id = support_messages.conversation_id AND support_conversation_admin_reads.admin_id = ?), 0)',
+                            [$adminId]
+                        );
+                }])
                 ->withMax('messages', 'created_at')
                 ->orderByDesc('updated_at')
                 ->limit(500)
@@ -35,6 +49,8 @@ class SupportChatController extends Controller
                     'user' => $conversation->user?->only(['id', 'name', 'phone']),
                     'unread_count' => $conversation->unread_count,
                     'last_message_at' => $conversation->messages_max_created_at,
+                    'last_message_preview' => $conversation->latestMessage?->body
+                        ?: ($conversation->latestMessage ? 'Attachment' : ''),
                 ]),
         ]);
     }
@@ -42,8 +58,14 @@ class SupportChatController extends Controller
     public function messages(Request $request, SupportConversation $conversation)
     {
         $request->validate(['after_id' => ['sometimes', 'nullable', 'integer', 'min:0']]);
+        $adminId = (int) auth('admin')->id();
         $conversation->messages()->where('sender_type', 'user')->whereNull('read_at')->update(['read_at' => now()]);
-        $conversation->forceFill(['admin_last_read_at' => now(), 'assigned_admin_id' => auth('admin')->id()])->save();
+        $lastReadMessageId = (int) ($conversation->messages()->max('id') ?? 0);
+        SupportConversationAdminRead::query()->updateOrCreate(
+            ['conversation_id' => $conversation->id, 'admin_id' => $adminId],
+            ['last_read_message_id' => $lastReadMessageId, 'last_read_at' => now()]
+        );
+        $conversation->forceFill(['admin_last_read_at' => now(), 'assigned_admin_id' => $adminId])->save();
 
         return response()->json([
             'data' => $conversation->messages()

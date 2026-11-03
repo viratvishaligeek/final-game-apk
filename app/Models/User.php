@@ -78,6 +78,11 @@ class User extends Authenticatable
         return $this->hasMany(Bid::class);
     }
 
+    public function presenceSessions()
+    {
+        return $this->hasMany(UserPresenceSession::class);
+    }
+
     public function completedTransactions()
     {
         return $this->transactions()
@@ -117,6 +122,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'notifications_enabled' => 'boolean',
+            'live_last_seen_at' => 'datetime',
         ];
     }
 }

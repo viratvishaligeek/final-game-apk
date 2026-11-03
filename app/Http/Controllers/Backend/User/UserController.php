@@ -16,11 +16,20 @@ class UserController extends Controller
         protected WalletService $walletService
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
+        $validated = $request->validate([
+            'live_status' => ['nullable', 'in:active,inactive'],
+        ]);
+
         $pageName = 'Users List';
-        $users = User::latest()->get();
-        return view('backend.users.index', compact('pageName', 'users'));
+        $liveStatus = $validated['live_status'] ?? null;
+        $users = User::query()
+            ->when($liveStatus, fn ($query) => $query->where('live_status', $liveStatus))
+            ->latest()
+            ->get();
+
+        return view('backend.users.index', compact('pageName', 'users', 'liveStatus'));
     }
 
     public function create()
@@ -75,7 +84,8 @@ class UserController extends Controller
                 $this->walletService->credit(
                     $user,
                     $initialBalance,
-                    'Initial wallet balance assigned by admin'
+                    'Initial wallet balance assigned by admin',
+                    ['admin_id' => auth('admin')->id()]
                 );
             }
         });
@@ -147,6 +157,16 @@ class UserController extends Controller
             COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) as total_amount
         ")->first();
 
+        $bidTypeStats = $user->bids()
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN type = 'jodi' THEN 1 ELSE 0 END), 0) as jodi_count,
+                COALESCE(SUM(CASE WHEN type = 'haruf' THEN 1 ELSE 0 END), 0) as haruf_count,
+                COALESCE(SUM(CASE WHEN type = 'cross' THEN 1 ELSE 0 END), 0) as crossing_count,
+                COALESCE(SUM(CASE WHEN type = 'jodi' THEN amount ELSE 0 END), 0) as jodi_amount,
+                COALESCE(SUM(CASE WHEN type = 'haruf' THEN amount ELSE 0 END), 0) as haruf_amount,
+                COALESCE(SUM(CASE WHEN type = 'cross' THEN amount ELSE 0 END), 0) as crossing_amount
+            ")->first();
+
         return view('backend.users.show', [
             'pageName'     => 'User Details',
             'user'         => $user,
@@ -154,6 +174,7 @@ class UserController extends Controller
             'bids'         => $bids,
             'walletStats'  => $walletStats,
             'gameStats'    => $gameStats,
+            'bidTypeStats' => $bidTypeStats,
         ]);
     }
 

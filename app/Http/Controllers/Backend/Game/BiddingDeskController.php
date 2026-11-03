@@ -7,6 +7,7 @@ use App\Models\Bid;
 use App\Models\Game;
 use App\Models\WalletRequest;
 use App\Models\Winner;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -253,6 +254,23 @@ class BiddingDeskController extends Controller
                 $endDateTime
             ])
             ->sum('amount');
+
+        // Direct admin wallet adjustments are kept separate from approved
+        // Add Money / withdrawal requests to prevent duplicate accounting.
+        $successfulStatuses = ['completed', 'success', 'successful'];
+        $adminCreditTotal = Transaction::query()
+            ->whereNotNull('admin_id')
+            ->where('type', 'credit')
+            ->whereIn('status', $successfulStatuses)
+            ->whereBetween('created_at', [$startDateTime, $endDateTime])
+            ->sum('amount');
+        $adminDebitTotal = Transaction::query()
+            ->whereNotNull('admin_id')
+            ->where('type', 'debit')
+            ->whereIn('status', $successfulStatuses)
+            ->whereBetween('created_at', [$startDateTime, $endDateTime])
+            ->sum('amount');
+
         $games = Game::where('status', 'active')
             ->orderBy('serial', 'asc')
             ->get();
@@ -294,6 +312,8 @@ class BiddingDeskController extends Controller
             'totalUser',
             'totalMatch',
             'totalTrans',
+            'adminCreditTotal',
+            'adminDebitTotal',
             'grandTotalBid',
             'grandTotalWin',
             'grandProfitLoss',
@@ -303,4 +323,38 @@ class BiddingDeskController extends Controller
             'endDate'
         ));
     }
+
+    /**
+     * Inspect completed direct admin wallet adjustments included in the P&L summary.
+     */
+    public function profitLossTransactions(Request $request)
+    {
+        $validated = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'type' => ['required', 'in:credit,debit'],
+        ]);
+
+        $from = Carbon::parse($validated['from'] ?? Carbon::today()->toDateString())->toDateString();
+        $to = Carbon::parse($validated['to'] ?? Carbon::today()->toDateString())->toDateString();
+
+        $transactions = Transaction::query()
+            ->with(['user:id,name,phone', 'admin:id,name'])
+            ->whereNotNull('admin_id')
+            ->where('type', $validated['type'])
+            ->whereIn('status', ['completed', 'success', 'successful'])
+            ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
+            ->latest('id')
+            ->paginate(50)
+            ->withQueryString();
+
+        return view('backend.profit_loss_transactions', [
+            'pageName' => 'Admin Wallet ' . ucfirst($validated['type']) . 's',
+            'transactions' => $transactions,
+            'type' => $validated['type'],
+            'from' => $from,
+            'to' => $to,
+        ]);
+    }
+
 }
