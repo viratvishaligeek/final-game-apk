@@ -158,6 +158,20 @@
         });
         const addAlert = alert => {
             if (!alert?.id || acknowledged.has(Number(alert.id)) || Number(activeAlert?.id) === Number(alert.id)) return;
+            if (alert.fingerprint && activeAlert?.fingerprint === alert.fingerprint) {
+                activeAlert = {...activeAlert, ...alert};
+                setText('payment-alert-occurrences', (alert.related_occurrences || 1) + ' correlated attempts · ' + (alert.occurrence_count || 1) + ' events for this attempt');
+                setText('payment-alert-occurrence-range', formatDate(alert.related_first_occurred_at || alert.first_occurred_at) + ' – ' + formatDate(alert.related_latest_occurred_at || alert.latest_occurred_at));
+                return;
+            }
+            if (alert.fingerprint) {
+                for (const [queuedId, queuedAlert] of queued.entries()) {
+                    if (queuedAlert.fingerprint === alert.fingerprint) {
+                        queued.set(queuedId, {...queuedAlert, ...alert});
+                        return;
+                    }
+                }
+            }
             queued.set(Number(alert.id), alert);
             presentNext();
         };

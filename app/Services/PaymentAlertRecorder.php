@@ -122,7 +122,19 @@ class PaymentAlertRecorder
     {
         $normalized = mb_strtolower(trim($message));
         $exactPlanError = preg_replace('/[^a-z0-9]+/', ' ', $normalized);
-        if ($exactPlanError === 'active plan not found please buy plan') {
+        if (in_array($exactPlanError, [
+            'active plan not found please buy plan',
+            'no active plan',
+            'plan expired',
+            'subscription expired',
+            'invalid api key',
+            'invalid api credentials',
+            'api authentication failed',
+            'unauthorized',
+            'merchant inactive',
+            'merchant account inactive',
+            'account inactive',
+        ], true)) {
             return 'PAYMENT_GATEWAY_CONFIGURATION_ERROR';
         }
 
