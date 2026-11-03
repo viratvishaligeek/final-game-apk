@@ -6,6 +6,7 @@ on:
       - feature/admin-user-live-ops-2026
       - feature/payment-error-monitoring-and-admin-js-fixes
       - feature/admin-bid-chat-realtime-ui-2026
+      - feature/admin-bid-chat-realtime-followup-2026
   pull_request:
     branches:
       - main
