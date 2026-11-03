@@ -109,6 +109,8 @@
         const chatAudio = new Audio('/sound/wow.wav');
         paymentAudio.loop = true;
         const playedChatMessages = new Set();
+        const lastSeenChatMessageIds = new Map();
+        let chatSnapshotInitialized = false;
         const chatSoundEnabled = @json((string) setting('notification_sound_chat', 'default') !== 'mute');
         const soundPreferenceEnabled = (() => { try { return localStorage.getItem('admin_notification_sound_enabled') === '1'; } catch (error) { return false; } })();
         const setSoundStatus = value => {
@@ -269,6 +271,16 @@
                 });
                 if (!response.ok) return;
                 const payload = await response.json();
+                (payload.data || []).forEach(item => {
+                    const messageId = Number(item.last_message_id || 0);
+                    const previousId = lastSeenChatMessageIds.get(Number(item.id)) || 0;
+                    if (chatSnapshotInitialized && messageId > previousId &&
+                        item.last_message_sender === 'user' && Number(item.unread_count) > 0) {
+                        playChatNotification({ message_id: messageId, sender: 'user' });
+                    }
+                    lastSeenChatMessageIds.set(Number(item.id), messageId);
+                });
+                chatSnapshotInitialized = true;
                 const unread = (payload.data || []).filter(item => Number(item.unread_count) > 0);
                 const total = unread.reduce((sum, item) => sum + Number(item.unread_count || 0), 0);
                 badge.textContent = total > 99 ? '99+' : String(total);

@@ -151,6 +151,8 @@ class SupportChatController extends Controller
                     'user' => $conversation->user?->only(['id', 'name', 'phone']),
                     'unread_count' => $conversation->unread_count,
                     'last_message_at' => $conversation->messages_max_created_at,
+                    'last_message_id' => $conversation->latestMessage?->id,
+                    'last_message_sender' => $conversation->latestMessage?->sender_type,
                     'last_message_preview' => $conversation->latestMessage?->body
                         ?: ($conversation->latestMessage ? 'Attachment' : ''),
                 ]),
