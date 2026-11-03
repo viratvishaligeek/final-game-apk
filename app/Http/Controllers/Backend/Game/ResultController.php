@@ -316,7 +316,7 @@ class ResultController extends Controller
                     ->lockForUpdate()
                     ->findOrFail($gameId);
 
-                $this->reverseSettlement($game, $gameDate);
+                $this->settlement->reverseSettlement($game, $gameDate);
 
                 Result::query()
                     ->where('game_id', $gameId)

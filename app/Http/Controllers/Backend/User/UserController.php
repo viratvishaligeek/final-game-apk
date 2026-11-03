@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Backend\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\Admin\UserBidActivityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;

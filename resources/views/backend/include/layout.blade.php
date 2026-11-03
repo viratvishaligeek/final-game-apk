@@ -17,6 +17,8 @@
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js" crossorigin="anonymous">
     </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+
 </head>
 
 <body class="nav-fixed">
@@ -51,68 +53,68 @@
                     <h4 class="modal-title fw-bold"><i class="fas fa-triangle-exclamation me-2"></i>Automatic Payment
                         Failed</h4>
                 </div>
-                <div class="modal-body d-flex flex-column justify-content-center p-4 p-md-5">
+                <div class="modal-body d-flex flex-column justify-content-center p-2 p-md-3">
                     <div class="text-center text-danger mb-4">
                         <div style="font-size:clamp(3rem,9vw,6rem);line-height:1"><i
                                 class="fas fa-circle-exclamation"></i></div>
                         <h2 class="fw-bold mt-3">Payment requires attention</h2>
                     </div>
                     <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">User</small><strong
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small class="text-muted d-block">User</small><strong
                                     id="payment-alert-user">—</strong>
                                 <div class="small text-muted" id="payment-alert-user-meta"></div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Transaction
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small class="text-muted d-block">Transaction
                                     ID</small><strong id="payment-alert-transaction">—</strong></div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small
                                     class="text-muted d-block">Amount</small><strong class="text-danger fs-3"
                                     id="payment-alert-amount">—</strong></div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway / Failed
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small class="text-muted d-block">Gateway / Failed
                                     at</small><strong id="payment-alert-gateway">—</strong>
                                 <div class="small text-muted" id="payment-alert-time"></div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Internal payment
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small class="text-muted d-block">Internal payment
                                     attempt ID</small><strong id="payment-alert-attempt">—</strong></div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway order
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small class="text-muted d-block">Gateway order
                                     ID</small><strong id="payment-alert-order">—</strong></div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Error category /
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small class="text-muted d-block">Error category /
                                     severity</small><strong id="payment-alert-category">—</strong>
                                 <div class="small text-muted" id="payment-alert-severity"></div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Error code / HTTP
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small class="text-muted d-block">Error code / HTTP
                                     status</small><strong id="payment-alert-code">—</strong></div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Processing
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small class="text-muted d-block">Processing
                                     stage</small><strong id="payment-alert-stage">—</strong></div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Diagnostic
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small class="text-muted d-block">Diagnostic
                                     reference</small><strong id="payment-alert-diagnostic">—</strong></div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="border rounded p-3 h-100"><small
+                        <div class="col-6 col-md-4">
+                            <div class="border rounded p-1 h-50"><small
                                     class="text-muted d-block">Occurrences</small><strong
                                     id="payment-alert-occurrences">—</strong>
                                 <div class="small text-muted" id="payment-alert-occurrence-range"></div>
                             </div>
                         </div>
-                        <div class="col-12">
+                        <div class="col-6">
                             <div class="border border-danger rounded p-3"><small class="text-muted d-block">Failure
                                     reason</small>
                                 <div class="fw-semibold" id="payment-alert-reason">Not provided by gateway.</div>
@@ -126,11 +128,10 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+    @include('backend.partials.toastr')
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous">
     </script>
     <script src="{{ URL::asset('backend') }}/js/scripts.js"></script>
-    @include('backend.partials.toastr')
 
     @if (config('broadcasting.default') === 'pusher')
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
@@ -161,8 +162,8 @@
         let activeAlert = null;
         let modalClosing = false;
         let paymentAlertActive = false;
-        const paymentAudio = new Audio('/sound/wow.wav');
-        const chatAudio = new Audio('/sound/wow.wav');
+        const paymentAudio = new Audio('/sound/emergency.wav');
+        const chatAudio = new Audio('/sound/smstone.wav');
         paymentAudio.loop = true;
         const playedChatMessages = new Set();
         const lastSeenChatMessageIds = new Map();
