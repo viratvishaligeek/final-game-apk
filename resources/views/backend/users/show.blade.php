@@ -477,82 +477,29 @@
                                 </div>
                             </div>
                         </div>
-                        {{-- PLAY SLIP CARDS --}}
-                        <div class="row g-3 play-history-groups">
-                            @forelse($bids as $bidGroup)
-                                @php
-                                    $firstBid = $bidGroup->bids->first();
-                                    $hasOrderNumber = !str_starts_with((string) $bidGroup->group_key, 'bid-');
-                                @endphp
-                                <div class="col-12 col-xl-6">
-                                    <article class="card h-100 border shadow-sm">
-                                        <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-start gap-2">
-                                            <div>
-                                                <div class="fw-bold text-dark">
-                                                    {{ $firstBid?->game?->name ?? 'Game Deleted' }}
-                                                </div>
-                                                <div class="small text-muted">
-                                                    {{ $hasOrderNumber ? 'Play Order #' . $bidGroup->group_key : 'Individual Bid #' . $firstBid?->id }}
-                                                </div>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="small text-muted">Slip total</div>
-                                                <div class="fw-bold text-primary">₹{{ number_format($bidGroup->total_amount, 2) }}</div>
-                                                <span class="badge bg-primary-subtle text-primary">{{ $bidGroup->item_count }} {{ $bidGroup->item_count === 1 ? 'number' : 'numbers' }}</span>
-                                            </div>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                            <div><h5 class="fw-bold mb-1">Games Played</h5><div class="small text-muted">Select a game to inspect its individual bids.</div></div>
+                            <span class="badge bg-primary-subtle text-primary">{{ $gameBidStats->count() }} games</span>
+                        </div>
+                        <div class="row g-3" id="user-game-bid-cards">
+                            @forelse($gameBidStats as $gameStatsRow)
+                                <div class="col-12 col-sm-6 col-xl-4">
+                                    <button type="button" class="btn btn-light border shadow-sm w-100 text-start p-3 h-100 js-open-game-bids"
+                                        data-game-id="{{ $gameStatsRow->game_id }}" data-game-name="{{ $gameStatsRow->game?->name ?? 'Game Deleted' }}">
+                                        <div class="d-flex align-items-start justify-content-between gap-2">
+                                            <strong class="text-dark">{{ $gameStatsRow->game?->name ?? 'Game Deleted' }}</strong>
+                                            <i data-feather="chevron-right" class="text-muted"></i>
                                         </div>
-                                        <div class="card-body">
-                                            @if ($firstBid)
-                                                <div class="small text-muted mb-3">
-                                                    <span class="me-2"><strong>Play date:</strong> {{ optional($firstBid->game_date)->format('d M Y') ?? \Carbon\Carbon::parse($firstBid->game_date)->format('d M Y') }}</span>
-                                                    <span><strong>Placed:</strong> {{ $firstBid->created_at?->timezone(config('app.timezone'))->format('d M Y, h:i A') ?? '-' }}</span>
-                                                </div>
-                                            @endif
-                                            <div class="list-group list-group-flush">
-                                                @foreach ($bidGroup->bids as $bid)
-                                                    <div class="list-group-item px-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
-                                                        <div class="me-2">
-                                                            <div class="fw-bold text-dark">
-                                                                {{ $bid->number }}
-                                                                <span class="badge bg-primary-subtle text-primary ms-1">{{ strtoupper((string) $bid->type) }}</span>
-                                                            </div>
-                                                            @if ($bid->game && $firstBid && $bid->game_id !== $firstBid->game_id)
-                                                                <small class="text-muted">{{ $bid->game->name }}</small>
-                                                            @endif
-                                                            <div class="small text-muted">Bid #{{ $bid->id }} · {{ $bid->created_at?->timezone(config('app.timezone'))->format('h:i A') ?? '-' }}</div>
-                                                        </div>
-                                                        <div class="text-end">
-                                                            <div class="fw-bold text-danger">₹{{ number_format((float) $bid->amount, 2) }}</div>
-                                                            @if ((int) $bid->status === 1)
-                                                                <span class="badge bg-success">Active</span>
-                                                            @else
-                                                                <span class="badge bg-secondary">{{ ucfirst((string) $bid->status) }}</span>
-                                                            @endif
-                                                            @if ((float) $bid->winning_amount > 0)
-                                                                <div class="small text-success fw-semibold">Won ₹{{ number_format((float) $bid->winning_amount, 2) }}</div>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </article>
+                                        <div class="d-flex justify-content-between mt-3"><span class="small text-muted">Bids</span><strong>{{ number_format((int) $gameStatsRow->total_bids) }}</strong></div>
+                                        <div class="d-flex justify-content-between"><span class="small text-muted">Invested</span><strong class="text-primary">₹{{ number_format((float) $gameStatsRow->total_amount, 2) }}</strong></div>
+                                        <div class="small text-primary mt-3">View bid details</div>
+                                    </button>
                                 </div>
                             @empty
-                                <div class="col-12">
-                                    <div class="text-center py-5 border rounded text-muted">
-                                        <i data-feather="target" style="width:40px;height:40px;" class="mb-2"></i>
-                                        <div class="fw-semibold">No bidding history found</div>
-                                        <div class="small">User's game activity will appear here.</div>
-                                    </div>
-                                </div>
+                                <div class="col-12"><div class="text-center py-5 border rounded text-muted">No bidding history found.</div></div>
                             @endforelse
                         </div>
-                        @if ($bids->hasPages())
-                            <div class="mt-4">
-                                {{ $bids->withQueryString()->links() }}
-                            </div>
-                        @endif
+
                     </div>
                 </div>
             </div>
@@ -560,6 +507,33 @@
 
     </div>
 
+
+
+    <div class="modal fade" id="gameBidsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <div><h5 class="modal-title fw-bold" id="gameBidsModalTitle">Game bids</h5><div class="small text-muted" id="gameBidsModalMeta"></div></div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="gameBidsLoading" class="text-center py-4 d-none"><span class="spinner-border spinner-border-sm me-2"></span>Loading bids…</div>
+                    <div id="gameBidsError" class="alert alert-danger d-none" role="alert"></div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead class="table-light"><tr><th>Bid ID</th><th>Order</th><th>Type</th><th>Number</th><th>Play date</th><th>Amount</th><th>Result / status</th><th>Placed at</th></tr></thead>
+                            <tbody id="gameBidsModalRows"></tbody>
+                        </table>
+                    </div>
+                    <div id="gameBidsEmpty" class="text-center text-muted py-4 d-none">No bids found for this game.</div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <small class="text-muted" id="gameBidsPagination"></small>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="gameBidsLoadMore">Load more</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {{-- ========================================================= --}}
     {{-- CREDIT MODAL --}}
@@ -689,4 +663,86 @@
         </div>
 
     </div>
+@endsection
+
+
+@section('script')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const modalElement = document.getElementById('gameBidsModal');
+    if (!modalElement || !window.bootstrap) return;
+    const modal = new bootstrap.Modal(modalElement);
+    const endpoint = @json(route('admin.users.bids', $user->id));
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const rows = document.getElementById('gameBidsModalRows');
+    const loading = document.getElementById('gameBidsLoading');
+    const error = document.getElementById('gameBidsError');
+    const empty = document.getElementById('gameBidsEmpty');
+    const more = document.getElementById('gameBidsLoadMore');
+    const meta = document.getElementById('gameBidsModalMeta');
+    let gameId = null, page = 1, lastPage = 1, busy = false;
+
+    const cell = (value, className = '') => {
+        const td = document.createElement('td');
+        if (className) td.className = className;
+        td.textContent = value == null || value === '' ? '-' : String(value);
+        return td;
+    };
+    const load = async (nextPage = 1) => {
+        if (!gameId || busy) return;
+        busy = true;
+        loading.classList.remove('d-none');
+        error.classList.add('d-none');
+        more.disabled = true;
+        try {
+            const params = new URLSearchParams({ game_id: String(gameId), page: String(nextPage), per_page: '50' });
+            const response = await fetch(endpoint + '?' + params.toString(), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }
+            });
+            const payload = await response.json();
+            if (!response.ok) throw new Error(payload.message || 'Unable to load this game’s bids.');
+            if (nextPage === 1) rows.replaceChildren();
+            (payload.data || []).forEach(bid => {
+                const tr = document.createElement('tr');
+                tr.append(
+                    cell('#' + bid.id, 'fw-semibold'),
+                    cell(bid.order_no),
+                    cell(String(bid.type || '').toUpperCase()),
+                    cell(bid.number, 'fw-bold'),
+                    cell(bid.game_date),
+                    cell('₹' + Number(bid.amount || 0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}), 'fw-semibold'),
+                    cell((bid.status || '-') + (Number(bid.winning_amount) > 0 ? ' · Won ₹' + Number(bid.winning_amount).toFixed(2) : '')),
+                    cell(bid.created_at)
+                );
+                rows.appendChild(tr);
+            });
+            page = payload.pagination?.current_page || nextPage;
+            lastPage = payload.pagination?.last_page || 1;
+            meta.textContent = (payload.pagination?.total || 0) + ' individual bids';
+            document.getElementById('gameBidsPagination').textContent = 'Page ' + page + ' of ' + lastPage;
+            more.classList.toggle('d-none', page >= lastPage);
+            empty.classList.toggle('d-none', rows.children.length > 0);
+        } catch (exception) {
+            error.textContent = exception.message || 'Unable to load bids.';
+            error.classList.remove('d-none');
+        } finally {
+            loading.classList.add('d-none');
+            more.disabled = false;
+            busy = false;
+        }
+    };
+    document.querySelectorAll('.js-open-game-bids').forEach(button => {
+        button.addEventListener('click', () => {
+            gameId = button.dataset.gameId;
+            page = 1;
+            rows.replaceChildren();
+            document.getElementById('gameBidsModalTitle').textContent = button.dataset.gameName || 'Game bids';
+            modal.show();
+            void load(1);
+        });
+    });
+    more.addEventListener('click', () => { if (page < lastPage) void load(page + 1); });
+});
+</script>
 @endsection

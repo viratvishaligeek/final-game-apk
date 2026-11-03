@@ -61,6 +61,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admi
     Route::resource('pages', PagesController::class);
     Route::resource('home-page', HomePageController::class);
 
+    Route::get('users/{user}/bids', [UserController::class, 'bids'])->name('users.bids');
     Route::resource('users', UserController::class);
     Route::patch('/users/toggle-status/{id}', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
 
