@@ -35,6 +35,7 @@ class ResultController extends Controller
         ]);
 
         $selectedDate = $validated['date'] ?? now()->toDateString();
+        $isCurrentCalendarDate = $selectedDate === now()->toDateString();
         $resultNotificationsEnabled = (string) $this->settings->value('result_notifications_enabled', '1') === '1';
 
         $allGames = Game::query()
@@ -42,16 +43,30 @@ class ResultController extends Controller
             ->orderBy('serial')
             ->get();
 
+        // The live result console normally uses today's calendar date. Disawar
+        // is the exception: its active business day may still be yesterday
+        // between midnight and its configured result-time boundary.
+        $gameDates = $allGames->mapWithKeys(function (Game $game) use ($selectedDate, $isCurrentCalendarDate) {
+            return [
+                $game->id => $isCurrentCalendarDate
+                    ? $game->businessDate()
+                    : $selectedDate,
+            ];
+        });
+
         $existingResults = Result::query()
             ->where('type', 'jodi')
-            ->where('game_date', $selectedDate)
+            ->whereIn('game_date', $gameDates->values()->unique()->all())
             ->get()
+            ->filter(fn (Result $result) => (string) $result->game_date === (string) $gameDates->get($result->game_id))
             ->keyBy('game_id');
 
         return view('backend.result.index', compact(
             'allGames',
             'existingResults',
             'selectedDate',
+            'gameDates',
+            'isCurrentCalendarDate',
             'resultNotificationsEnabled',
         ));
     }
