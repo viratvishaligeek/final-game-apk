@@ -458,104 +458,42 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+$(function () {
+    if (window.feather) feather.replace();
 
-            feather.replace();
+    const escapeHtml = value => $('<div>').text(String(value ?? '')).html();
 
-            document.querySelectorAll('.view-proof-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const image = document.getElementById('proofImage');
-                    image.onerror = function() {
-                        this.onerror = null;
-                        this.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#64748b" font-family="Arial" font-size="22">Image unavailable</text></svg>');
-                    };
-                    image.src = this.dataset.image;
-                });
-            });
-
-            /*
-             * Approve Request
-             */
-            document.querySelectorAll('.approve-btn').forEach(button => {
-
-                button.addEventListener('click', function() {
-
-                    const form = this.closest('form');
-
-                    const name = this.dataset.name;
-                    const amount = this.dataset.amount;
-
-                    Swal.fire({
-
-                        title: 'Approve Withdrawal?',
-
-                        html: `
-                        <div class="text-center">
-
-                            <p class="mb-1">
-                                User:
-                                <strong>${name}</strong>
-                            </p>
-
-                            <p>
-                                Amount:
-                                <strong class="text-danger">
-                                    ₹${amount}
-                                </strong>
-                            </p>
-
-                            <small class="text-muted">
-                                The withdrawal request will be marked as approved.
-                            </small>
-
-                        </div>
-                    `,
-
-                        icon: 'warning',
-
-                        showCancelButton: true,
-
-                        confirmButtonColor: '#1cc88a',
-
-                        cancelButtonColor: '#858796',
-
-                        confirmButtonText: 'Yes, Approve',
-
-                        cancelButtonText: 'Cancel'
-
-                    }).then((result) => {
-
-                        if (result.isConfirmed) {
-                            form.submit();
-                        }
-
-                    });
-
-                });
-
-            });
-
-            /*
-             * Reject Request
-             */
-            document.querySelectorAll('.reject-btn').forEach(button => {
-
-                button.addEventListener('click', function() {
-
-                    const id = this.dataset.id;
-
-                    const name = this.dataset.name;
-
-                    document.getElementById('rejectUserName')
-                        .textContent = name;
-
-                    document.getElementById('rejectForm').action =
-                        button.dataset.action;
-
-                });
-
-            });
-
+    $(document).on('click.adminWalletRequests', '.view-proof-btn', function () {
+        const $image = $('#proofImage');
+        $image.one('error.adminWalletRequests', function () {
+            $(this).attr('src', 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#64748b" font-family="Arial" font-size="22">Image unavailable</text></svg>'));
         });
-    </script>
+        $image.attr('src', $(this).data('image'));
+    });
+
+    $(document).on('click.adminWalletRequests', '.approve-btn', function () {
+        const $button = $(this);
+        const form = $button.closest('form')[0];
+        const name = escapeHtml($button.data('name'));
+        const amount = escapeHtml($button.data('amount'));
+        if (!form || typeof Swal === 'undefined') return;
+        Swal.fire({
+            title: 'Approve Withdrawal?',
+            html: '<div class="text-center"><p class="mb-1">User: <strong>' + name + '</strong></p><p>Amount: <strong class="text-danger">₹' + amount + '</strong></p><small class="text-muted">The withdrawal request will be marked as approved.</small></div>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1cc88a',
+            cancelButtonColor: '#858796',
+            confirmButtonText: 'Yes, Approve',
+            cancelButtonText: 'Cancel'
+        }).then(result => { if (result.isConfirmed) form.submit(); });
+    });
+
+    $(document).on('click.adminWalletRequests', '.reject-btn', function () {
+        const $button = $(this);
+        $('#rejectUserName').text($button.data('name') || '');
+        $('#rejectForm').attr('action', $button.data('action') || '');
+    });
+});
+</script>
 @endsection
