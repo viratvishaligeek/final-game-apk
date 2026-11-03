@@ -1,11 +1,11 @@
 <?php
 
-namespace App\\Services;
+namespace App\Services;
 
-use App\\Events\\AdminPaymentFailedPaymentAlert;
-use App\\Models\\AdminPaymentAlert;
-use App\\Models\\WalletRequest;
-use Illuminate\\Support\\Str;
+use App\Events\AdminPaymentFailedPaymentAlert;
+use App\Models\AdminPaymentAlert;
+use App\Models\WalletRequest;
+use Illuminate\Support\Str;
 use Throwable;
 
 class PaymentAlertRecorder
@@ -95,8 +95,8 @@ class PaymentAlertRecorder
     private function sanitize(mixed $value): string
     {
         $text = is_scalar($value) ? (string) $value : 'Automatic payment processing failed.';
-        $text = preg_replace('/(authorization\\s*[:=]\\s*bearer\\s+)[^\\s,;]+/i', '$1[redacted]', $text);
-        $text = preg_replace('/((?:api[_ -]?key|access[_ -]?token|secret|password|otp|cvv|card[_ -]?number)\\s*[:=]\\s*)[^\\s,;]+/i', '$1[redacted]', $text);
+        $text = preg_replace('/(authorization\s*[:=]\s*bearer\s+)[^\s,;]+/i', '$1[redacted]', $text);
+        $text = preg_replace('/((?:api[_ -]?key|access[_ -]?token|secret|password|otp|cvv|card[_ -]?number)\s*[:=]\s*)[^\s,;]+/i', '$1[redacted]', $text);
         return mb_substr(trim(strip_tags($text)), 0, 1000);
     }
 }
