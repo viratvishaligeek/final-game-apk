@@ -455,6 +455,13 @@
     })();
     </script>
 
+        <script>
+            $(function () {
+                $(document).on('change.adminSiteSwitch', '.js-admin-site-switch', function () {
+                    $(this).closest('form').trigger('submit');
+                });
+            });
+        </script>
         @yield('script')
 </body>
 
