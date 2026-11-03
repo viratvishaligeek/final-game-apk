@@ -23,24 +23,11 @@ This review and branch are confined to `viratvishaligeek/final-game-apk`. No Vue
 
 ## Blade JavaScript migration status
 
-jQuery is loaded once in the shared Admin layout. Custom event/AJAX code was migrated in:
+jQuery is loaded once in the shared Admin layout. All 47 Blade files under `resources/views/backend` were inventoried. The migration removed inline event attributes, `addEventListener` registrations and Fetch API calls from the Admin Blade views. Relevant page behavior now uses jQuery ready handlers, delegated `.on()` events, jQuery DOM helpers and `$.ajax()` where applicable.
 
-- `backend/users/show.blade.php`
-- `backend/users/index.blade.php`
-- `backend/support-chat/index.blade.php`
-- `backend/games/index.blade.php`
-- `backend/banner/index.blade.php`
-- `backend/faqs/index.blade.php`
-- `backend/home-page/index.blade.php`
-- `backend/member/index.blade.php`
-- `backend/pages/index.blade.php`
-- `backend/roles/edit.blade.php`
-- `backend/roles/index.blade.php`
-- `backend/wallet/request-add.blade.php`
-- `backend/wallet/request-withdraw.blade.php`
-- `backend/result/index.blade.php`
+This includes the shared payment/chat notification manager, site selector, dashboard, bidding desk, User Show/User List, Live Chat, wallet request pages, result controls and CRUD confirmation/preview pages. Native browser/platform APIs remain where jQuery is not a substitute (Pusher connection bindings, Firebase Messaging, Notification, FileReader, MediaRecorder and Bootstrap's programmatic modal API). External plugin scripts and the shared `public/backend/js/scripts.js` asset are not rewritten by this Blade-only migration.
 
-This is not a completed conversion of every Admin Blade view. Remaining custom scripts include the shared notification/payment-alert manager, bidding desk, dashboard and other page-specific integrations. Plugin initializers and browser APIs (MediaRecorder, Firebase Messaging, Pusher) remain native where jQuery does not provide a replacement. A repository-wide conversion still requires page-by-page regression testing and is not represented as complete.
+The current CI compiles all Blade views. Browser-level interaction testing is still required before treating this migration as production-verified.
 
 ## Controller inventory and refactoring decision
 
