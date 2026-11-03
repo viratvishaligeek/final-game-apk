@@ -814,7 +814,7 @@ $(function () {
                 channel.unbind('pusher:member_removed', refreshPresence);
                 client.unsubscribe(channelName);
             };
-            window.addEventListener('pagehide', cleanupPresence, { once: true });
+            $(window).one('pagehide', cleanupPresence);
         });
     </script>
 @endsection
