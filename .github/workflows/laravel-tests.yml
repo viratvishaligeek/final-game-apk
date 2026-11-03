@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - feature/admin-user-live-ops-2026
+      - feature/payment-error-monitoring-and-admin-js-fixes
   pull_request:
     branches:
       - main
+      - feature/admin-user-live-ops-2026
 
 jobs:
   tests:
@@ -36,13 +38,13 @@ jobs:
       CACHE_STORE: array
       SESSION_DRIVER: array
       QUEUE_CONNECTION: sync
-      BROADCAST_CONNECTION: null
+      BROADCAST_CONNECTION: 'null'
       MAIL_MAILER: array
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4.1'
           extensions: bcmath, ctype, curl, dom, fileinfo, gd, intl, mbstring, mysqli, pdo_mysql, xml, zip
           coverage: none
       - run: composer install --no-interaction --prefer-dist --no-progress

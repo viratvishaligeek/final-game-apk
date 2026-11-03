@@ -14,6 +14,18 @@ class AdminPaymentAlert extends Model
 
     protected $fillable = [
         'wallet_request_id',
+        'attempt_id',
+        'gateway_order_id',
+        'error_category',
+        'error_code',
+        'http_status',
+        'processing_stage',
+        'diagnostic_reference',
+        'severity',
+        'fingerprint',
+        'occurrence_count',
+        'first_occurred_at',
+        'latest_occurred_at',
         'user_id',
         'transaction_id',
         'amount',
@@ -27,6 +39,8 @@ class AdminPaymentAlert extends Model
         return [
             'amount' => 'decimal:2',
             'failed_at' => 'datetime',
+            'first_occurred_at' => 'datetime',
+            'latest_occurred_at' => 'datetime',
         ];
     }
 
