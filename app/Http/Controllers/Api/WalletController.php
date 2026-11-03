@@ -568,9 +568,23 @@ class WalletController extends Controller
 
         if (!in_array($walletRequest->status, ['approved', 'failed', 'rejected'], true)) {
             try {
-                $this->verifyGatewayTransaction($walletRequest);
+                $verified = $this->verifyGatewayTransaction($walletRequest);
+                if (!$verified) {
+                    app(PaymentAlertRecorder::class)->record($walletRequest, [
+                        'stage' => 'payment_verification',
+                        'category' => 'PAYMENT_VERIFICATION_ERROR',
+                        'message' => 'Gateway payment verification did not return a valid matching response.',
+                        'error_code' => 'VERIFICATION_UNCONFIRMED',
+                    ]);
+                }
             } catch (Throwable $exception) {
                 report($exception);
+                app(PaymentAlertRecorder::class)->record($walletRequest, [
+                    'stage' => 'payment_verification_exception',
+                    'category' => 'BACKEND_SYSTEM_ERROR',
+                    'message' => $exception->getMessage(),
+                    'error_code' => 'VERIFICATION_EXCEPTION',
+                ]);
             }
         }
 
@@ -625,9 +639,23 @@ class WalletController extends Controller
         }
 
         try {
-            $this->verifyGatewayTransaction($walletRequest);
+            $verified = $this->verifyGatewayTransaction($walletRequest);
+            if (!$verified) {
+                app(PaymentAlertRecorder::class)->record($walletRequest, [
+                    'stage' => 'gateway_return_verification',
+                    'category' => 'PAYMENT_VERIFICATION_ERROR',
+                    'message' => 'Gateway payment verification did not return a valid matching response.',
+                    'error_code' => 'VERIFICATION_UNCONFIRMED',
+                ]);
+            }
         } catch (Throwable $exception) {
             report($exception);
+            app(PaymentAlertRecorder::class)->record($walletRequest, [
+                'stage' => 'gateway_return_verification_exception',
+                'category' => 'BACKEND_SYSTEM_ERROR',
+                'message' => $exception->getMessage(),
+                'error_code' => 'VERIFICATION_EXCEPTION',
+            ]);
         }
 
         $walletRequest->refresh();
@@ -712,6 +740,12 @@ class WalletController extends Controller
             $verified = $this->verifyGatewayTransaction($walletRequest);
         } catch (Throwable $e) {
             report($e);
+            app(PaymentAlertRecorder::class)->record($walletRequest, [
+                'stage' => 'gateway_callback_verification_exception',
+                'category' => 'BACKEND_SYSTEM_ERROR',
+                'message' => $e->getMessage(),
+                'error_code' => 'CALLBACK_VERIFICATION_EXCEPTION',
+            ]);
 
             return response()->json([
                 'success' => false,
@@ -720,6 +754,12 @@ class WalletController extends Controller
         }
 
         if (!$verified) {
+            app(PaymentAlertRecorder::class)->record($walletRequest, [
+                'stage' => 'gateway_callback_verification',
+                'category' => 'PAYMENT_VERIFICATION_ERROR',
+                'message' => 'Gateway callback could not be verified against the provider.',
+                'error_code' => 'CALLBACK_VERIFICATION_UNCONFIRMED',
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Payment could not be verified yet. Please retry.',
