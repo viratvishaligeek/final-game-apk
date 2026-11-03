@@ -117,46 +117,5 @@
         crossorigin="anonymous"></script>
     <script src="{{ URL::asset('backend') }}/js/datatables/datatables-simple-demo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            document.addEventListener('click', function(event) {
-                const button = event.target.closest('.delete-game-btn');
-                if (!button) {
-                    return;
-                }
-                event.preventDefault();
-                const gameId = button.dataset.id;
-                const gameName = button.dataset.name;
-                const deleteForm = document.getElementById('delete-form-' + gameId);
-                if (!deleteForm) {
-                    console.error('Delete form not found for game:', gameId);
-                    return;
-                }
-                if (typeof Swal === 'undefined') {
-                    console.error('SweetAlert2 is not loaded.');
-                    alert('SweetAlert2 failed to load. Please refresh the page.');
-                    return;
-                }
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'Do you really want to delete "' + gameName +
-                        '"? This action cannot be undone.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e74a3b',
-                    cancelButtonColor: '#858796',
-                    confirmButtonText: 'Yes, delete it!',
-                    cancelButtonText: 'Cancel',
-                    reverseButtons: true,
-                    focusCancel: true
-                }).then(function(result) {
-                    if (result.isConfirmed) {
-                        deleteForm.submit();
-                    }
-                });
-            });
-
-        });
-    </script>
+    
 @endsection
