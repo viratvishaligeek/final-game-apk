@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\Backend\Game\BiddingDeskController;
 use App\Http\Controllers\Backend\SupportChatController;
+use App\Http\Controllers\Api\PresenceController;
+use App\Console\Commands\ExpireStaleUserPresence;
 use App\Http\Controllers\Backend\User\UserController;
 use App\Events\AdminPaymentFailedPaymentAlert;
 use App\Events\SupportMessageCreated;
@@ -15,6 +17,7 @@ use App\Models\Game;
 use App\Models\SupportConversation;
 use App\Models\SupportConversationAdminRead;
 use App\Models\User;
+use App\Models\UserPresenceSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -435,6 +438,95 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         ]);
         $paymentChannels = (new AdminPaymentFailedPaymentAlert($alert->id))->broadcastOn();
         $this->assertSame('private-admin.payment-alerts.' . $alert->site_key, $paymentChannels[0]->name);
+    }
+
+    public function test_disconnecting_one_device_keeps_user_online_while_another_session_is_active(): void
+    {
+        $user = $this->makeUser('9876500094');
+        $user->forceFill([
+            'live_status' => 'active',
+            'live_last_seen_at' => now()->subSeconds(5),
+        ])->save();
+
+        $firstSession = UserPresenceSession::query()->create([
+            'user_id' => $user->id,
+            'session_id' => 'device-session-one',
+            'platform' => 'web',
+            'app_state' => 'foreground',
+            'last_seen_at' => now(),
+        ]);
+        $secondSession = UserPresenceSession::query()->create([
+            'user_id' => $user->id,
+            'session_id' => 'device-session-two',
+            'platform' => 'android',
+            'app_state' => 'foreground',
+            'last_seen_at' => now(),
+        ]);
+
+        $request = Request::create('/api/v1/presence/session', 'DELETE', [
+            'session_id' => $firstSession->session_id,
+        ]);
+        $request->setUserResolver(fn () => $user);
+        app(PresenceController::class)->disconnect($request);
+
+        $this->assertNotNull($firstSession->fresh()->ended_at);
+        $this->assertNull($secondSession->fresh()->ended_at);
+        $this->assertSame('active', $user->fresh()->live_status);
+
+        $secondRequest = Request::create('/api/v1/presence/session', 'DELETE', [
+            'session_id' => $secondSession->session_id,
+        ]);
+        $secondRequest->setUserResolver(fn () => $user);
+        app(PresenceController::class)->disconnect($secondRequest);
+
+        $this->assertSame('inactive', $user->fresh()->live_status);
+    }
+
+    public function test_stale_presence_command_marks_users_offline_after_the_session_lease_expires(): void
+    {
+        $user = $this->makeUser('9876500095');
+        $user->forceFill([
+            'live_status' => 'active',
+            'live_last_seen_at' => now()->subMinute(),
+        ])->save();
+
+        UserPresenceSession::query()->create([
+            'user_id' => $user->id,
+            'session_id' => 'stale-device-session',
+            'platform' => 'web',
+            'app_state' => 'foreground',
+            'last_seen_at' => now()->subSeconds(90),
+        ]);
+
+        app(ExpireStaleUserPresence::class)->handle();
+
+        $this->assertSame('inactive', $user->fresh()->live_status);
+    }
+
+    public function test_presence_session_identifier_cannot_be_reused_by_another_user(): void
+    {
+        $owner = $this->makeUser('9876500096');
+        $other = $this->makeUser('9876500097');
+
+        UserPresenceSession::query()->create([
+            'user_id' => $owner->id,
+            'session_id' => 'owned-device-session',
+            'platform' => 'web',
+            'app_state' => 'foreground',
+            'last_seen_at' => now(),
+        ]);
+
+        $request = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'owned-device-session',
+            'platform' => 'web',
+            'app_state' => 'foreground',
+        ]);
+        $request->setUserResolver(fn () => $other);
+
+        $response = app(PresenceController::class)->heartbeat($request);
+
+        $this->assertSame(409, $response->getStatusCode());
+        $this->assertSame($owner->id, UserPresenceSession::query()->where('session_id', 'owned-device-session')->value('user_id'));
     }
 
     public function test_player_presence_channel_only_authorizes_the_matching_account(): void
