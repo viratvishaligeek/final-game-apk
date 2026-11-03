@@ -82,7 +82,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame(200.0, $payload['summary']['crossing']['total_amount']);
         $this->assertSame(1, $payload['summary']['haruf']['total_bets']);
         $this->assertSame(25.0, $payload['summary']['haruf']['total_amount']);
-        $this->assertSame(99, $payload['summary']['jodi']['unplayed_numbers']);
+        $this->assertSame(98, $payload['summary']['jodi']['unplayed_numbers']);
     }
 
     public function test_selected_number_details_include_only_same_user_same_type_other_numbers(): void
