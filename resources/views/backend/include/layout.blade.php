@@ -137,6 +137,7 @@
     <script>
         window.ADMIN_PAYMENT_ALERT_BROADCAST = {
             driver: @json(config('broadcasting.default')),
+            siteKey: @json(config('sites.current_key', config('sites.default', 'play-online-khaiwal'))),
             configured: @json(filled(config('broadcasting.connections.pusher.app_id')) && filled(config('broadcasting.connections.pusher.key')) && filled(config('broadcasting.connections.pusher.secret')) && filled(config('broadcasting.connections.pusher.options.cluster'))),
             key: @json(config('broadcasting.connections.' . config('broadcasting.default') . '.key')),
             cluster: @json(config('broadcasting.connections.pusher.options.cluster') ?? null),
@@ -414,11 +415,11 @@
                 }
                 if (!window.adminPusherChannelsBound) {
                     window.adminPusherChannelsBound = true;
-                    client.subscribe('private-admin.payment-alerts').bind('payment.failed', addAlert);
-                    client.subscribe('private-admin.user-presence').bind('presence.changed', payload => {
+                    client.subscribe('private-admin.payment-alerts.' + config.siteKey).bind('payment.failed', addAlert);
+                    client.subscribe('private-admin.user-presence.' + config.siteKey).bind('presence.changed', payload => {
                         window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
                     });
-                    client.subscribe('private-admin.support-chat').bind('support.message.created', payload => {
+                    client.subscribe('private-admin.support-chat.' + config.siteKey).bind('support.message.created', payload => {
                         playChatNotification(payload);
                         window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
                         void refreshHeaderChatNotifications();
