@@ -41,7 +41,7 @@ Audit date: 2026-11-04. All 22 controllers under `app/Http/Controllers/Backend/`
 ## Priority remaining refactors
 
 1. Extract wallet request approve/reject workflows with transaction, ledger, and notification regression tests.
-2. Extract BiddingDesk query builders for profit/loss and detail aggregation; preserve current response contracts.
+2. Extract remaining BiddingDesk detail aggregation; profit/loss report aggregation is now in a service.
 3. Extract Dashboard report aggregation; preserve date boundaries, site scoping, and summary values.
 4. Extract SettingController file/config persistence with rollback-safe storage handling.
 5. Extract SupportChat conversation query/send orchestration while preserving per-admin unread counts and site scoping.
