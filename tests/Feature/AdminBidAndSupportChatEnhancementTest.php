@@ -146,6 +146,21 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame(0, $payload['data'][0]['unread_count']);
     }
 
+    public function test_admin_all_user_search_route_is_protected_by_admin_authentication(): void
+    {
+        $route = Route::getRoutes()->getByAction(SupportChatController::class . '@searchUsers');
+
+        $this->assertNotNull($route);
+        $this->assertContains('auth:admin', $route->gatherMiddleware());
+    }
+
+    public function test_player_private_broadcast_auth_route_requires_sanctum(): void
+    {
+        $route = Route::getRoutes()->match(Request::create('/api/broadcasting/auth', 'POST'));
+
+        $this->assertContains('auth:sanctum', $route->gatherMiddleware());
+    }
+
     public function test_starting_the_same_user_conversation_twice_reuses_the_existing_row(): void
     {
         $admin = Admin::query()->create([
