@@ -215,6 +215,7 @@
      const query = !reset ? '?after_id='+encodeURIComponent(String(lastId)) : '';
      const result=await request(root+'/'+active+'/messages'+query);
      const all=result.data || [];
+     window.dispatchEvent(new Event('admin:refresh-chat-unread'));
      const previousId = lastId;
      if (!reset && previousId > 0) {
        all.filter(m => m.sender === 'user' && m.id > previousId).forEach(notifyAdmin);

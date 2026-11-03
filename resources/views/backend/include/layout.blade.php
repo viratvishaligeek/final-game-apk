@@ -163,6 +163,7 @@
             }
         });
         window.addEventListener('admin:incoming-chat-message', event => playChatNotification(event.detail || {}));
+        window.addEventListener('admin:refresh-chat-unread', () => { void refreshHeaderChatNotifications(); });
         const formatDate = value => {
             if (!value) return '—';
             const date = new Date(value);
