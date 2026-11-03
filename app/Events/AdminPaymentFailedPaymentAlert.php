@@ -30,9 +30,9 @@ class AdminPaymentFailedPaymentAlert implements ShouldBroadcastNow, ShouldDispat
         $alert = AdminPaymentAlert::query()
             ->with('user:id,name,phone')
             ->addSelect([
-                'related_occurrences' => AdminPaymentAlert::query()->from('admin_payment_alerts as related_alerts')->selectRaw('COUNT(*)')->whereNotNull('related_alerts.fingerprint')->whereColumn('related_alerts.fingerprint', 'admin_payment_alerts.fingerprint'),
-                'related_first_occurred_at' => AdminPaymentAlert::query()->from('admin_payment_alerts as related_alerts')->selectRaw('MIN(related_alerts.first_occurred_at)')->whereNotNull('related_alerts.fingerprint')->whereColumn('related_alerts.fingerprint', 'admin_payment_alerts.fingerprint'),
-                'related_latest_occurred_at' => AdminPaymentAlert::query()->from('admin_payment_alerts as related_alerts')->selectRaw('MAX(related_alerts.latest_occurred_at)')->whereNotNull('related_alerts.fingerprint')->whereColumn('related_alerts.fingerprint', 'admin_payment_alerts.fingerprint'),
+                'related_occurrences' => AdminPaymentAlert::withoutGlobalScopes()->from('admin_payment_alerts as related_alerts')->selectRaw('COUNT(*)')->where('related_alerts.site_key', config('sites.current_key', config('sites.default', 'play-online-khaiwal')))->whereNotNull('related_alerts.fingerprint')->whereColumn('related_alerts.fingerprint', 'admin_payment_alerts.fingerprint'),
+                'related_first_occurred_at' => AdminPaymentAlert::withoutGlobalScopes()->from('admin_payment_alerts as related_alerts')->selectRaw('MIN(related_alerts.first_occurred_at)')->where('related_alerts.site_key', config('sites.current_key', config('sites.default', 'play-online-khaiwal')))->whereNotNull('related_alerts.fingerprint')->whereColumn('related_alerts.fingerprint', 'admin_payment_alerts.fingerprint'),
+                'related_latest_occurred_at' => AdminPaymentAlert::withoutGlobalScopes()->from('admin_payment_alerts as related_alerts')->selectRaw('MAX(related_alerts.latest_occurred_at)')->where('related_alerts.site_key', config('sites.current_key', config('sites.default', 'play-online-khaiwal')))->whereNotNull('related_alerts.fingerprint')->whereColumn('related_alerts.fingerprint', 'admin_payment_alerts.fingerprint'),
             ])
             ->find($this->alertId);
 
