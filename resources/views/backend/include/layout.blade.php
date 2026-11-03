@@ -280,6 +280,7 @@
                 const response = await fetch(endpoint + '/pending', {credentials: 'same-origin', headers: {'Accept': 'application/json'}});
                 if (!response.ok) return;
                 const payload = await response.json();
+                window.dispatchEvent(new CustomEvent('admin:conversations-snapshot', {detail: payload}));
                 (payload.data || []).forEach(addAlert);
             } catch (error) {
                 console.warn('Unable to restore pending payment alerts.', error);
@@ -431,7 +432,6 @@
                 if (client.connection.state !== 'connected') startRealtimeFallback();
                 else {
                     void loadPending();
-                    void refreshHeaderChatNotifications();
                 }
                 window.dispatchEvent(new CustomEvent('admin:broadcast-state', {
                     detail: {current: client.connection.state}
