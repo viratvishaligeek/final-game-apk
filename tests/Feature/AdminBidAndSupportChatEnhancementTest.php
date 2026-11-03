@@ -242,4 +242,55 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame($first->getData(true)['data']['id'], $second->getData(true)['data']['id']);
         $this->assertSame(1, SupportConversation::query()->where('user_id', $user->id)->count());
     }
+    public function test_global_unread_total_is_per_admin_and_includes_all_conversations(): void
+    {
+        $firstAdmin = Admin::query()->create([
+            'name' => 'Unread Admin One',
+            'email' => 'unread-one@example.test',
+            'password' => 'test-password',
+            'status' => 'active',
+        ]);
+        $secondAdmin = Admin::query()->create([
+            'name' => 'Unread Admin Two',
+            'email' => 'unread-two@example.test',
+            'password' => 'test-password',
+            'status' => 'active',
+        ]);
+
+        $firstUser = $this->makeUser('9876500021');
+        $secondUser = $this->makeUser('9876500022');
+        $firstConversation = SupportConversation::query()->create(['user_id' => $firstUser->id]);
+        $secondConversation = SupportConversation::query()->create(['user_id' => $secondUser->id]);
+
+        $firstMessage = $firstConversation->messages()->create([
+            'sender_type' => 'user',
+            'sender_id' => $firstUser->id,
+            'body' => 'First unread message',
+        ]);
+        $secondConversation->messages()->create([
+            'sender_type' => 'user',
+            'sender_id' => $secondUser->id,
+            'body' => 'Second unread message',
+        ]);
+
+        SupportConversationAdminRead::query()->create([
+            'conversation_id' => $firstConversation->id,
+            'admin_id' => $firstAdmin->id,
+            'last_read_message_id' => $firstMessage->id,
+            'last_read_at' => now(),
+        ]);
+
+        Auth::guard('admin')->setUser($firstAdmin);
+        $firstPayload = app(SupportChatController::class)
+            ->conversations(Request::create('/admin/support-chat/conversations', 'GET'))
+            ->getData(true);
+        $this->assertSame(1, $firstPayload['meta']['total_unread_count']);
+
+        Auth::guard('admin')->setUser($secondAdmin);
+        $secondPayload = app(SupportChatController::class)
+            ->conversations(Request::create('/admin/support-chat/conversations', 'GET'))
+            ->getData(true);
+        $this->assertSame(2, $secondPayload['meta']['total_unread_count']);
+    }
+
 }
