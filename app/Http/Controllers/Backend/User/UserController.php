@@ -97,53 +97,12 @@ class UserController extends Controller
     {
         $transactions = $user->transactions()->latest('id')->paginate(15, ['*'], 'transactions_page');
 
-        // Paginate play slips, not individual numbers, so one order is never
-        // split across pages. Bids without an order number remain individual slips.
-        $bids = $user->bids()
-            ->selectRaw("COALESCE(NULLIF(order_no, ''), CONCAT('bid-', id)) as group_key, MAX(id) as latest_id, COUNT(*) as item_count, SUM(amount) as total_amount")
-            ->groupBy('group_key')
-            ->orderByDesc('latest_id')
-            ->paginate(15, null, 'bids_page');
-
-        $groupKeys = $bids->getCollection()->pluck('group_key');
-        $orderNumbers = $groupKeys
-            ->filter(fn ($key) => !str_starts_with((string) $key, 'bid-'))
-            ->values();
-        $singleBidIds = $groupKeys
-            ->filter(fn ($key) => str_starts_with((string) $key, 'bid-'))
-            ->map(fn ($key) => (int) substr((string) $key, 4))
-            ->values();
-
-        $groupedBidRows = $groupKeys->isEmpty()
-            ? collect()
-            : $user->bids()
-                ->with('game:id,name')
-                ->where(function ($query) use ($orderNumbers, $singleBidIds) {
-                    if ($orderNumbers->isNotEmpty()) {
-                        $query->whereIn('order_no', $orderNumbers);
-                    }
-                    if ($singleBidIds->isNotEmpty()) {
-                        if ($orderNumbers->isNotEmpty()) {
-                            $query->orWhereIn('id', $singleBidIds);
-                        } else {
-                            $query->whereIn('id', $singleBidIds);
-                        }
-                    }
-                })
-                ->orderByDesc('id')
-                ->get()
-                ->groupBy(fn ($bid) => filled($bid->order_no) ? (string) $bid->order_no : 'bid-' . $bid->id);
-
-        $bids->setCollection($bids->getCollection()->map(function ($group) use ($groupedBidRows) {
-            $key = (string) $group->group_key;
-            return (object) [
-                'group_key' => $key,
-                'latest_id' => $group->latest_id,
-                'item_count' => (int) $group->item_count,
-                'total_amount' => (float) $group->total_amount,
-                'bids' => $groupedBidRows->get($key, collect())->sortByDesc('id')->values(),
-            ];
-        }));
+        $gameBidStats = $user->bids()
+            ->with('game:id,name')
+            ->selectRaw('game_id, COUNT(*) as total_bids, COALESCE(SUM(amount), 0) as total_amount, MAX(id) as latest_bid_id')
+            ->groupBy('game_id')
+            ->orderByDesc('latest_bid_id')
+            ->get();
 
         $walletStats = $user->completedTransactions()
             ->selectRaw("
@@ -171,13 +130,49 @@ class UserController extends Controller
             'pageName'     => 'User Details',
             'user'         => $user,
             'transactions' => $transactions,
-            'bids'         => $bids,
+            'gameBidStats' => $gameBidStats,
             'walletStats'  => $walletStats,
             'gameStats'    => $gameStats,
             'bidTypeStats' => $bidTypeStats,
         ]);
     }
 
+
+    public function bids(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $bids = $user->bids()
+            ->with('game:id,name')
+            ->where('game_id', $validated['game_id'])
+            ->latest('id')
+            ->paginate($validated['per_page'] ?? 50)
+            ->withQueryString();
+
+        return response()->json([
+            'data' => $bids->getCollection()->map(fn ($bid) => [
+                'id' => $bid->id,
+                'order_no' => $bid->order_no,
+                'game_name' => $bid->game?->name ?? 'Game Deleted',
+                'game_date' => $bid->game_date?->format('d M Y') ?? (string) $bid->game_date,
+                'type' => $bid->type,
+                'number' => $bid->number,
+                'amount' => round((float) $bid->amount, 2),
+                'status' => $bid->status,
+                'winning_amount' => round((float) $bid->winning_amount, 2),
+                'created_at' => $bid->created_at?->timezone(config('app.timezone'))->format('d M Y, h:i A'),
+            ])->values(),
+            'pagination' => [
+                'current_page' => $bids->currentPage(),
+                'last_page' => $bids->lastPage(),
+                'total' => $bids->total(),
+            ],
+        ]);
+    }
 
     public function edit(string $id)
     {
