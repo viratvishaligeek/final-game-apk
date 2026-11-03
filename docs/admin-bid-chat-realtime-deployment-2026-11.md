@@ -4,7 +4,7 @@
 
 This change adds no database migrations. It uses the existing bid indexes, the unique `support_conversations.user_id` constraint, the per-admin `support_conversation_admin_reads` table, and existing Pusher channels.
 
-The admin browser uses one shared Pusher JS client per page load. The three admin private-channel authorizations (payment alerts, presence, and support chat) are separate expected `/broadcasting/auth` requests. The player app authorizes its own `private-users.{id}` channel at `/api/broadcasting/auth`. Repeated requests beyond these subscriptions should be investigated for duplicate page initialization or duplicate subscriptions; do not assume each authorization request is an error.
+The admin browser uses one shared Pusher JS client per page load. Payment alerts, presence and support chat use site-qualified private channels; the channel authorization callback also verifies that the authenticated admin's selected site matches the channel. The three admin private-channel authorizations are separate expected `/broadcasting/auth` requests. The player app authorizes its own `private-users.{id}` channel at `/api/broadcasting/auth`. Repeated requests beyond these subscriptions should be investigated for duplicate page initialization or duplicate subscriptions; do not assume each authorization request is an error.
 
 ## Backend environment
 
