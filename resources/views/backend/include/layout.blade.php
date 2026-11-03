@@ -88,7 +88,7 @@
             cluster: @json(config('broadcasting.connections.pusher.options.cluster') ?? null),
             host: @json(config('broadcasting.connections.reverb.options.host') ?? null),
             port: @json(config('broadcasting.connections.reverb.options.port') ?? 443),
-            forceTLS: @json((config('broadcasting.connections.reverb.options.scheme') ?? 'https') === 'https')
+            forceTLS: @json(config('broadcasting.connections.pusher.options.useTLS', true))
         };
     </script>
 
@@ -250,18 +250,9 @@
                 };
                 if (config.driver === 'reverb') {
                     throw new Error('Reverb is not installed in this Laravel dependency set. Use Pusher or install and validate laravel/reverb before selecting Reverb.');
-                    // Reverb speaks the Pusher protocol. pusher-js requires a cluster
-                    // option even when a custom Reverb host is supplied; this sentinel
-                    // is not a Pusher account setting and is never read from PUSHER_*.
-                    options.cluster = 'mt1';
-                    options.wsHost = config.host;
-                    options.wsPort = Number(config.port || 80);
-                    options.wssPort = Number(config.port || 443);
-                    options.enabledTransports = ['ws', 'wss'];
-                } else {
-                    if (!config.cluster) throw new Error('Pusher is selected but PUSHER_APP_CLUSTER is missing.');
-                    options.cluster = config.cluster;
                 }
+                if (!config.cluster) throw new Error('Pusher is selected but PUSHER_APP_CLUSTER is missing.');
+                options.cluster = config.cluster;
                 const client = new Pusher(config.key, options);
                 client.connection.bind('state_change', state => {
                     window.dispatchEvent(new CustomEvent('admin:broadcast-state', {detail: state}));
