@@ -628,7 +628,7 @@
                         page: page,
                         per_page: 50,
                     });
-                    const response = await fetch(\`{{ route('admin.bidding-desk.details') }}?\${params.toString()}\`,
+                    const response = await fetch(`{{ route('admin.bidding-desk.details') }}?${params.toString()}`,
                         { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }
                     );
                     const result = await response.json();
