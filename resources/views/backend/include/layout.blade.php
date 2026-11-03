@@ -110,10 +110,12 @@
         paymentAudio.loop = true;
         const playedChatMessages = new Set();
         const chatSoundEnabled = @json((string) setting('notification_sound_chat', 'default') !== 'mute');
+        const soundPreferenceEnabled = (() => { try { return localStorage.getItem('admin_notification_sound_enabled') === '1'; } catch (error) { return false; } })();
         const setSoundStatus = value => {
             const label = document.getElementById('admin-sound-status');
             if (label) label.textContent = value;
         };
+        if (soundPreferenceEnabled) setSoundStatus('Sound enabled');
 
         const setText = (id, value) => {
             const element = document.getElementById(id);
@@ -127,7 +129,7 @@
         const startSound = () => {
             paymentAlertActive = true;
             paymentAudio.currentTime = 0;
-            paymentAudio.play().catch(() => setSoundStatus('Click to enable sounds'));
+            paymentAudio.play().catch(() => setSoundStatus('Tap to enable sound'));
         };
         const playChatNotification = payload => {
             if (!chatSoundEnabled) return;
@@ -138,7 +140,7 @@
             if (playedChatMessages.size > 500) playedChatMessages.delete(playedChatMessages.values().next().value);
             if (paymentAlertActive) return;
             chatAudio.currentTime = 0;
-            chatAudio.play().catch(() => setSoundStatus('Click to enable sounds'));
+            chatAudio.play().catch(() => setSoundStatus('Tap to enable sound'));
         };
         document.getElementById('admin-enable-alert-sounds')?.addEventListener('click', async () => {
             try {
@@ -152,11 +154,12 @@
                     }
                     audio.volume = 1;
                 }
-                setSoundStatus('Sounds enabled');
+                try { localStorage.setItem('admin_notification_sound_enabled', '1'); } catch (error) {}
+                setSoundStatus('Sound enabled');
             } catch (error) {
                 paymentAudio.volume = 1;
                 chatAudio.volume = 1;
-                setSoundStatus('Sound blocked');
+                setSoundStatus('Tap to enable sound');
             }
         });
         window.addEventListener('admin:incoming-chat-message', event => playChatNotification(event.detail || {}));

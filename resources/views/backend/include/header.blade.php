@@ -9,7 +9,7 @@
      <ul class="navbar-nav align-items-center ms-auto">
          <li class="nav-item me-2">
              <button type="button" class="btn btn-sm btn-outline-dark text-nowrap" id="admin-enable-alert-sounds" title="Enable notification sounds">
-                 <i data-feather="volume-2"></i><span class="d-none d-lg-inline ms-1" id="admin-sound-status">Enable sounds</span>
+                 <i data-feather="volume-2"></i><span class="d-inline ms-1 small" id="admin-sound-status">Enable sound</span>
              </button>
          </li>
          <li class="nav-item dropdown no-caret me-2 dropdown-notifications">
