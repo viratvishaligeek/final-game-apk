@@ -166,7 +166,7 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>
-                                        #
+                                        Bid / Txn ID
                                     </th>
                                     <th>
                                         User
