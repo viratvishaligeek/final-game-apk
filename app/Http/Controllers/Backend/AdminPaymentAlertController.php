@@ -42,6 +42,7 @@ class AdminPaymentAlertController extends Controller
                 'processing_stage' => $alert->processing_stage,
                 'diagnostic_reference' => $alert->diagnostic_reference,
                 'severity' => $alert->severity,
+                'fingerprint' => $alert->fingerprint,
                 'occurrence_count' => $alert->occurrence_count,
                 'related_occurrences' => $alert->related_occurrences,
                 'related_first_occurred_at' => $alert->related_first_occurred_at,
@@ -56,13 +57,17 @@ class AdminPaymentAlertController extends Controller
 
     public function acknowledge(Request $request, AdminPaymentAlert $alert): JsonResponse
     {
-        AdminPaymentAlertRead::query()->firstOrCreate(
-            [
-                'admin_payment_alert_id' => $alert->id,
-                'admin_id' => (int) $request->user('admin')->id,
-            ],
-            ['read_at' => now()]
-        );
+        $adminId = (int) $request->user('admin')->id;
+        $group = AdminPaymentAlert::query()
+            ->when($alert->fingerprint, fn ($query) => $query->where('fingerprint', $alert->fingerprint), fn ($query) => $query->whereKey($alert->id))
+            ->pluck('id');
+
+        foreach ($group as $alertId) {
+            AdminPaymentAlertRead::query()->firstOrCreate(
+                ['admin_payment_alert_id' => $alertId, 'admin_id' => $adminId],
+                ['read_at' => now()]
+            );
+        }
 
         return response()->json(['success' => true]);
     }
