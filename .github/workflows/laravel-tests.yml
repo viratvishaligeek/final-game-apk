@@ -60,9 +60,19 @@ jobs:
         run: |
           php -l app/Http/Controllers/Backend/Game/BiddingDeskController.php
           php -l app/Services/BidAnalyticsService.php
+          php -l app/Http/Controllers/Backend/User/UserController.php
           php -l app/Http/Controllers/Backend/SupportChatController.php
           php -l app/Events/SupportMessageCreated.php
+          php -l routes/admin.php
+          php -l routes/api.php
+          php -l routes/channels.php
+          php -l config/broadcasting.php
           php -l tests/Feature/AdminBidAndSupportChatEnhancementTest.php
+      - name: Compile Blade views and verify broadcast route
+        run: |
+          php artisan view:clear
+          php artisan view:cache
+          php artisan route:list --path=broadcasting
       - name: Run bid and chat regression tests
         run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php --display-warnings
       - name: Run complete Laravel test suite
