@@ -3,6 +3,7 @@
 use App\Models\Admin;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -72,3 +73,5 @@ Artisan::command('permissions:setup', function () {
     }
     $this->info('Roles and permissions have been set up successfully.');
 })->describe('Setup roles and permissions for the application');
+
+Schedule::command('presence:expire')->everyMinute()->withoutOverlapping();
