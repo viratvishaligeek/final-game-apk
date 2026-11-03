@@ -21,8 +21,6 @@ PUSHER_APP_SECRET=your-pusher-app-secret
 PUSHER_APP_CLUSTER=your-pusher-cluster
 PUSHER_PORT=443
 PUSHER_SCHEME=https
-# Optional only for a custom Pusher-compatible host:
-# PUSHER_HOST=
 ~~~
 
 PUSHER_APP_KEY and PUSHER_APP_CLUSTER must match the Vue public values below. Keep PUSHER_APP_SECRET and PUSHER_APP_ID server-side; never expose them in Vite variables.
