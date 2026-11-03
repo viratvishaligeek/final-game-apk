@@ -78,6 +78,11 @@ class User extends Authenticatable
         return $this->hasMany(Bid::class);
     }
 
+    public function presenceSessions()
+    {
+        return $this->hasMany(UserPresenceSession::class);
+    }
+
     public function completedTransactions()
     {
         return $this->transactions()
