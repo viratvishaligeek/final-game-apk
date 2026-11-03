@@ -75,11 +75,11 @@
    if (!response.ok) throw new Error('Request failed ('+response.status+')');
    return response.json();
  }
- async function loadConversations() {
+ async function loadConversations(snapshot = null) {
    const requestId = ++conversationSearchRequest;
    const phone = conversationSearch ? conversationSearch.value.trim() : '';
    const query = phone ? '?phone='+encodeURIComponent(phone) : '';
-   const result = await request(root+'/conversations'+query);
+   const result = snapshot && !phone ? snapshot : await request(root+'/conversations'+query);
    if (requestId !== conversationSearchRequest) return;
    conversations.replaceChildren();
    const items = Array.isArray(result.data) ? result.data : [];
@@ -190,10 +190,13 @@
  }
  window.addEventListener('admin:support-message', event => {
    const payload = event.detail || {};
-   void loadConversations().catch(error => console.warn('Realtime inbox refresh failed', error));
    if (active && Number(payload.conversation_id) === Number(active)) {
      void loadMessages(false);
    }
+ });
+ window.addEventListener('admin:conversations-snapshot', event => {
+   if (conversationSearch?.value.trim()) return;
+   void loadConversations(event.detail || null).catch(error => console.warn('Realtime inbox snapshot failed', error));
  });
  function notifyAdmin(message) {
    window.dispatchEvent(new CustomEvent('admin:incoming-chat-message', { detail: { ...message, sender: 'user' } }));
@@ -358,7 +361,6 @@
    const connected = event.detail?.current === 'connected';
    realtimeConnected = connected;
    if (connected) {
-     void loadConversations();
      if (active) void loadMessages();
      status.textContent = 'Live · Pusher';
      status.className = 'badge bg-success';
@@ -368,9 +370,7 @@
    }
  });
  window.addEventListener('admin:recovery-tick', () => {
-   if (realtimeConnected) return;
-   void loadConversations().catch(error => console.warn('Recovery inbox refresh failed', error));
-   if (active) void loadMessages(false);
+   if (!realtimeConnected && active) void loadMessages(false);
  });
  loadConversations().then(()=>{
    if (window.adminPusher?.connection?.state === 'connected') realtimeConnected = true;
