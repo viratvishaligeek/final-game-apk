@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('admin_payment_alerts', function (Blueprint $table) {
             $table->id();
+            $table->string('site_key', 64)->default('play-online-khaiwal')->index();
             $table->foreignId('wallet_request_id')->unique()->constrained('wallet_requests')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('transaction_id', 120)->nullable();
@@ -23,6 +24,7 @@ return new class extends Migration
 
         Schema::create('admin_payment_alert_reads', function (Blueprint $table) {
             $table->id();
+            $table->string('site_key', 64)->default('play-online-khaiwal')->index();
             $table->foreignId('admin_payment_alert_id')->constrained('admin_payment_alerts')->cascadeOnDelete();
             $table->foreignId('admin_id')->constrained('admins')->cascadeOnDelete();
             $table->timestamp('read_at');
