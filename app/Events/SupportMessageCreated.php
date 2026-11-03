@@ -26,7 +26,7 @@ class SupportMessageCreated implements ShouldBroadcastNow, ShouldDispatchAfterCo
         }
 
         return [
-            new PrivateChannel('admin.support-chat'),
+            new PrivateChannel('admin.support-chat.' . $message->site_key),
             new PrivateChannel('users.' . $message->conversation->user_id),
         ];
     }
