@@ -57,6 +57,7 @@
  const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
  const playChatSound = @json(($chatSoundEnabled ?? true) === true);
  let active = null, lastId = 0, busy = false, recordedFile = null, recorder = null, stream = null, chunks = [];
+ let conversationVersion = 0, pendingMessageRefresh = false, pendingMessageReset = false;
  let pollTimer = null, pollDelay = 30000;
  const conversations = document.getElementById('conversations');
  const messages = document.getElementById('messages');
@@ -203,17 +204,25 @@
    }
  }
  async function selectConversation(c) {
-   active=c.id; lastId=0;
+   active=c.id; lastId=0; conversationVersion += 1;
    document.getElementById('chat-title').textContent=(c.user?.name || 'User')+' · '+(c.user?.phone || '');
    await loadMessages(true); await loadConversations();
  }
  async function loadMessages(reset=false) {
-   if (!active || busy) return;
+   if (!active) return;
+   if (busy) {
+     pendingMessageRefresh = true;
+     pendingMessageReset = pendingMessageReset || reset;
+     return;
+   }
    busy=true;
+   const requestedConversation = active;
+   const requestedVersion = conversationVersion;
    try {
      const wasNearBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 100;
      const query = !reset ? '?after_id='+encodeURIComponent(String(lastId)) : '';
-     const result=await request(root+'/'+active+'/messages'+query);
+     const result=await request(root+'/'+requestedConversation+'/messages'+query);
+     if (requestedVersion !== conversationVersion || requestedConversation !== active) return;
      const all=result.data || [];
      window.dispatchEvent(new Event('admin:refresh-chat-unread'));
      const previousId = lastId;
@@ -236,12 +245,20 @@
        messages.insertAdjacentHTML('beforeend', rendered);
      }
      if (all.length) lastId=Math.max(lastId,...all.map(m=>Number(m.id)||0));
+     if (!reset && all.length >= 200) pendingMessageRefresh = true;
      if (reset || (rendered && wasNearBottom)) messages.scrollTop=messages.scrollHeight;
      status.textContent='Connected · refreshes automatically'; status.className='badge bg-success';
    } catch(e) {
      status.textContent='Reconnecting…'; status.className='badge bg-secondary';
      console.warn('Support chat sync failed',e);
-   } finally { busy=false; }
+   } finally {
+     busy=false;
+     const shouldRefresh = pendingMessageRefresh && !!active;
+     const shouldReset = pendingMessageReset;
+     pendingMessageRefresh = false;
+     pendingMessageReset = false;
+     if (shouldRefresh) void loadMessages(shouldReset);
+   }
  }
  if (conversationSearch) {
    conversationSearch.addEventListener('input', () => {
