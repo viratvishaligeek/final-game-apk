@@ -4,12 +4,12 @@ namespace App\Events;
 
 use App\Models\AdminPaymentAlert;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class AdminPaymentFailedPaymentAlert implements ShouldBroadcast, ShouldDispatchAfterCommit
+class AdminPaymentFailedPaymentAlert implements ShouldBroadcastNow, ShouldDispatchAfterCommit
 {
     use Dispatchable, SerializesModels;
 
