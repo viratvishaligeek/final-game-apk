@@ -51,4 +51,14 @@ jobs:
       - run: php artisan migrate --force
       - name: Run payment monitoring tests
         run: php artisan test tests/Unit/PaymentAlertRecorderTest.php tests/Feature/PaymentAlertPersistenceTest.php
-      - run: php artisan test
+      - name: Validate bid and chat PHP syntax
+        run: |
+          php -l app/Http/Controllers/Backend/Game/BiddingDeskController.php
+          php -l app/Services/BidAnalyticsService.php
+          php -l app/Http/Controllers/Backend/SupportChatController.php
+          php -l app/Events/SupportMessageCreated.php
+          php -l tests/Feature/AdminBidAndSupportChatEnhancementTest.php
+      - name: Run bid and chat regression tests
+        run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php
+      - name: Run complete Laravel test suite
+        run: php artisan test
