@@ -35,39 +35,92 @@
             <footer class="footer-admin mt-auto footer-light">
                 <div class="container-xl px-4">
                     <div class="row">
-                        <div class="col-md-6 small">{{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Play Online Khaiwal')) }}</div>
+                        <div class="col-md-6 small">
+                            {{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Play Online Khaiwal')) }}
+                        </div>
                     </div>
                 </div>
             </footer>
         </div>
     </div>
-    <div class="modal fade" id="adminPaymentFailureModal" tabindex="-1" aria-hidden="true"
-        data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal fade" id="adminPaymentFailureModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+        data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered" style="width:90vw;max-width:1100px">
             <div class="modal-content border-0 shadow-lg" style="min-height:90vh;border:5px solid #dc3545!important">
                 <div class="modal-header bg-danger text-white">
-                    <h4 class="modal-title fw-bold"><i class="fas fa-triangle-exclamation me-2"></i>Automatic Payment Failed</h4>
+                    <h4 class="modal-title fw-bold"><i class="fas fa-triangle-exclamation me-2"></i>Automatic Payment
+                        Failed</h4>
                 </div>
                 <div class="modal-body d-flex flex-column justify-content-center p-4 p-md-5">
                     <div class="text-center text-danger mb-4">
-                        <div style="font-size:clamp(3rem,9vw,6rem);line-height:1"><i class="fas fa-circle-exclamation"></i></div>
+                        <div style="font-size:clamp(3rem,9vw,6rem);line-height:1"><i
+                                class="fas fa-circle-exclamation"></i></div>
                         <h2 class="fw-bold mt-3">Payment requires attention</h2>
                     </div>
                     <div class="row g-3">
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">User</small><strong id="payment-alert-user">—</strong><div class="small text-muted" id="payment-alert-user-meta"></div></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Transaction ID</small><strong id="payment-alert-transaction">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Amount</small><strong class="text-danger fs-3" id="payment-alert-amount">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway / Failed at</small><strong id="payment-alert-gateway">—</strong><div class="small text-muted" id="payment-alert-time"></div></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Internal payment attempt ID</small><strong id="payment-alert-attempt">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway order ID</small><strong id="payment-alert-order">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Error category / severity</small><strong id="payment-alert-category">—</strong><div class="small text-muted" id="payment-alert-severity"></div></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Error code / HTTP status</small><strong id="payment-alert-code">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Processing stage</small><strong id="payment-alert-stage">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Diagnostic reference</small><strong id="payment-alert-diagnostic">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Occurrences</small><strong id="payment-alert-occurrences">—</strong><div class="small text-muted" id="payment-alert-occurrence-range"></div></div></div>
-                        <div class="col-12"><div class="border border-danger rounded p-3"><small class="text-muted d-block">Failure reason</small><div class="fw-semibold" id="payment-alert-reason">Not provided by gateway.</div></div></div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">User</small><strong
+                                    id="payment-alert-user">—</strong>
+                                <div class="small text-muted" id="payment-alert-user-meta"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Transaction
+                                    ID</small><strong id="payment-alert-transaction">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small
+                                    class="text-muted d-block">Amount</small><strong class="text-danger fs-3"
+                                    id="payment-alert-amount">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway / Failed
+                                    at</small><strong id="payment-alert-gateway">—</strong>
+                                <div class="small text-muted" id="payment-alert-time"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Internal payment
+                                    attempt ID</small><strong id="payment-alert-attempt">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway order
+                                    ID</small><strong id="payment-alert-order">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Error category /
+                                    severity</small><strong id="payment-alert-category">—</strong>
+                                <div class="small text-muted" id="payment-alert-severity"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Error code / HTTP
+                                    status</small><strong id="payment-alert-code">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Processing
+                                    stage</small><strong id="payment-alert-stage">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Diagnostic
+                                    reference</small><strong id="payment-alert-diagnostic">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small
+                                    class="text-muted d-block">Occurrences</small><strong
+                                    id="payment-alert-occurrences">—</strong>
+                                <div class="small text-muted" id="payment-alert-occurrence-range"></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="border border-danger rounded p-3"><small class="text-muted d-block">Failure
+                                    reason</small>
+                                <div class="fw-semibold" id="payment-alert-reason">Not provided by gateway.</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-center mt-5"><button type="button" class="btn btn-danger btn-lg px-5 fw-bold" id="payment-alert-acknowledge">Mark as Read</button></div>
+                    <div class="text-center mt-5"><button type="button" class="btn btn-danger btn-lg px-5 fw-bold"
+                            id="payment-alert-acknowledge">Mark as Read</button></div>
                 </div>
             </div>
         </div>
@@ -93,73 +146,37 @@
     </script>
 
     <script>
-    (() => {
-        const modalElement = document.getElementById('adminPaymentFailureModal');
-        if (!modalElement || !window.bootstrap) return;
+        (() => {
+            const modalElement = document.getElementById('adminPaymentFailureModal');
+            if (!modalElement || !window.bootstrap) return;
 
-        const modal = new bootstrap.Modal(modalElement, {backdrop: 'static', keyboard: false});
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-        const endpoint = '/admin/payment-alerts';
-        const acknowledged = new Set();
-        const queued = new Map();
-        let activeAlert = null;
-        let modalClosing = false;
-        let paymentAlertActive = false;
-        const paymentAudio = new Audio('/sound/wow.wav');
-        const chatAudio = new Audio('/sound/wow.wav');
-        paymentAudio.loop = true;
-        const playedChatMessages = new Set();
-        const chatSoundEnabled = @json((string) setting('notification_sound_chat', 'default') !== 'mute');
-        const setSoundStatus = value => {
-            const label = document.getElementById('admin-sound-status');
-            if (label) label.textContent = value;
-        };
+            const modal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const endpoint = '/admin/payment-alerts';
+            const acknowledged = new Set();
+            const queued = new Map();
+            let activeAlert = null;
+            let modalClosing = false;
 
         const setText = (id, value) => {
             const element = document.getElementById(id);
             if (element) element.textContent = value == null || value === '' ? '—' : String(value);
         };
         const stopSound = () => {
-            paymentAudio.pause();
-            paymentAudio.currentTime = 0;
-            paymentAlertActive = false;
+            if (!sound) return;
+            sound.pause();
+            sound.currentTime = 0;
+            sound = null;
         };
         const startSound = () => {
-            paymentAlertActive = true;
-            paymentAudio.currentTime = 0;
-            paymentAudio.play().catch(() => setSoundStatus('Click to enable sounds'));
+            stopSound();
+            sound = new Audio('/sound/wow.wav');
+            sound.loop = true;
+            sound.play().catch(() => {});
         };
-        const playChatNotification = payload => {
-            if (!chatSoundEnabled) return;
-            const sender = payload?.sender || payload?.sender_type;
-            const messageId = Number(payload?.message_id || payload?.id || 0);
-            if (sender !== 'user' || !messageId || playedChatMessages.has(messageId)) return;
-            playedChatMessages.add(messageId);
-            if (playedChatMessages.size > 500) playedChatMessages.delete(playedChatMessages.values().next().value);
-            if (paymentAlertActive) return;
-            chatAudio.currentTime = 0;
-            chatAudio.play().catch(() => setSoundStatus('Click to enable sounds'));
-        };
-        document.getElementById('admin-enable-alert-sounds')?.addEventListener('click', async () => {
-            try {
-                for (const audio of [paymentAudio, chatAudio]) {
-                    const wasPlaying = !audio.paused;
-                    audio.volume = 0;
-                    await audio.play();
-                    if (!wasPlaying) {
-                        audio.pause();
-                        audio.currentTime = 0;
-                    }
-                    audio.volume = 1;
-                }
-                setSoundStatus('Sounds enabled');
-            } catch (error) {
-                paymentAudio.volume = 1;
-                chatAudio.volume = 1;
-                setSoundStatus('Sound blocked');
-            }
-        });
-        window.addEventListener('admin:incoming-chat-message', event => playChatNotification(event.detail || {}));
         const formatDate = value => {
             if (!value) return '—';
             const date = new Date(value);
@@ -170,7 +187,6 @@
             const [id, alert] = queued.entries().next().value;
             queued.delete(id);
             activeAlert = alert;
-            paymentAlertActive = true;
             setText('payment-alert-user', alert.user_name);
             setText('payment-alert-user-meta', 'User ID: ' + alert.user_id + (alert.phone ? ' · ' + alert.phone : ''));
             setText('payment-alert-transaction', alert.transaction_id || 'Not generated');
@@ -225,154 +241,126 @@
             }
         };
 
-        document.getElementById('payment-alert-acknowledge')?.addEventListener('click', async () => {
-            if (!activeAlert) return;
-            const alert = activeAlert;
-            const button = document.getElementById('payment-alert-acknowledge');
-            button.disabled = true;
-            try {
-                const response = await fetch(endpoint + '/' + encodeURIComponent(alert.id) + '/acknowledge', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf},
-                    body: JSON.stringify({})
-                });
-                if (!response.ok) throw new Error('Acknowledgement failed');
-                acknowledged.add(Number(alert.id));
-                activeAlert = null;
-                stopSound();
-                modalClosing = true;
-                modal.hide();
-                void loadPending();
-            } catch (error) {
-                console.error(error);
-                window.alert('Unable to acknowledge this alert. Please try again.');
-            } finally {
-                button.disabled = false;
-            }
-        });
-
-        void loadPending();
-
-        const refreshHeaderChatNotifications = async () => {
-            const badge = document.getElementById('admin-chat-unread-badge');
-            const container = document.getElementById('admin-chat-notification-items');
-            if (!badge || !container) return;
-            try {
-                const response = await fetch('/admin/support-chat/conversations', {
-                    credentials: 'same-origin',
-                    headers: {'Accept': 'application/json'}
-                });
-                if (!response.ok) return;
-                const payload = await response.json();
-                const unread = (payload.data || []).filter(item => Number(item.unread_count) > 0);
-                const total = unread.reduce((sum, item) => sum + Number(item.unread_count || 0), 0);
-                badge.textContent = total > 99 ? '99+' : String(total);
-                badge.classList.toggle('d-none', total === 0);
-                container.replaceChildren();
-                if (!unread.length) {
-                    const empty = document.createElement('div');
-                    empty.className = 'dropdown-item small text-muted';
-                    empty.textContent = 'No unread support messages.';
-                    container.appendChild(empty);
-                    return;
+            document.getElementById('payment-alert-acknowledge')?.addEventListener('click', async () => {
+                if (!activeAlert) return;
+                const alert = activeAlert;
+                const button = document.getElementById('payment-alert-acknowledge');
+                button.disabled = true;
+                try {
+                    const response = await fetch(endpoint + '/' + encodeURIComponent(alert.id) +
+                        '/acknowledge', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            },
+                            body: JSON.stringify({})
+                        });
+                    if (!response.ok) throw new Error('Acknowledgement failed');
+                    acknowledged.add(Number(alert.id));
+                    activeAlert = null;
+                    stopSound();
+                    modalClosing = true;
+                    modal.hide();
+                    void loadPending();
+                } catch (error) {
+                    console.error(error);
+                    window.alert('Unable to acknowledge this alert. Please try again.');
+                } finally {
+                    button.disabled = false;
                 }
-                unread.slice(0, 6).forEach(item => {
-                    const link = document.createElement('a');
-                    link.className = 'dropdown-item dropdown-notifications-item';
-                    link.href = '/admin/support-chat?conversation_id=' + encodeURIComponent(item.id);
-                    const copy = document.createElement('div');
-                    copy.className = 'dropdown-notifications-item-content';
-                    const preview = document.createElement('div');
-                    preview.className = 'dropdown-notifications-item-content-text';
-                    preview.textContent = item.last_message_preview || 'New support message';
-                    const details = document.createElement('div');
-                    details.className = 'dropdown-notifications-item-content-details';
-                    details.textContent = (item.user?.name || 'User') + ' · ' + (item.user?.phone || '') + ' · ' + item.unread_count + ' unread';
-                    copy.append(preview, details);
-                    link.appendChild(copy);
-                    container.appendChild(link);
-                });
-            } catch (error) {
-                console.warn('Unable to refresh support message notifications.', error);
-            }
-        };
-        void refreshHeaderChatNotifications();
+            });
+
+            void loadPending();
+
+            const refreshHeaderChatNotifications = async () => {
+                const badge = document.getElementById('admin-chat-unread-badge');
+                const container = document.getElementById('admin-chat-notification-items');
+                if (!badge || !container) return;
+                try {
+                    const response = await fetch('/admin/support-chat/conversations', {
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (!response.ok) return;
+                    const payload = await response.json();
+                    const unread = (payload.data || []).filter(item => Number(item.unread_count) > 0);
+                    const total = unread.reduce((sum, item) => sum + Number(item.unread_count || 0), 0);
+                    badge.textContent = total > 99 ? '99+' : String(total);
+                    badge.classList.toggle('d-none', total === 0);
+                    container.replaceChildren();
+                    if (!unread.length) {
+                        const empty = document.createElement('div');
+                        empty.className = 'dropdown-item small text-muted';
+                        empty.textContent = 'No unread support messages.';
+                        container.appendChild(empty);
+                        return;
+                    }
+                    unread.slice(0, 6).forEach(item => {
+                        const link = document.createElement('a');
+                        link.className = 'dropdown-item dropdown-notifications-item';
+                        link.href = '/admin/support-chat?conversation_id=' + encodeURIComponent(item
+                            .id);
+                        const copy = document.createElement('div');
+                        copy.className = 'dropdown-notifications-item-content';
+                        const preview = document.createElement('div');
+                        preview.className = 'dropdown-notifications-item-content-text';
+                        preview.textContent = item.last_message_preview || 'New support message';
+                        const details = document.createElement('div');
+                        details.className = 'dropdown-notifications-item-content-details';
+                        details.textContent = (item.user?.name || 'User') + ' · ' + (item.user?.phone ||
+                            '') + ' · ' + item.unread_count + ' unread';
+                        copy.append(preview, details);
+                        link.appendChild(copy);
+                        container.appendChild(link);
+                    });
+                } catch (error) {
+                    console.warn('Unable to refresh support message notifications.', error);
+                }
+            };
+            void refreshHeaderChatNotifications();
 
         const config = window.ADMIN_PAYMENT_ALERT_BROADCAST || {};
-        let fallbackRefreshTimer = null;
-        const startRealtimeFallback = () => {
-            if (fallbackRefreshTimer) return;
-            fallbackRefreshTimer = window.setInterval(() => {
-                void loadPending();
-                void refreshHeaderChatNotifications();
-            }, 30000);
-        };
-        const stopRealtimeFallback = () => {
-            if (fallbackRefreshTimer) window.clearInterval(fallbackRefreshTimer);
-            fallbackRefreshTimer = null;
-        };
-        window.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                void loadPending();
-                void refreshHeaderChatNotifications();
-            }
-        });
-        if (config.driver === 'pusher' && config.key && window.Pusher) {
+        if (['pusher', 'reverb'].includes(config.driver) && config.key && window.Pusher) {
             try {
-                if (!config.cluster) throw new Error('Pusher is selected but PUSHER_APP_CLUSTER is missing.');
                 const options = {
-                    cluster: config.cluster,
                     forceTLS: config.forceTLS !== false,
                     authEndpoint: '/broadcasting/auth',
                     auth: {headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'}}
                 };
-                const client = window.adminPusher || new Pusher(config.key, options);
-                window.adminPusher = client;
-                if (!window.adminPusherLifecycleBound) {
-                    window.adminPusherLifecycleBound = true;
-                    client.connection.bind('state_change', state => {
-                        window.dispatchEvent(new CustomEvent('admin:broadcast-state', {detail: state}));
-                        if (state.current === 'connected') {
-                            stopRealtimeFallback();
-                            void loadPending();
-                            void refreshHeaderChatNotifications();
-                        } else {
-                            startRealtimeFallback();
-                        }
-                    });
+                if (config.driver === 'reverb') {
+                    throw new Error('Reverb is not installed in this Laravel dependency set. Use Pusher or install and validate laravel/reverb before selecting Reverb.');
                 }
-                if (!window.adminPusherChannelsBound) {
-                    window.adminPusherChannelsBound = true;
-                    client.subscribe('private-admin.payment-alerts').bind('payment.failed', addAlert);
-                    client.subscribe('private-admin.user-presence').bind('presence.changed', payload => {
-                        window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
-                    });
-                    client.subscribe('private-admin.support-chat').bind('support.message.created', payload => {
-                        playChatNotification(payload);
-                        window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
-                        void refreshHeaderChatNotifications();
-                    });
-                }
-                if (client.connection.state !== 'connected') startRealtimeFallback();
-                else {
-                    void loadPending();
+                if (!config.cluster) throw new Error('Pusher is selected but PUSHER_APP_CLUSTER is missing.');
+                options.cluster = config.cluster;
+                const client = new Pusher(config.key, options);
+                client.connection.bind('state_change', state => {
+                    window.dispatchEvent(new CustomEvent('admin:broadcast-state', {detail: state}));
+                });
+                client.subscribe('private-admin.payment-alerts').bind('payment.failed', addAlert);
+                client.subscribe('private-admin.user-presence').bind('presence.changed', payload => {
+                    window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
+                });
+                client.subscribe('private-admin.support-chat').bind('support.message.created', payload => {
+                    window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
+                });
+                client.channel('private-admin.support-chat').bind('support.message.created', () => {
                     void refreshHeaderChatNotifications();
-                }
+                });
             } catch (error) {
-                console.error('Admin Pusher realtime connection failed.', error);
-                startRealtimeFallback();
+                console.error('Admin payment alert realtime connection failed.', error);
             }
-        } else {
-            if (config.driver !== 'null') {
-                console.warn('Admin realtime broadcasting is not configured for Pusher. Pending alerts use the HTTP recovery fallback.');
-            }
-            startRealtimeFallback();
+        } else if (config.driver !== 'null') {
+            console.warn('Admin realtime broadcasting is not configured. Pending alerts will still be restored by HTTP.');
         }
     })();
     </script>
 
-        @yield('script')
+    @yield('script')
 </body>
 
 </html>

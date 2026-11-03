@@ -17,13 +17,7 @@
         <div class="col-md-4">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-header bg-white">
-                    <label for="user-search" class="form-label fw-bold mb-2">Find any registered user</label>
-                    <input id="user-search" type="search" class="form-control form-control-sm mb-2"
-                        placeholder="Search name, phone or user ID…" autocomplete="off">
-                    <div id="user-search-results" class="list-group mb-3" aria-live="polite">
-                        <div class="list-group-item small text-muted">Search users to start a new conversation.</div>
-                    </div>
-                    <label for="conversation-search" class="form-label fw-bold mb-2">Existing conversations</label>
+                    <label for="conversation-search" class="form-label fw-bold mb-2">Conversations</label>
                     <input id="conversation-search" type="search" class="form-control form-control-sm"
                         placeholder="Search registered phone number…" inputmode="tel" autocomplete="off">
                 </div>
@@ -63,11 +57,6 @@
  const status = document.getElementById('connection-status');
  const conversationSearch = document.getElementById('conversation-search');
  let conversationSearchTimer = null;
- let userSearchTimer = null;
- let userSearchRequest = 0;
- const userSearch = document.getElementById('user-search');
- const userSearchResults = document.getElementById('user-search-results');
- let realtimeConnected = false;
  let conversationSearchRequest = 0;
  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  async function request(url, options={}) {
@@ -97,88 +86,6 @@
      button.onclick=()=>selectConversation(c);
      conversations.appendChild(button);
    });
- async function searchUsers() {
-   const requestId = ++userSearchRequest;
-   const term = userSearch ? userSearch.value.trim() : '';
-   userSearchResults.replaceChildren();
-   if (!term) {
-     const empty = document.createElement('div');
-     empty.className = 'list-group-item small text-muted';
-     empty.textContent = 'Search by name, phone number or user ID.';
-     userSearchResults.appendChild(empty);
-     return;
-   }
-   const loading = document.createElement('div');
-   loading.className = 'list-group-item small text-muted';
-   loading.textContent = 'Searching registered users…';
-   userSearchResults.appendChild(loading);
-   try {
-     const result = await request(root + '/users?q=' + encodeURIComponent(term));
-     if (requestId !== userSearchRequest) return;
-     userSearchResults.replaceChildren();
-     const users = Array.isArray(result.data) ? result.data : [];
-     if (!users.length) {
-       const empty = document.createElement('div');
-       empty.className = 'list-group-item small text-muted';
-       empty.textContent = 'No registered users found.';
-       userSearchResults.appendChild(empty);
-       return;
-     }
-     users.forEach(user => {
-       const button = document.createElement('button');
-       button.type = 'button';
-       button.className = 'list-group-item list-group-item-action py-2';
-       const title = document.createElement('div');
-       title.className = 'd-flex justify-content-between gap-2';
-       const name = document.createElement('strong');
-       name.textContent = user.name || ('User #' + user.id);
-       const state = document.createElement('span');
-       state.className = 'badge ' + (Number(user.unread_count) > 0 ? 'bg-danger' : user.has_conversation ? 'bg-success' : 'bg-primary');
-       state.textContent = Number(user.unread_count) > 0 ? Number(user.unread_count) + ' unread' : user.has_conversation ? 'Existing chat' : 'Start chat';
-       title.append(name, state);
-       const meta = document.createElement('small');
-       meta.className = 'text-muted d-block';
-       meta.textContent = (user.phone || 'No phone') + ' · User #' + user.id + ' · ' + (user.status || 'unknown');
-       button.append(title, meta);
-       button.addEventListener('click', async () => {
-         button.disabled = true;
-         try {
-           const started = await request(root + '/conversations', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ user_id: user.id })
-           });
-           await loadConversations();
-           await selectConversation({
-             id: started.data.id,
-             user: started.data.user || { id: user.id, name: user.name, phone: user.phone }
-           });
-           userSearchResults.replaceChildren();
-           userSearch.value = '';
-         } catch (error) {
-           window.alert(error.message || 'Unable to open this user conversation.');
-         } finally {
-           button.disabled = false;
-         }
-       });
-       userSearchResults.appendChild(button);
-     });
-   } catch (error) {
-     if (requestId !== userSearchRequest) return;
-     userSearchResults.replaceChildren();
-     const failure = document.createElement('div');
-     failure.className = 'list-group-item small text-danger';
-     failure.textContent = error.message || 'User search failed. Please retry.';
-     userSearchResults.appendChild(failure);
-   }
- }
- if (userSearch) {
-   userSearch.addEventListener('input', () => {
-     if (userSearchTimer) clearTimeout(userSearchTimer);
-     userSearchTimer = window.setTimeout(() => { void searchUsers(); }, 300);
-   });
- }
-
    const requestedId = new URLSearchParams(window.location.search).get('conversation_id');
    if (!window.__adminChatInitialConversationOpened && requestedId) {
      const requested = items.find(item => Number(item.id) === Number(requestedId));
@@ -196,7 +103,10 @@
    }
  });
  function notifyAdmin(message) {
-   window.dispatchEvent(new CustomEvent('admin:incoming-chat-message', { detail: { ...message, sender: 'user' } }));
+   if (playChatSound) {
+     const audio = new Audio('/sound/wow.wav');
+     audio.play().catch(() => {});
+   }
    if ('Notification' in window && Notification.permission === 'granted') {
      const notification = new Notification('New support message', {body: message.body || 'User sent an attachment.'});
      notification.onclick = () => window.focus();
@@ -259,9 +169,12 @@
    const permission = await Notification.requestPermission();
    if (permission !== 'granted') return alert('Notifications were not enabled. Please allow notifications in browser settings.');
 
-   if (!('serviceWorker' in navigator) || !window.firebase || !window.FIREBASE_CONFIG || !window.FIREBASE_VAPID_KEY) {
-     return alert('Desktop alerts are enabled while this tab is open, but background push configuration is not available on this domain.');
-   }
+                if (!('serviceWorker' in navigator) || !window.firebase || !window.FIREBASE_CONFIG || !
+                    window.FIREBASE_VAPID_KEY) {
+                    return alert(
+                        'Desktop alerts are enabled while this tab is open, but background push configuration is not available on this domain.'
+                        );
+                }
 
    try {
      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
@@ -342,40 +255,16 @@
      await loadConversations();
      if(active) await loadMessages();
      else {status.textContent='Connected';status.className='badge bg-success';}
-     pollDelay = 30000;
+     if(status.classList.contains('bg-success')) pollDelay=30000;
    } catch(e) {
-     pollDelay = Math.min(60000, pollDelay * 2);
+     pollDelay=Math.min(30000,pollDelay*2);
      status.textContent='Reconnecting…'; status.className='badge bg-secondary';
    } finally {
-     if (!realtimeConnected) pollTimer = window.setTimeout(tick, pollDelay);
+     pollTimer=window.setTimeout(tick,pollDelay);
    }
  }
- window.addEventListener('admin:broadcast-state', event => {
-   const connected = event.detail?.current === 'connected';
-   realtimeConnected = connected;
-   if (connected) {
-     if (pollTimer) clearTimeout(pollTimer);
-     pollTimer = null;
-     void loadConversations();
-     if (active) void loadMessages();
-     status.textContent = 'Live · Pusher';
-     status.className = 'badge bg-success';
-   } else if (!pollTimer) {
-     pollTimer = window.setTimeout(tick, 30000);
-   }
- });
- loadConversations().then(()=>{
-   if (window.adminPusher?.connection?.state === 'connected') realtimeConnected = true;
-   status.textContent = realtimeConnected ? 'Live · Pusher' : 'Connected · recovery sync';
-   status.className = 'badge bg-success';
- }).catch(()=>{status.textContent='Reconnecting…';status.className='badge bg-secondary';});
- if (window.adminPusher?.connection?.state === 'connected') {
-   realtimeConnected = true;
-   if (pollTimer) clearTimeout(pollTimer);
-   pollTimer = null;
- } else if (!realtimeConnected) {
-   pollTimer=window.setTimeout(tick,pollDelay);
- }
+ loadConversations().then(()=>{status.textContent='Connected · refreshes automatically';status.className='badge bg-success';}).catch(()=>{status.textContent='Reconnecting…';status.className='badge bg-secondary';});
+ pollTimer=window.setTimeout(tick,pollDelay);
  window.addEventListener('beforeunload',()=>{ if(pollTimer) clearTimeout(pollTimer); stream?.getTracks().forEach(t=>t.stop()); });
 })();
 </script>
