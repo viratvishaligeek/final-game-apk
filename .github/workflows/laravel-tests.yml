@@ -49,4 +49,6 @@ jobs:
           coverage: none
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: php artisan migrate --force
+      - name: Run payment monitoring tests
+        run: php artisan test tests/Unit/PaymentAlertRecorderTest.php tests/Feature/PaymentAlertPersistenceTest.php
       - run: php artisan test
