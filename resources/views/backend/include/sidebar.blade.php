@@ -57,7 +57,7 @@
                 @if (count(config('sites.sites', [])) > 1)
                     <form method="GET" action="{{ route('admin.dashboard') }}" class="px-3 py-2">
                         <label class="small text-muted mb-1" for="admin-site-select">Active site</label>
-                        <select id="admin-site-select" name="site" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <select id="admin-site-select" name="site" class="form-select form-select-sm" data-submit-on-change="true">
                             @foreach (config('sites.sites', []) as $siteKey => $site)
                                 <option value="{{ $siteKey }}" @selected(config('sites.current_key') === $siteKey)>{{ $site['name'] ?? $siteKey }}</option>
                             @endforeach
