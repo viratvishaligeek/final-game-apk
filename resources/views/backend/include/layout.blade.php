@@ -195,6 +195,9 @@
                 }
                 const client = new Pusher(config.key, options);
                 client.subscribe('private-admin.payment-alerts').bind('payment.failed', addAlert);
+                client.subscribe('private-admin.user-presence').bind('presence.changed', payload => {
+                    window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
+                });
             } catch (error) {
                 console.error('Admin payment alert realtime connection failed.', error);
             }
