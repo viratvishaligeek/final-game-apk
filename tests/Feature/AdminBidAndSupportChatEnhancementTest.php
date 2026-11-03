@@ -6,6 +6,7 @@ use App\Http\Controllers\Backend\Game\BiddingDeskController;
 use App\Http\Controllers\Backend\SupportChatController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Services\Presence\UserPresenceChannelAuthorizer;
+use App\Services\Admin\BiddingDeskProfitLossReportService;
 use App\Http\Controllers\Backend\User\UserController;
 use App\Events\AdminPaymentFailedPaymentAlert;
 use App\Events\SupportMessageCreated;
@@ -439,6 +440,42 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         ]);
         $paymentChannels = (new AdminPaymentFailedPaymentAlert($alert->id))->broadcastOn();
         $this->assertSame('private-admin.payment-alerts.' . $alert->site_key, $paymentChannels[0]->name);
+    }
+
+    public function test_bidding_desk_profit_loss_report_service_preserves_game_totals(): void
+    {
+        $game = $this->makeGame();
+        $user = $this->makeUser('9876500098');
+        $bid = Bid::query()->create([
+            'order_no' => (string) Str::uuid(),
+            'user_id' => $user->id,
+            'game_id' => $game->id,
+            'game_date' => '2026-11-04',
+            'type' => 'jodi',
+            'number' => '25',
+            'amount' => 100,
+            'status' => 'won',
+            'winning_amount' => 40,
+        ]);
+        Winner::query()->create([
+            'bid_id' => $bid->id,
+            'user_id' => $user->id,
+            'game_id' => $game->id,
+            'number' => '25',
+            'type' => 'jodi',
+            'game_date' => '2026-11-04',
+            'amount' => 100,
+            'winning_amount' => 40,
+        ]);
+
+        $report = app(BiddingDeskProfitLossReportService::class)->build('2026-11-04', '2026-11-04');
+        $gameStats = $report['gameStats']->firstWhere('id', $game->id);
+
+        $this->assertNotNull($gameStats);
+        $this->assertEquals(100, $gameStats['total_bid']);
+        $this->assertEquals(40, $gameStats['total_win']);
+        $this->assertEquals(60, $gameStats['profit_loss']);
+        $this->assertEquals(60, $report['grandProfitLoss']);
     }
 
     public function test_disconnecting_one_device_keeps_user_online_while_another_session_is_active(): void
