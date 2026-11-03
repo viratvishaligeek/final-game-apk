@@ -124,7 +124,7 @@
      const button = document.createElement('button');
      button.type='button'; button.className='list-group-item list-group-item-action '+(active===c.id?'active':'');
      button.innerHTML='<div class="d-flex justify-content-between gap-2"><span class="fw-bold">'+esc(c.user?.name || ('User #'+c.id))+'</span>'+(c.unread_count ? '<span class="badge bg-danger">'+c.unread_count+'</span>' : '')+'</div><small>'+esc(c.user?.phone || '')+'</small><div class="small text-muted text-truncate">'+esc(c.last_message_preview || 'No messages yet')+'</div>';
-     button.onclick=()=>selectConversation(c);
+     $(button).on('click.adminChat', () => selectConversation(c));
      $(conversations).append(button);
    });
  async function searchUsers() {
@@ -145,7 +145,7 @@
    try {
      const result = await request(root + '/users?q=' + encodeURIComponent(term));
      if (requestId !== userSearchRequest) return;
-     userSearchResults.replaceChildren();
+     $(userSearchResults).empty();
      const users = Array.isArray(result.data) ? result.data : [];
      if (!users.length) {
        const empty = document.createElement('div');
@@ -183,7 +183,7 @@
              id: started.data.id,
              user: started.data.user || { id: user.id, name: user.name, phone: user.phone }
            });
-           userSearchResults.replaceChildren();
+           $(userSearchResults).empty();
            userSearch.value = '';
          } catch (error) {
            window.alert(error.message || 'Unable to open this user conversation.');
@@ -232,7 +232,7 @@
    window.dispatchEvent(new CustomEvent('admin:incoming-chat-message', { detail: { ...message, sender: 'user' } }));
    if ('Notification' in window && Notification.permission === 'granted') {
      const notification = new Notification('New support message', {body: message.body || 'User sent an attachment.'});
-     notification.onclick = () => window.focus();
+     $(notification).on('click.adminChat', () => window.focus());
    }
  }
  async function selectConversation(c) {
