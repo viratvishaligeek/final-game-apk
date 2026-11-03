@@ -154,7 +154,7 @@
                     }
                     audio.volume = 1;
                 }
-                try { localStorage.setItem('admin_notification_sound_enabled', '1'); } catch (error) {}
+                try { localStorage.setItem('admin_notification_sound_enabled', '1'); } catch (error) { console.warn('Unable to persist notification sound preference.', error); }
                 setSoundStatus('Sound enabled');
             } catch (error) {
                 paymentAudio.volume = 1;
