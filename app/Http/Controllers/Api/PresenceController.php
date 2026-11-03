@@ -1,12 +1,12 @@
 <?php
 
-namespace App\\Http\\Controllers\\Api;
+namespace App\Http\Controllers\Api;
 
-use App\\Events\\UserPresenceChanged;
-use App\\Http\\Controllers\\Controller;
-use App\\Models\\UserPresenceSession;
-use Illuminate\\Http\\JsonResponse;
-use Illuminate\\Http\\Request;
+use App\Events\UserPresenceChanged;
+use App\Http\Controllers\Controller;
+use App\Models\UserPresenceSession;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PresenceController extends Controller
 {
