@@ -299,6 +299,23 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertContains('auth:admin', $route->gatherMiddleware());
     }
 
+    public function test_admin_route_reorganization_preserves_names_and_security_middleware(): void
+    {
+        foreach ([
+            'admin.support-chat.index',
+            'admin.users.bids',
+            'admin.wallet.request-add',
+            'admin.results.index',
+            'admin.bidding-desk.data',
+        ] as $routeName) {
+            $route = Route::getRoutes()->getByName($routeName);
+
+            $this->assertNotNull($route, "Missing Admin route name: {$routeName}");
+            $this->assertContains('auth:admin', $route->gatherMiddleware());
+            $this->assertContains('admin.site', $route->gatherMiddleware());
+        }
+    }
+
     public function test_player_private_broadcast_auth_route_requires_sanctum(): void
     {
         $route = Route::getRoutes()->match(Request::create('/api/broadcasting/auth', 'POST'));
