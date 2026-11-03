@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Exceptions\PaymentGatewayVerificationException;
 use App\Models\Bid;
 use App\Models\Transaction;
 use App\Models\User;
@@ -852,12 +853,22 @@ class WalletController extends Controller
     ): bool {
         $gatewayKey = $this->gatewayValue('api_key', 'services.upi_gateway.key');
         if (!$gatewayKey) {
-            return false;
+            throw new PaymentGatewayVerificationException(
+                'PAYMENT_GATEWAY_CONFIGURATION_ERROR',
+                'MISSING_GATEWAY_API_KEY',
+                null,
+                'Gateway API credentials are not configured.'
+            );
         }
 
         $statusUrl = $this->gatewayValue('status_url', 'services.upi_gateway.status_url');
         if (!$statusUrl) {
-            return false;
+            throw new PaymentGatewayVerificationException(
+                'PAYMENT_GATEWAY_CONFIGURATION_ERROR',
+                'MISSING_GATEWAY_STATUS_URL',
+                null,
+                'Gateway status endpoint is not configured.'
+            );
         }
 
         $response = Http::timeout(30)
@@ -870,18 +881,57 @@ class WalletController extends Controller
                     'txn_date' => ($walletRequest->created_at ?: now())->format('d-m-Y'),
                 ]
             );
+
         if (!$response->successful()) {
-            return false;
+            $gatewayError = $response->json();
+            $message = is_array($gatewayError)
+                ? ($gatewayError['msg'] ?? $gatewayError['message'] ?? 'Gateway verification endpoint returned an error.')
+                : 'Gateway verification endpoint returned an error.';
+            $errorCode = is_array($gatewayError)
+                ? ($gatewayError['code'] ?? $gatewayError['error_code'] ?? 'VERIFICATION_HTTP_ERROR')
+                : 'VERIFICATION_HTTP_ERROR';
+            $normalizedMessage = preg_replace('/[^a-z0-9]+/', ' ', mb_strtolower(trim((string) $message)));
+            $category = in_array($response->status(), [401, 403], true)
+                || $normalizedMessage === 'active plan not found please buy plan'
+                ? 'PAYMENT_GATEWAY_CONFIGURATION_ERROR'
+                : ($response->status() >= 500 ? 'PAYMENT_GATEWAY_API_ERROR' : 'PAYMENT_VERIFICATION_ERROR');
+
+            throw new PaymentGatewayVerificationException(
+                $category,
+                (string) $errorCode,
+                $response->status(),
+                (string) $message
+            );
         }
+
         $result = $response->json();
         if (($result['status'] ?? false) !== true) {
-            return false;
+            $message = is_array($result)
+                ? ($result['msg'] ?? $result['message'] ?? 'Gateway did not confirm the payment verification request.')
+                : 'Gateway returned an invalid verification response.';
+            $errorCode = is_array($result)
+                ? ($result['code'] ?? $result['error_code'] ?? 'VERIFICATION_REJECTED')
+                : 'VERIFICATION_REJECTED';
+            $normalizedMessage = preg_replace('/[^a-z0-9]+/', ' ', mb_strtolower(trim((string) $message)));
+
+            throw new PaymentGatewayVerificationException(
+                $normalizedMessage === 'active plan not found please buy plan'
+                    ? 'PAYMENT_GATEWAY_CONFIGURATION_ERROR'
+                    : 'PAYMENT_VERIFICATION_ERROR',
+                (string) $errorCode,
+                null,
+                (string) $message
+            );
         }
 
         $data = $result['data'] ?? null;
-
         if (!is_array($data)) {
-            return false;
+            throw new PaymentGatewayVerificationException(
+                'PAYMENT_VERIFICATION_ERROR',
+                'INVALID_VERIFICATION_PAYLOAD',
+                null,
+                'Gateway verification response did not contain a valid payment record.'
+            );
         }
 
         $verifiedClientTxnId = (string) ($data['client_txn_id'] ?? '');
@@ -893,7 +943,12 @@ class WalletController extends Controller
                 'wallet_request_id' => $walletRequest->id,
             ]);
 
-            return false;
+            throw new PaymentGatewayVerificationException(
+                'PAYMENT_VERIFICATION_ERROR',
+                'CLIENT_TRANSACTION_ID_MISMATCH',
+                null,
+                'Gateway verification returned a transaction ID that does not match the payment attempt.'
+            );
         }
 
         if (
@@ -907,7 +962,12 @@ class WalletController extends Controller
                 'verified_amount' => $data['amount'] ?? null,
             ]);
 
-            return false;
+            throw new PaymentGatewayVerificationException(
+                'PAYMENT_VERIFICATION_ERROR',
+                'PAYMENT_AMOUNT_MISMATCH',
+                null,
+                'Gateway verification amount does not match the payment attempt.'
+            );
         }
 
         $providerStatus = strtolower(trim((string) ($data['status'] ?? '')));
@@ -916,7 +976,12 @@ class WalletController extends Controller
             'success', 'failure', 'pending', 'processing',
             'cancelled', 'canceled', 'expired',
         ], true)) {
-            return false;
+            throw new PaymentGatewayVerificationException(
+                'PAYMENT_VERIFICATION_ERROR',
+                'UNKNOWN_PROVIDER_STATUS',
+                null,
+                'Gateway returned an unknown payment status.'
+            );
         }
 
         // Explicit provider cancellation/expiry is terminal failure; a timeout
