@@ -442,6 +442,11 @@
             const badge = cell.querySelector('[data-live-status]');
             if (badge) {
                 const status = presence.live_status === 'active' ? 'active' : 'inactive';
+                const activeFilter = @json($liveStatus ?? null);
+                if (activeFilter && activeFilter !== status) {
+                    cell.closest('tr')?.remove();
+                    return;
+                }
                 badge.dataset.liveStatus = status;
                 badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
                 badge.className = 'badge ' + (status === 'active' ? 'bg-success' : 'bg-secondary');
