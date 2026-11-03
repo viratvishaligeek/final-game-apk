@@ -565,10 +565,18 @@ class WalletController extends Controller
             ]);
         } catch (Throwable $e) {
             report($e);
-            $walletRequest->update([
-                'status' => 'failed',
-                'gateway_status' => 'exception',
-            ]);
+            try {
+                $walletRequest->update([
+                    'status' => 'failed',
+                    'gateway_status' => 'exception',
+                ]);
+            } catch (Throwable $updateException) {
+                Log::critical('Unable to persist failed gateway order state.', [
+                    'wallet_request_id' => $walletRequest->id,
+                    'attempt_id' => $clientTxnId,
+                    'exception_class' => get_class($updateException),
+                ]);
+            }
             app(PaymentAlertRecorder::class)->record($walletRequest, [
                 'stage' => 'order_creation_exception',
                 'category' => 'BACKEND_SYSTEM_ERROR',
