@@ -64,4 +64,4 @@ jobs:
           php -l routes/api.php
           php -l routes/channels.php
       - name: Run focused bid, chat and channel regression tests
-        run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php --display-warnings
+        run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php tests/Feature/AdminWalletCreditIdempotencyTest.php --display-warnings
