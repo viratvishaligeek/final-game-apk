@@ -364,8 +364,18 @@
      pollTimer = window.setTimeout(tick, 30000);
    }
  });
- loadConversations().then(()=>{status.textContent='Connected · refreshes automatically';status.className='badge bg-success';}).catch(()=>{status.textContent='Reconnecting…';status.className='badge bg-secondary';});
- if (!realtimeConnected) pollTimer=window.setTimeout(tick,pollDelay);
+ loadConversations().then(()=>{
+   if (window.adminPusher?.connection?.state === 'connected') realtimeConnected = true;
+   status.textContent = realtimeConnected ? 'Live · Pusher' : 'Connected · recovery sync';
+   status.className = 'badge bg-success';
+ }).catch(()=>{status.textContent='Reconnecting…';status.className='badge bg-secondary';});
+ if (window.adminPusher?.connection?.state === 'connected') {
+   realtimeConnected = true;
+   if (pollTimer) clearTimeout(pollTimer);
+   pollTimer = null;
+ } else if (!realtimeConnected) {
+   pollTimer=window.setTimeout(tick,pollDelay);
+ }
  window.addEventListener('beforeunload',()=>{ if(pollTimer) clearTimeout(pollTimer); stream?.getTracks().forEach(t=>t.stop()); });
 })();
 </script>
