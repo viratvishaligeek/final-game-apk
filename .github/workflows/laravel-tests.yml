@@ -49,6 +49,7 @@ jobs:
         run: |
           php -l app/Http/Controllers/Api/PresenceController.php
           php -l app/Http/Controllers/Backend/User/UserController.php
+          php -l app/Services/Admin/UserBidActivityService.php
           php -l tests/Feature/AdminBidAndSupportChatEnhancementTest.php
           php -l app/Http/Controllers/Backend/SupportChatController.php
           php -l routes/admin.php
