@@ -131,7 +131,23 @@ class SupportChatController extends Controller
         ]);
         $phone = trim((string) ($validated['phone'] ?? ''));
 
+        // Compute the per-admin unread total across every conversation. The
+        // list below remains bounded for the inbox UI, but the global badge
+        // must not silently omit older conversations beyond that page.
+        $readMarkers = SupportConversationAdminRead::query()
+            ->select(['conversation_id', 'last_read_message_id'])
+            ->where('admin_id', $adminId);
+
+        $totalUnread = SupportMessage::query()
+            ->leftJoinSub($readMarkers, 'admin_reads', function ($join) {
+                $join->on('admin_reads.conversation_id', '=', 'support_messages.conversation_id');
+            })
+            ->where('support_messages.sender_type', 'user')
+            ->whereRaw('support_messages.id > COALESCE(admin_reads.last_read_message_id, 0)')
+            ->count('support_messages.id');
+
         return response()->json([
+            'meta' => ['total_unread_count' => (int) $totalUnread],
             'data' => SupportConversation::query()
                 ->with(['user:id,name,phone', 'latestMessage:id,conversation_id,body,sender_type,created_at'])
                 ->when($phone !== '', fn ($query) => $query->whereHas('user', fn ($userQuery) => $userQuery->where('phone', 'like', '%' . $phone . '%')))
