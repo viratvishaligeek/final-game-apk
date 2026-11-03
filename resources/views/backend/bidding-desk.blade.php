@@ -55,17 +55,17 @@
             <span><i class="d-inline-block rounded border me-1" style="width:10px;height:10px;background:#fff5f5;border-color:#dc3545!important"></i>Higher investment</span>
         </div>
         <div id="jodiSection" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
-            <div class="card-header bg-info text-white border-0 rounded-top-4 p-3">
+            <div class="card-header bg-success text-white border-0 rounded-top-4 p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="text-dark mb-0 fw-bold">
+                        <h2 class="text-light mb-0 fw-bold fs-2">
                             🎯 Jodi
-                        </h4>
-                        <small class="text-dark">
+                        </h2>
+                        <small class="text-light">
                             Jodi · 00–99
                         </small>
                     </div>
-                    <span id="jodiTotal" class="badge bg-warning text-dark fs-6">
+                    <span id="jodiTotal" class="badge bg-warning text-light fs-4">
                         ₹0
                     </span>
                 </div>
@@ -120,13 +120,13 @@
             <div class="modal-content border-0 rounded-4 shadow-lg">
                 <div class="modal-header bg-dark text-white">
                     <div>
-                        <h5 class="modal-title fw-bold">
+                        <h5 class="modal-title text-white fw-bold">
                             Number:
                             <span id="modalNumber" class="text-warning">
                                 --
                             </span>
                         </h5>
-                        <small class="text-white-50">
+                        <small class="text-white">
                             Bidding details
                         </small>
                     </div>
