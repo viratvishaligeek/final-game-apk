@@ -9,6 +9,7 @@ use App\Models\Admin;
 use App\Models\Bid;
 use App\Models\Game;
 use App\Models\SupportConversation;
+use App\Models\SupportConversationAdminRead;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
