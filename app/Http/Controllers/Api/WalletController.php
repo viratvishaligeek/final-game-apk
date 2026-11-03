@@ -366,13 +366,8 @@ class WalletController extends Controller
             'amount'
         );
 
-        $gatewayKey = $this->gatewayValue('api_key', 'services.upi_gateway.key');
-        $createOrderUrl = $this->gatewayValue('create_order_url', 'services.upi_gateway.create_order_url');
-        $statusUrl = $this->gatewayValue('status_url', 'services.upi_gateway.status_url');
-        $returnUrl = $this->gatewayValue('return_url', 'services.upi_gateway.return_url');
-        $webhookUrl = $this->gatewayValue('webhook_url', 'services.upi_gateway.webhook_url');
-
-        $walletRequest = DB::transaction(function () use ($user, $clientTxnId, $validated) {
+        try {
+            $walletRequest = DB::transaction(function () use ($user, $clientTxnId, $validated) {
             User::query()->lockForUpdate()->findOrFail($user->id);
 
             $pendingExists = WalletRequest::query()
@@ -398,8 +393,40 @@ class WalletController extends Controller
                 'client_txn_id' => $clientTxnId,
                 'remark' => 'Automated UPI gateway payment',
             ]);
-        });
-        if (!$gatewayKey || !$createOrderUrl || !$statusUrl || !$returnUrl) {
+            });
+        } catch (Throwable $exception) {
+            report($exception);
+            $diagnosticReference = (string) Str::uuid();
+            try {
+                app(PaymentAlertRecorder::class)->recordAttempt($user, $amount, $clientTxnId, [
+                    'stage' => 'payment_attempt_creation_database',
+                    'category' => 'BACKEND_SYSTEM_ERROR',
+                    'message' => 'Database error prevented creation of the automatic payment attempt.',
+                    'error_code' => 'PAYMENT_ATTEMPT_PERSISTENCE_FAILED',
+                    'diagnostic_reference' => $diagnosticReference,
+                ]);
+            } catch (Throwable $alertException) {
+                Log::critical('Unable to persist automatic payment alert because the alert store is unavailable.', [
+                    'diagnostic_reference' => $diagnosticReference,
+                    'attempt_id' => $clientTxnId,
+                    'user_id' => $user->id,
+                    'exception_class' => get_class($alertException),
+                ]);
+            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to start payment at this time. Please try again later.',
+            ], 500);
+        }
+
+        try {
+            $gatewayKey = $this->gatewayValue('api_key', 'services.upi_gateway.key');
+            $createOrderUrl = $this->gatewayValue('create_order_url', 'services.upi_gateway.create_order_url');
+            $statusUrl = $this->gatewayValue('status_url', 'services.upi_gateway.status_url');
+            $returnUrl = $this->gatewayValue('return_url', 'services.upi_gateway.return_url');
+            $webhookUrl = $this->gatewayValue('webhook_url', 'services.upi_gateway.webhook_url');
+
+            if (!$gatewayKey || !$createOrderUrl || !$statusUrl || !$returnUrl) {
             app(PaymentAlertRecorder::class)->record($walletRequest, [
                 'stage' => 'configuration_check',
                 'category' => 'PAYMENT_GATEWAY_CONFIGURATION_ERROR',
@@ -412,9 +439,8 @@ class WalletController extends Controller
                 'success' => false,
                 'message' => 'Payment gateway is not fully configured. Please contact support.',
             ], 503);
-        }
+            }
 
-        try {
             $response = Http::timeout(30)
                 ->acceptJson()
                 ->post(
@@ -445,6 +471,7 @@ class WalletController extends Controller
                     'stage' => 'order_creation',
                     'message' => is_array($gatewayError) ? ($gatewayError['msg'] ?? $gatewayError['message'] ?? 'Gateway order creation failed.') : 'Gateway order creation failed.',
                     'error_code' => is_array($gatewayError) ? ($gatewayError['code'] ?? $gatewayError['error_code'] ?? '') : '',
+                    'gateway_order_id' => is_array($gatewayError) ? ($gatewayError['order_id'] ?? $gatewayError['data']['order_id'] ?? null) : null,
                     'http_status' => $response->status(),
                     'attempt_id' => $clientTxnId,
                 ]);
@@ -464,11 +491,12 @@ class WalletController extends Controller
                     'stage' => 'order_creation',
                     'message' => $result['msg'] ?? $result['message'] ?? 'Gateway rejected order.',
                     'error_code' => $result['code'] ?? $result['error_code'] ?? '',
+                    'gateway_order_id' => $result['data']['order_id'] ?? $result['order_id'] ?? null,
                     'attempt_id' => $clientTxnId,
                 ]);
                 return response()->json([
                     'success' => false,
-                    'message' => $result['msg'] ?? 'Payment gateway rejected the request.',
+                    'message' => 'Payment gateway could not process the request. Please try again or contact support.',
                 ], 422);
             }
             $paymentUrl = $result['data']['payment_url'] ?? null;
