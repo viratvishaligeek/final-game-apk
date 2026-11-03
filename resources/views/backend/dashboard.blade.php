@@ -336,5 +336,15 @@
             initializeTable($('#totalUserTable'));
             initializeTable($('#datatablesSimple'));
         });
-    </script>
+        if (invalidRow) {
+            console.error('Dashboard table has inconsistent columns:', $table.attr('id'));
+            return;
+        }
+        $table.data('simpleDatatablesInitialized', true);
+        new simpleDatatables.DataTable(table, {searchable: true, perPage: 10, perPageSelect: [10, 25, 50]});
+    }
+    initializeTable($('#totalUserTable')[0]);
+    initializeTable($('#datatablesSimple')[0]);
+});
+</script>
 @endsection
