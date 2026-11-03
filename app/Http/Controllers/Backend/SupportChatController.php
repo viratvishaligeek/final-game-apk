@@ -37,7 +37,7 @@ class SupportChatController extends Controller
 
         $users = User::query()
             ->where(function ($query) use ($term) {
-                $query->where('phone', 'like', '%' . $term . '%')
+                $query->where('phone', 'like', $term . '%')
                     ->orWhere('name', 'like', '%' . $term . '%');
                 if (ctype_digit($term)) {
                     $query->orWhereKey((int) $term);
