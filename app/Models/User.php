@@ -122,6 +122,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'notifications_enabled' => 'boolean',
+            'live_last_seen_at' => 'datetime',
         ];
     }
 }
