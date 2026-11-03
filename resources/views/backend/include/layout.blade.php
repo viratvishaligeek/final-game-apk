@@ -103,6 +103,7 @@
         const acknowledged = new Set();
         const queued = new Map();
         let activeAlert = null;
+        let modalClosing = false;
         let sound = null;
 
         const setText = (id, value) => {
@@ -127,7 +128,7 @@
             return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('en-IN');
         };
         const presentNext = () => {
-            if (activeAlert || queued.size === 0) return;
+            if (activeAlert || modalClosing || queued.size === 0) return;
             const [id, alert] = queued.entries().next().value;
             queued.delete(id);
             activeAlert = alert;
@@ -150,6 +151,11 @@
             modal.show();
             startSound();
         };
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            if (!modalClosing) return;
+            modalClosing = false;
+            presentNext();
+        });
         const addAlert = alert => {
             if (!alert?.id || acknowledged.has(Number(alert.id)) || Number(activeAlert?.id) === Number(alert.id)) return;
             queued.set(Number(alert.id), alert);
@@ -182,8 +188,8 @@
                 acknowledged.add(Number(alert.id));
                 activeAlert = null;
                 stopSound();
+                modalClosing = true;
                 modal.hide();
-                presentNext();
                 void loadPending();
             } catch (error) {
                 console.error(error);
