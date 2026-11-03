@@ -106,6 +106,7 @@ class UserController extends Controller
         $submissionStats = $user->bids()
             ->selectRaw("order_no, {$submissionGroup} as submission_group_key, COUNT(*) as total_bids, COALESCE(SUM(amount), 0) as total_amount, MIN(id) as representative_bid_id, MAX(id) as latest_bid_id, MIN(created_at) as submitted_at")
             ->groupByRaw($submissionGroup)
+            ->groupBy('order_no')
             ->orderByDesc('latest_bid_id')
             ->get();
 
