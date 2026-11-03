@@ -289,7 +289,7 @@
          else if (String(m.media_mime||'').startsWith('audio/')) media='<audio controls preload="metadata" src="'+esc(m.media_url)+'"></audio>';
          else media='<a href="'+esc(m.media_url)+'" target="_blank" rel="noopener">Open attachment</a>';
        }
-       return '<div class="p-3 rounded-3 border '+(m.sender==='admin'?'align-self-end bg-warning-subtle':'align-self-start bg-white')+'" style="max-width:90%;overflow-wrap:anywhere">'+(m.body?'<div style="white-space:pre-wrap">'+esc(m.body)+'</div>':'')+media+'<small class="d-block text-muted mt-2">'+esc(m.created_at||'')+(m.read_at?' · Seen':'')+'</small></div>';
+       return '<div class="admin-chat-bubble '+(m.sender==='admin'?'admin-chat-bubble--outgoing':'admin-chat-bubble--incoming')+'">'+(m.body?'<div style="white-space:pre-wrap">'+esc(m.body)+'</div>':'')+media+'<small class="d-block text-muted mt-2 text-end">'+esc(m.created_at||'')+(m.read_at?' · Seen':'')+'</small></div>';
      }).join('');
      if (reset || $(messages).find('p.text-muted.text-center').length > 0) {
        $(messages).html(rendered || '<p class="text-muted text-center my-auto">No messages yet. Send the first reply.</p>');

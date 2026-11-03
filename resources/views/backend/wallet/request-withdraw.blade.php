@@ -489,5 +489,32 @@
                 $('#rejectForm').attr('action', $(this).data('action'));
             });
         });
-    </script>
+        $image.attr('src', $(this).data('image'));
+    });
+
+    $(document).on('click.adminWalletRequests', '.approve-btn', function () {
+        const $button = $(this);
+        const form = $button.closest('form')[0];
+        const name = escapeHtml($button.data('name'));
+        const amount = escapeHtml($button.data('amount'));
+        if (!form || typeof Swal === 'undefined') return;
+        Swal.fire({
+            title: 'Approve Withdrawal?',
+            html: '<div class="text-center"><p class="mb-1">User: <strong>' + name + '</strong></p><p>Amount: <strong class="text-danger">₹' + amount + '</strong></p><small class="text-muted">The withdrawal request will be marked as approved.</small></div>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1cc88a',
+            cancelButtonColor: '#858796',
+            confirmButtonText: 'Yes, Approve',
+            cancelButtonText: 'Cancel'
+        }).then(result => { if (result.isConfirmed) form.submit(); });
+    });
+
+    $(document).on('click.adminWalletRequests', '.reject-btn', function () {
+        const $button = $(this);
+        $('#rejectUserName').text($button.data('name') || '');
+        $('#rejectForm').attr('action', $button.data('action') || '');
+    });
+});
+</script>
 @endsection

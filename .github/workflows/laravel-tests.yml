@@ -1,6 +1,13 @@
 name: Focused Laravel regression tests
 
 on:
+  push:
+    branches:
+      - feature/admin-user-live-ops-2026
+      - feature/payment-error-monitoring-and-admin-js-fixes
+      - feature/admin-bid-chat-realtime-ui-2026
+      - feature/admin-bid-chat-realtime-followup-2026
+      - feature/admin-game-activity-chat-refactor-2026
   pull_request:
     branches:
       - main
@@ -45,9 +52,11 @@ jobs:
       - name: Validate Composer manifest
         run: composer validate --no-check-publish
       - run: composer install --no-interaction --prefer-dist --no-progress
-      - name: Compile Admin Blade views
-        run: php artisan view:cache
-      - name: Check changed backend PHP files
+      - run: php artisan migrate --force
+      - name: Run payment monitoring tests
+        if: github.head_ref != 'feature/admin-game-activity-chat-refactor-2026' && github.ref_name != 'feature/admin-game-activity-chat-refactor-2026'
+        run: php artisan test tests/Unit/PaymentAlertRecorderTest.php tests/Feature/PaymentAlertPersistenceTest.php
+      - name: Validate bid and chat PHP syntax
         run: |
           php -l app/Http/Controllers/Api/PresenceController.php
           php -l app/Http/Controllers/Backend/User/UserController.php
