@@ -70,19 +70,19 @@
 <script>
 (() => {
  const root = @json(url('/admin/support-chat'));
- const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+ const token = $('meta[name="csrf-token"]').attr('content') || '';
  const playChatSound = @json(($chatSoundEnabled ?? true) === true);
  let active = null, lastId = 0, busy = false, recordedFile = null, recorder = null, stream = null, chunks = [];
  let conversationVersion = 0, pendingMessageRefresh = false, pendingMessageReset = false;
- const conversations = document.getElementById('conversations');
- const messages = document.getElementById('messages');
- const status = document.getElementById('connection-status');
- const conversationSearch = document.getElementById('conversation-search');
+ const conversations = $('#conversations');
+ const messages = $('#messages');
+ const status = $('#connection-status');
+ const conversationSearch = $('#conversation-search');
  let conversationSearchTimer = null;
  let userSearchTimer = null;
  let userSearchRequest = 0;
- const userSearch = document.getElementById('user-search');
- const userSearchResults = document.getElementById('user-search-results');
+ const userSearch = $('#user-search');
+ const userSearchResults = $('#user-search-results');
  let realtimeConnected = false;
  let conversationSearchRequest = 0;
  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -106,103 +106,122 @@
    });
  }
  async function loadConversations(snapshot = null) {
-   const requestId = ++conversationSearchRequest;
-   const phone = conversationSearch ? conversationSearch.value.trim() : '';
-   const query = phone ? '?phone='+encodeURIComponent(phone) : '';
-   const result = snapshot && !phone ? snapshot : await request(root+'/conversations'+query);
-   if (requestId !== conversationSearchRequest) return;
-   $(conversations).empty();
-   const items = Array.isArray(result.data) ? result.data : [];
-   if (!items.length) {
-     const empty = document.createElement('div');
-     empty.className = 'list-group-item text-muted small py-3';
-     empty.textContent = phone ? 'No conversations found for this phone number.' : 'No conversations yet.';
-     $(conversations).append(empty);
-     return;
-   }
-   items.forEach(c => {
-     const button = document.createElement('button');
-     button.type='button'; button.className='list-group-item list-group-item-action '+(active===c.id?'active':'');
-     button.innerHTML='<div class="d-flex justify-content-between gap-2"><span class="fw-bold">'+esc(c.user?.name || ('User #'+c.id))+'</span>'+(c.unread_count ? '<span class="badge bg-danger">'+c.unread_count+'</span>' : '')+'</div><small>'+esc(c.user?.phone || '')+'</small><div class="small text-muted text-truncate">'+esc(c.last_message_preview || 'No messages yet')+'</div>';
-     $(button).on('click.adminChat', () => selectConversation(c));
-     $(conversations).append(button);
-   });
- async function searchUsers() {
-   const requestId = ++userSearchRequest;
-   const term = userSearch ? userSearch.value.trim() : '';
-   $(userSearchResults).empty();
-   if (!term) {
-     const empty = document.createElement('div');
-     empty.className = 'list-group-item small text-muted';
-     empty.textContent = 'Search by name, phone number or user ID.';
-     $(userSearchResults).append(empty);
-     return;
-   }
-   const loading = document.createElement('div');
-   loading.className = 'list-group-item small text-muted';
-   loading.textContent = 'Searching registered users…';
-   $(userSearchResults).append(loading);
-   try {
-     const result = await request(root + '/users?q=' + encodeURIComponent(term));
-     if (requestId !== userSearchRequest) return;
-     $(userSearchResults).empty();
-     const users = Array.isArray(result.data) ? result.data : [];
-     if (!users.length) {
-       const empty = document.createElement('div');
-       empty.className = 'list-group-item small text-muted';
-       empty.textContent = 'No registered users found.';
-       userSearchResults.appendChild(empty);
-       return;
-     }
-     users.forEach(user => {
-       const button = document.createElement('button');
-       button.type = 'button';
-       button.className = 'list-group-item list-group-item-action py-2';
-       const title = document.createElement('div');
-       title.className = 'd-flex justify-content-between gap-2';
-       const name = document.createElement('strong');
-       name.textContent = user.name || ('User #' + user.id);
-       const state = document.createElement('span');
-       state.className = 'badge ' + (Number(user.unread_count) > 0 ? 'bg-danger' : user.has_conversation ? 'bg-success' : 'bg-primary');
-       state.textContent = Number(user.unread_count) > 0 ? Number(user.unread_count) + ' unread' : user.has_conversation ? 'Existing chat' : 'Start chat';
-       title.append(name, state);
-       const meta = document.createElement('small');
-       meta.className = 'text-muted d-block';
-       meta.textContent = (user.phone || 'No phone') + ' · User #' + user.id + ' · ' + (user.status || 'unknown');
-       button.append(title, meta);
-       $(button).on('click.adminChat', async () => {
-         button.disabled = true;
-         try {
-           const started = await request(root + '/conversations', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ user_id: user.id })
-           });
-           await loadConversations();
-           await selectConversation({
-             id: started.data.id,
-             user: started.data.user || { id: user.id, name: user.name, phone: user.phone }
-           });
-           $(userSearchResults).empty();
-           userSearch.value = '';
-         } catch (error) {
-           window.alert(error.message || 'Unable to open this user conversation.');
-         } finally {
-           button.disabled = false;
-         }
-       });
-       $(userSearchResults).append(button);
-     });
-   } catch (error) {
-     if (requestId !== userSearchRequest) return;
-     userSearchResults.replaceChildren();
-     const failure = document.createElement('div');
-     failure.className = 'list-group-item small text-danger';
-     failure.textContent = error.message || 'User search failed. Please retry.';
-     $(userSearchResults).append(failure);
-   }
- }
- if (userSearch) {
+    const requestId = ++conversationSearchRequest;
+    const phone = conversationSearch.length ? String(conversationSearch.val() || '').trim() : '';
+    const query = phone ? '?phone=' + encodeURIComponent(phone) : '';
+    const result = snapshot && !phone ? snapshot : await request(root + '/conversations' + query);
+    if (requestId !== conversationSearchRequest) return;
+
+    const $list = $(conversations).empty();
+    const items = Array.isArray(result.data) ? result.data : [];
+    if (!items.length) {
+      $list.append($('<div>', { class: 'list-group-item text-muted small py-3' })
+        .text(phone ? 'No conversations found for this phone number.' : 'No conversations yet.'));
+      return;
+    }
+
+    items.forEach(conversation => {
+      const $button = $('<button>', {
+        type: 'button',
+        class: 'list-group-item list-group-item-action' + (active === conversation.id ? ' active' : '')
+      });
+      const $heading = $('<div>', { class: 'd-flex justify-content-between gap-2' });
+      $heading.append($('<span>', { class: 'fw-bold' })
+        .text(conversation.user?.name || ('User #' + conversation.id)));
+      if (conversation.unread_count) {
+        $heading.append($('<span>', { class: 'badge bg-danger' }).text(conversation.unread_count));
+      }
+      $button.append($heading);
+      $button.append($('<small>').text(conversation.user?.phone || ''));
+      $button.append($('<div>', { class: 'small text-muted text-truncate' })
+        .text(conversation.last_message_preview || 'No messages yet'));
+      $button.on('click.adminChat', () => selectConversation(conversation));
+      $list.append($button);
+    });
+
+    const requestedId = new URLSearchParams(window.location.search).get('conversation_id');
+    if (!window.__adminChatInitialConversationOpened && requestedId) {
+      const requested = items.find(item => Number(item.id) === Number(requestedId));
+      if (requested) {
+        window.__adminChatInitialConversationOpened = true;
+        void selectConversation(requested);
+      }
+    }
+  }
+
+  async function searchUsers() {
+    const requestId = ++userSearchRequest;
+    const term = userSearch.length ? String(userSearch.val() || '').trim() : '';
+    const $results = $(userSearchResults).empty();
+    if (!term) {
+      $results.append($('<div>', { class: 'list-group-item small text-muted' })
+        .text('Search by name, phone number or user ID.'));
+      return;
+    }
+
+    $results.append($('<div>', { class: 'list-group-item small text-muted' })
+      .text('Searching registered users…'));
+
+    try {
+      const result = await request(root + '/users?q=' + encodeURIComponent(term));
+      if (requestId !== userSearchRequest) return;
+      $results.empty();
+      const users = Array.isArray(result.data) ? result.data : [];
+      if (!users.length) {
+        $results.append($('<div>', { class: 'list-group-item small text-muted' })
+          .text('No registered users found.'));
+        return;
+      }
+
+      users.forEach(user => {
+        const $button = $('<button>', {
+          type: 'button',
+          class: 'list-group-item list-group-item-action py-2'
+        });
+        const $title = $('<div>', { class: 'd-flex justify-content-between gap-2' });
+        $title.append($('<strong>').text(user.name || ('User #' + user.id)));
+        const stateClass = Number(user.unread_count) > 0
+          ? 'bg-danger'
+          : user.has_conversation ? 'bg-success' : 'bg-primary';
+        const stateText = Number(user.unread_count) > 0
+          ? Number(user.unread_count) + ' unread'
+          : user.has_conversation ? 'Existing chat' : 'Start chat';
+        $title.append($('<span>', { class: 'badge ' + stateClass }).text(stateText));
+        $button.append($title);
+        $button.append($('<small>', { class: 'text-muted d-block' }).text(
+          (user.phone || 'No phone') + ' · User #' + user.id + ' · ' + (user.status || 'unknown')
+        ));
+
+        $button.on('click.adminChat', async function () {
+          const $clicked = $(this).prop('disabled', true);
+          try {
+            const started = await request(root + '/conversations', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id: user.id })
+            });
+            await loadConversations();
+            await selectConversation({
+              id: started.data.id,
+              user: started.data.user || { id: user.id, name: user.name, phone: user.phone }
+            });
+            $results.empty();
+            $(userSearch).val('');
+          } catch (error) {
+            window.alert(error.message || 'Unable to open this user conversation.');
+          } finally {
+            $clicked.prop('disabled', false);
+          }
+        });
+        $results.append($button);
+      });
+    } catch (error) {
+      if (requestId !== userSearchRequest) return;
+      $results.empty().append($('<div>', { class: 'list-group-item small text-danger' })
+        .text(error.message || 'User search failed. Please retry.'));
+    }
+  }
+  if (userSearch) {
    $(userSearch).on('input.adminChat', () => {
      if (userSearchTimer) clearTimeout(userSearchTimer);
      userSearchTimer = window.setTimeout(() => { void searchUsers(); }, 300);
@@ -225,7 +244,7 @@
    }
  });
  $(window).on('admin:conversations-snapshot.adminChat', (event, snapshotArg) => {
-   if (conversationSearch?.value.trim()) return;
+   if (String(conversationSearch.val() || '').trim()) return;
    void loadConversations(event.originalEvent?.detail || event.detail || snapshotArg || null).catch(error => console.warn('Realtime inbox snapshot failed', error));
  });
  function notifyAdmin(message) {
@@ -237,7 +256,7 @@
  }
  async function selectConversation(c) {
    active=c.id; lastId=0; conversationVersion += 1;
-   document.getElementById('chat-title').textContent=(c.user?.name || 'User')+' · '+(c.user?.phone || '');
+   $('#chat-title').text((c.user?.name || 'User') + ' · ' + (c.user?.phone || ''));
    await loadMessages(true); await loadConversations();
  }
  async function loadMessages(reset=false) {
@@ -251,7 +270,8 @@
    const requestedConversation = active;
    const requestedVersion = conversationVersion;
    try {
-     const wasNearBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 100;
+     const messageElement = messages.get(0);
+    const wasNearBottom = messageElement.scrollHeight - messages.scrollTop() - messages.innerHeight() < 100;
      const query = !reset ? '?after_id='+encodeURIComponent(String(lastId)) : '';
      const result=await request(root+'/'+requestedConversation+'/messages'+query);
      if (requestedVersion !== conversationVersion || requestedConversation !== active) return;
@@ -278,10 +298,10 @@
      }
      if (all.length) lastId=Math.max(lastId,...all.map(m=>Number(m.id)||0));
      if (!reset && all.length >= 200) pendingMessageRefresh = true;
-     if (reset || (rendered && wasNearBottom)) messages.scrollTop=messages.scrollHeight;
-     status.textContent='Connected · refreshes automatically'; status.className='badge bg-success';
+     if (reset || (rendered && wasNearBottom)) messages.scrollTop(messageElement.scrollHeight);
+     status.text('Connected · refreshes automatically').attr('class', 'badge bg-success');
    } catch(e) {
-     status.textContent='Reconnecting…'; status.className='badge bg-secondary';
+     status.text('Reconnecting…').attr('class', 'badge bg-secondary');
      console.warn('Support chat sync failed',e);
    } finally {
      busy=false;
@@ -297,7 +317,7 @@
      if (conversationSearchTimer) clearTimeout(conversationSearchTimer);
      conversationSearchTimer = window.setTimeout(() => {
        loadConversations().catch(error => {
-         status.textContent = 'Search unavailable';
+         status.text('Search unavailable');
          status.className = 'badge bg-danger';
          console.warn('Conversation search failed', error);
        });
@@ -349,14 +369,14 @@
      alert('Unable to disable admin push: ' + (error?.message || 'Unknown error'));
    }
  });
- const recordButton = document.getElementById('record-voice');
- const recordingStatus = document.getElementById('recording-status');
+ const recordButton = $('#record-voice');
+ const recordingStatus = $('#recording-status');
  $(recordButton).on('click.adminChat', async () => {
    if (recorder && recorder.state === 'recording') {
      recorder.stop();
-     recordButton.textContent='Record';
-     recordButton.classList.remove('btn-danger'); recordButton.classList.add('btn-outline-secondary');
-     recordingStatus.textContent='Preparing voice attachment…';
+     recordButton.text('Record');
+     recordButton.removeClass('btn-danger').addClass('btn-outline-secondary');
+     recordingStatus.text('Preparing voice attachment…');
      return;
    }
    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return alert('Voice recording is not supported by this browser.');
@@ -368,23 +388,23 @@
      recorder.onstop=()=>{
        const type=recorder.mimeType||'audio/webm'; const ext=type.includes('mp4')?'mp4':'webm';
        recordedFile=new File([new Blob(chunks,{type})],'voice-message.'+ext,{type});
-       document.getElementById('attachment').value='';
-       recordingStatus.textContent='Voice message ready to send'; recordingStatus.classList.remove('d-none');
+       $('#attachment').val('');
+       recordingStatus.text('Voice message ready to send').removeClass('d-none');
        stream?.getTracks().forEach(t=>t.stop()); stream=null;
      };
-     recorder.start(); recordButton.textContent='Stop'; recordButton.classList.remove('btn-outline-secondary'); recordButton.classList.add('btn-danger');
-     recordingStatus.textContent='Recording… press Stop to attach'; recordingStatus.classList.remove('d-none');
+     recorder.start(); recordButton.text('Stop').removeClass('btn-outline-secondary').addClass('btn-danger');
+     recordingStatus.text('Recording… press Stop to attach').removeClass('d-none');
    } catch(e) { alert('Microphone permission was denied or unavailable.'); }
  });
- $('#attachment').on('change.adminChat',()=>{recordedFile=null;recordingStatus.classList.add('d-none');});
+ $('#attachment').on('change.adminChat',()=>{recordedFile=null;recordingStatus.addClass('d-none');});
  $('#send-form').on('submit.adminChat', async event=>{
    event.preventDefault(); if(!active) return alert('Select a conversation first.');
-   const body=document.getElementById('body'), file=document.getElementById('attachment');
-   if(!body.value.trim()&&!file.files.length&&!recordedFile) return;
+   const body=$('#body'), file=$('#attachment');
+   if(!String(body.val() || '').trim()&&!file.get(0).files.length&&!recordedFile) return;
    if (recorder && recorder.state === 'recording') return alert('Stop recording before sending.');
-   const data=new FormData(); if(body.value.trim()) data.append('body',body.value.trim());
+   const data=new FormData(); if(String(body.val() || '').trim()) data.append('body',String(body.val()).trim());
    const attachment = recordedFile || file.files[0]; if(attachment) data.append('attachment',attachment);
-   try { await request(root+'/'+active+'/send',{method:'POST',body:data}); body.value=''; file.value=''; recordedFile=null; recordingStatus.classList.add('d-none'); await loadMessages(true); await loadConversations(); }
+   try { await request(root+'/'+active+'/send',{method:'POST',body:data}); body.val(''); file.val(''); recordedFile=null; recordingStatus.addClass('d-none'); await loadMessages(true); await loadConversations(); }
    catch(error){ alert(error.message); }
  });
  $(window).on('admin:broadcast-state.adminChat', (event, stateArg) => {
@@ -393,10 +413,10 @@
    realtimeConnected = connected;
    if (connected) {
      if (active) void loadMessages();
-     status.textContent = 'Live · Pusher';
+     status.text('Live · Pusher');
      status.className = 'badge bg-success';
    } else {
-     status.textContent = 'Reconnecting…';
+     status.text('Reconnecting…');
      status.className = 'badge bg-secondary';
    }
  });
@@ -405,9 +425,9 @@
  });
  loadConversations().then(()=>{
    if (window.adminPusher?.connection?.state === 'connected') realtimeConnected = true;
-   status.textContent = realtimeConnected ? 'Live · Pusher' : 'Connected · recovery sync';
+   status.text(realtimeConnected ? 'Live · Pusher' : 'Connected · recovery sync');
    status.className = 'badge bg-success';
- }).catch(()=>{status.textContent='Reconnecting…';status.className='badge bg-secondary';});
+ }).catch(()=>{status.text('Reconnecting…').attr('class', 'badge bg-secondary');});
  $(window).one('beforeunload.adminChat',()=>{ stream?.getTracks().forEach(t=>t.stop()); });
 })();
 </script>

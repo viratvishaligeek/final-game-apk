@@ -4,6 +4,10 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\Backend\Game\BiddingDeskController;
 use App\Http\Controllers\Backend\SupportChatController;
+use App\Http\Controllers\Api\PresenceController;
+use App\Services\Presence\UserPresenceChannelAuthorizer;
+use App\Services\Admin\BiddingDeskProfitLossReportService;
+use App\Services\Admin\AdminDashboardService;
 use App\Http\Controllers\Backend\User\UserController;
 use App\Events\AdminPaymentFailedPaymentAlert;
 use App\Events\SupportMessageCreated;
@@ -15,9 +19,11 @@ use App\Models\Game;
 use App\Models\SupportConversation;
 use App\Models\SupportConversationAdminRead;
 use App\Models\User;
+use App\Models\UserPresenceSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Broadcast;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Illuminate\Support\Facades\Route;
@@ -435,6 +441,188 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         ]);
         $paymentChannels = (new AdminPaymentFailedPaymentAlert($alert->id))->broadcastOn();
         $this->assertSame('private-admin.payment-alerts.' . $alert->site_key, $paymentChannels[0]->name);
+    }
+
+    public function test_admin_dashboard_service_returns_site_scoped_summary_and_user_report(): void
+    {
+        $this->makeUser('9876500099');
+        $this->makeGame();
+
+        $report = app(AdminDashboardService::class)->build('not-a-valid-period');
+
+        $this->assertSame('7days', $report['period']);
+        $this->assertSame(1, $report['totalUsers']);
+        $this->assertSame(1, $report['totalGames']);
+        $this->assertSame(0, (int) $report['todayTotalBids']);
+        $this->assertCount(1, $report['totalUserTable']);
+        $this->assertSame('Not Played', $report['totalUserTable'][0]['playing_period']);
+    }
+
+    public function test_bidding_desk_profit_loss_report_service_preserves_game_totals(): void
+    {
+        $game = $this->makeGame();
+        $user = $this->makeUser('9876500098');
+        $bid = Bid::query()->create([
+            'order_no' => (string) Str::uuid(),
+            'user_id' => $user->id,
+            'game_id' => $game->id,
+            'game_date' => '2026-11-04',
+            'type' => 'jodi',
+            'number' => '25',
+            'amount' => 100,
+            'status' => 'won',
+            'winning_amount' => 40,
+        ]);
+        Winner::query()->create([
+            'bid_id' => $bid->id,
+            'user_id' => $user->id,
+            'game_id' => $game->id,
+            'number' => '25',
+            'type' => 'jodi',
+            'game_date' => '2026-11-04',
+            'amount' => 100,
+            'winning_amount' => 40,
+        ]);
+
+        $report = app(BiddingDeskProfitLossReportService::class)->build('2026-11-04', '2026-11-04');
+        $gameStats = $report['gameStats']->firstWhere('id', $game->id);
+
+        $this->assertNotNull($gameStats);
+        $this->assertEquals(100, $gameStats['total_bid']);
+        $this->assertEquals(40, $gameStats['total_win']);
+        $this->assertEquals(60, $gameStats['profit_loss']);
+        $this->assertEquals(60, $report['grandProfitLoss']);
+    }
+
+    public function test_disconnecting_one_device_keeps_user_online_while_another_session_is_active(): void
+    {
+        $user = $this->makeUser('9876500094');
+        $user->forceFill([
+            'live_status' => 'active',
+            'live_last_seen_at' => now()->subSeconds(5),
+        ])->save();
+
+        $firstSession = UserPresenceSession::query()->create([
+            'user_id' => $user->id,
+            'session_id' => 'device-session-one',
+            'platform' => 'web',
+            'app_state' => 'foreground',
+            'last_seen_at' => now(),
+        ]);
+        $secondSession = UserPresenceSession::query()->create([
+            'user_id' => $user->id,
+            'session_id' => 'device-session-two',
+            'platform' => 'android',
+            'app_state' => 'foreground',
+            'last_seen_at' => now(),
+        ]);
+
+        $request = Request::create('/api/v1/presence/session', 'DELETE', [
+            'session_id' => $firstSession->session_id,
+        ]);
+        $request->setUserResolver(fn () => $user);
+        app(PresenceController::class)->disconnect($request);
+
+        $this->assertNotNull($firstSession->fresh()->ended_at);
+        $this->assertNull($secondSession->fresh()->ended_at);
+        $this->assertSame('active', $user->fresh()->live_status);
+
+        $secondRequest = Request::create('/api/v1/presence/session', 'DELETE', [
+            'session_id' => $secondSession->session_id,
+        ]);
+        $secondRequest->setUserResolver(fn () => $user);
+        app(PresenceController::class)->disconnect($secondRequest);
+
+        $this->assertSame('inactive', $user->fresh()->live_status);
+    }
+
+    public function test_stale_presence_command_marks_users_offline_after_the_session_lease_expires(): void
+    {
+        $user = $this->makeUser('9876500095');
+        $user->forceFill([
+            'live_status' => 'active',
+            'live_last_seen_at' => now()->subMinute(),
+        ])->save();
+
+        UserPresenceSession::query()->create([
+            'user_id' => $user->id,
+            'session_id' => 'stale-device-session',
+            'platform' => 'web',
+            'app_state' => 'foreground',
+            'last_seen_at' => now()->subSeconds(90),
+        ]);
+
+        Artisan::call('presence:expire');
+
+        $this->assertSame('inactive', $user->fresh()->live_status);
+    }
+
+    public function test_presence_session_identifier_cannot_be_reused_by_another_user(): void
+    {
+        $owner = $this->makeUser('9876500096');
+        $other = $this->makeUser('9876500097');
+
+        UserPresenceSession::query()->create([
+            'user_id' => $owner->id,
+            'session_id' => 'owned-device-session',
+            'platform' => 'web',
+            'app_state' => 'foreground',
+            'last_seen_at' => now(),
+        ]);
+
+        $request = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'owned-device-session',
+            'platform' => 'web',
+            'app_state' => 'foreground',
+        ]);
+        $request->setUserResolver(fn () => $other);
+
+        $response = app(PresenceController::class)->heartbeat($request);
+
+        $this->assertSame(409, $response->getStatusCode());
+        $this->assertSame($owner->id, UserPresenceSession::query()->where('session_id', 'owned-device-session')->value('user_id'));
+    }
+
+    public function test_player_presence_channel_authorizer_allows_only_the_matching_account(): void
+    {
+        $user = $this->makeUser('9876500091');
+        $otherUser = $this->makeUser('9876500092');
+        $authorizer = app(UserPresenceChannelAuthorizer::class);
+
+        $firstConnection = $authorizer->authorize($user, $user->id);
+        $secondConnection = $authorizer->authorize($user, $user->id);
+
+        $this->assertSame([
+            'id' => 'player-' . $user->id,
+            'type' => 'player',
+        ], $firstConnection);
+        $this->assertSame($firstConnection, $secondConnection, 'All tabs/devices for the same account share one presence member identity.');
+        $this->assertFalse($authorizer->authorize($user, $otherUser->id));
+    }
+
+    public function test_admin_presence_channel_authorizer_enforces_site_scope_and_active_status(): void
+    {
+        $user = $this->makeUser('9876500093');
+        $admin = Admin::query()->create([
+            'name' => 'Presence Admin',
+            'email' => 'presence-admin@example.test',
+            'password' => 'test-password',
+            'status' => 'active',
+        ]);
+        $authorizer = app(UserPresenceChannelAuthorizer::class);
+
+        config(['sites.current_key' => $user->site_key]);
+        $this->assertSame([
+            'id' => 'admin-' . $admin->id,
+            'type' => 'admin',
+        ], $authorizer->authorize($admin, $user->id));
+
+        config(['sites.current_key' => 'different-site']);
+        $this->assertFalse($authorizer->authorize($admin, $user->id));
+
+        $admin->forceFill(['status' => 'inactive'])->save();
+        config(['sites.current_key' => $user->site_key]);
+        $this->assertFalse($authorizer->authorize($admin->fresh(), $user->id));
     }
 
     public function test_admin_private_channel_authorization_rejects_a_different_site(): void

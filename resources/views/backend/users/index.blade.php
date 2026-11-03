@@ -215,145 +215,186 @@
     <script src="{{ URL::asset('backend') }}/js/datatables/datatables-simple-demo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-$(function () {
-    const creditModalElement = document.getElementById('addMoneyModal');
-    if (!creditModalElement || !window.bootstrap) return;
-    const creditModal = bootstrap.Modal.getOrCreateInstance(creditModalElement);
-    const $creditForm = $('#addMoneyForm');
-    const $creditAmount = $('#creditAmount');
-    const $creditRemark = $('#creditRemark');
-    const $creditActionUrl = $('#creditActionUrl');
-    const $creditIdempotencyKey = $('#creditIdempotencyKey');
-    const $creditError = $('#addMoneyError');
-    const $creditSuccess = $('#addMoneySuccess');
-    const $creditSubmit = $('#submitCreditButton');
-    const $creditCancel = $('#cancelAddMoneyModal');
-    const $creditClose = $('#closeAddMoneyModal');
+        $(function () {
+            const $creditModalElement = $('#addMoneyModal');
+            if (!$creditModalElement.length || !window.bootstrap) return;
 
-    const createRequestKey = () => window.crypto?.randomUUID
-        ? window.crypto.randomUUID()
-        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-            const r = Math.random() * 16 | 0;
-            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-        });
+            const creditModal = bootstrap.Modal.getOrCreateInstance($creditModalElement.get(0));
+            const $creditForm = $('#addMoneyForm');
+            const $creditAmount = $('#creditAmount');
+            const $creditRemark = $('#creditRemark');
+            const $creditActionUrl = $('#creditActionUrl');
+            const $creditIdempotencyKey = $('#creditIdempotencyKey');
+            const $creditError = $('#addMoneyError');
+            const $creditSuccess = $('#addMoneySuccess');
+            const $creditSubmitButton = $('#submitCreditButton');
+            const $creditCancelButton = $('#cancelAddMoneyModal');
+            const $creditCloseButton = $('#closeAddMoneyModal');
 
-    function showCreditError(message) {
-        $creditError.text(message).removeClass('d-none');
-        $creditSuccess.addClass('d-none');
-    }
-
-    function setCreditBusy(busy) {
-        $creditSubmit.add($creditCancel).add($creditClose).prop('disabled', busy);
-        $creditSubmit.text(busy ? 'Processing…' : 'Retry Add Money');
-    }
-
-    $(document).on('click.adminUsers', '.add-money-btn', function (event) {
-        event.preventDefault();
-        const $button = $(this);
-        $('#creditUserName').text($button.data('user-name') || '—');
-        $('#creditUserId').text($button.data('user-id') || '—');
-        const balance = Number($button.data('balance') || 0);
-        $('#creditCurrentBalance').text('₹' + balance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-        $creditActionUrl.val($button.data('action'));
-        $creditIdempotencyKey.val(createRequestKey());
-        $creditAmount.val('');
-        $creditRemark.val('');
-        $creditError.addClass('d-none');
-        $creditSuccess.addClass('d-none');
-        setCreditBusy(false);
-        $creditSubmit.html('<i data-feather="plus-circle" class="me-1"></i> Add Money');
-        if (window.feather) feather.replace();
-        creditModal.show();
-    });
-
-    $(document).on('click.adminUsers', '.toggle-status-btn', function (event) {
-        event.preventDefault();
-        const $button = $(this);
-        const action = String($button.data('action') || 'block');
-        const form = document.getElementById('status-form-' + $button.data('id'));
-        if (!form) return console.error('Status form not found for user:', $button.data('id'));
-        if (typeof Swal === 'undefined') return window.alert('SweetAlert2 failed to load. Please refresh the page.');
-        Swal.fire({
-            title: (action === 'block' ? 'Block' : 'Unblock') + ' User?',
-            text: 'Are you sure you want to ' + action + ' "' + String($button.data('name') || '') + '"?',
-            icon: action === 'block' ? 'warning' : 'question',
-            showCancelButton: true,
-            confirmButtonColor: action === 'block' ? '#e74a3b' : '#1cc88a',
-            cancelButtonColor: '#858796',
-            confirmButtonText: 'Yes, ' + action + '!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true,
-            focusCancel: true
-        }).then(result => { if (result.isConfirmed) form.submit(); });
-    });
-
-    $(document).on('click.adminUsers', '.delete-user-btn', function (event) {
-        event.preventDefault();
-        const $button = $(this);
-        const form = document.getElementById('delete-form-' + $button.data('id'));
-        if (!form) return console.error('Delete form not found for user:', $button.data('id'));
-        if (typeof Swal === 'undefined') return window.alert('SweetAlert2 failed to load. Please refresh the page.');
-        Swal.fire({
-            title: 'Delete User?',
-            text: 'Do you really want to delete "' + String($button.data('name') || '') + '"?',
-            icon: 'error',
-            showCancelButton: true,
-            confirmButtonColor: '#e74a3b',
-            cancelButtonColor: '#858796',
-            confirmButtonText: 'Yes, Delete!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true,
-            focusCancel: true
-        }).then(result => { if (result.isConfirmed) form.submit(); });
-    });
-
-    $creditForm.on('submit.adminUsers', async function (event) {
-        event.preventDefault();
-        $creditError.addClass('d-none');
-        $creditSuccess.addClass('d-none');
-        const amount = String($creditAmount.val() || '').trim();
-        if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0 || !/^\d+(?:\.\d{1,2})?$/.test(amount)) {
-            showCreditError('Enter a valid positive amount with no more than two decimal places.');
-            $creditAmount.trigger('focus');
-            return;
-        }
-
-        setCreditBusy(true);
-        try {
-            const result = await $.ajax({
-                url: $creditActionUrl.val(),
-                method: 'POST',
-                data: new FormData($creditForm[0]),
-                processData: false,
-                contentType: false,
-                dataType: 'json',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': $creditForm.find('input[name="_token"]').val()
+            const createRequestKey = () => {
+                if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                    return window.crypto.randomUUID();
                 }
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (character) {
+                    const random = Math.random() * 16 | 0;
+                    return (character === 'x' ? random : (random & 0x3 | 0x8)).toString(16);
+                });
+            };
+
+            const showCreditError = message => {
+                $creditError.text(message).removeClass('d-none');
+                $creditSuccess.addClass('d-none');
+            };
+
+            $(document).on('click', '.add-money-btn', function (event) {
+                event.preventDefault();
+                const $button = $(this);
+                const balance = Number($button.data('balance') || 0);
+
+                $('#creditUserName').text($button.data('user-name') || '—');
+                $('#creditUserId').text($button.data('user-id') || '—');
+                $('#creditCurrentBalance').text('₹' + balance.toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }));
+
+                $creditActionUrl.val($button.data('action'));
+                $creditIdempotencyKey.val(createRequestKey());
+                $creditAmount.val('');
+                $creditRemark.val('');
+                $creditError.addClass('d-none');
+                $creditSuccess.addClass('d-none');
+                $creditSubmitButton.prop('disabled', false).html('<i data-feather="plus-circle" class="me-1"></i> Add Money');
+                $creditCancelButton.add($creditCloseButton).prop('disabled', false);
+                if (window.feather) feather.replace();
+                creditModal.show();
             });
 
-            if (!result.success) throw {responseJSON: result};
-            const updatedBalance = Number(result.data.balance || 0);
-            const $rowBalance = $('.user-balance[data-user-id="' + Number(result.data.user_id) + '"]');
-            if ($rowBalance.length) {
-                $rowBalance.attr('data-balance', updatedBalance.toFixed(2));
-                $rowBalance.text('₹' + updatedBalance.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $(document).on('click', '.toggle-status-btn', function (event) {
+                event.preventDefault();
+                const $button = $(this);
+                const userId = $button.data('id');
+                const userName = $button.data('name');
+                const action = $button.data('action');
+                const $statusForm = $('#status-form-' + userId);
+
+                if (!$statusForm.length) {
+                    console.error('Status form not found for user:', userId);
+                    return;
+                }
+                if (!window.Swal || typeof window.Swal.fire !== 'function') {
+                    window.alert('SweetAlert2 failed to load. Please refresh the page.');
+                    return;
+                }
+
+                window.Swal.fire({
+                    title: (action === 'block' ? 'Block' : 'Unblock') + ' User?',
+                    text: 'Are you sure you want to ' + action + ' "' + userName + '"?',
+                    icon: action === 'block' ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: action === 'block' ? '#e74a3b' : '#1cc88a',
+                    cancelButtonColor: '#858796',
+                    confirmButtonText: 'Yes, ' + action + '!',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then(result => {
+                    if (result.isConfirmed) $statusForm.get(0).submit();
+                });
+            });
+
+            $creditForm.on('submit', async function (event) {
+                event.preventDefault();
+                $creditError.add($creditSuccess).addClass('d-none');
+
+                const amount = String($creditAmount.val() || '').trim();
+                if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0 || !/^\d+(?:\.\d{1,2})?$/.test(amount)) {
+                    showCreditError('Enter a valid positive amount with no more than two decimal places.');
+                    $creditAmount.trigger('focus');
+                    return;
+                }
+
+                $creditSubmitButton.prop('disabled', true).text('Processing…');
+                $creditCancelButton.add($creditCloseButton).prop('disabled', true);
+
+                try {
+                    const result = await $.ajax({
+                        url: $creditActionUrl.val(),
+                        method: 'POST',
+                        data: new FormData($creditForm.get(0)),
+                        dataType: 'json',
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': $creditForm.find('input[name="_token"]').val()
+                        }
+                    });
+
+                    if (!result.success) {
+                        const validationMessage = result.errors ? Object.values(result.errors).flat()[0] : null;
+                        throw { responseJSON: result, message: validationMessage || result.message };
+                    }
+
+                    const updatedBalance = Number(result.data.balance || 0);
+                    const $rowBalance = $('.user-balance[data-user-id="' + Number(result.data.user_id) + '"]');
+                    if ($rowBalance.length) {
+                        $rowBalance.attr('data-balance', updatedBalance.toFixed(2));
+                        $rowBalance.text('₹' + updatedBalance.toLocaleString('en-IN', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }));
+                    }
+
+                    $creditSuccess.text(result.message || 'Wallet credited successfully.').removeClass('d-none');
+                    $creditError.addClass('d-none');
+                    creditModal.hide();
+
+                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                        window.Swal.fire({
+                            icon: 'success',
+                            title: 'Credit successful',
+                            text: result.message || 'Wallet credited successfully.',
+                            timer: 1800,
+                            showConfirmButton: false
+                        });
+                    }
+                } catch (error) {
+                    const result = error.responseJSON || {};
+                    const firstError = result.errors ? Object.values(result.errors).flat()[0] : null;
+                    showCreditError(firstError || error.message || 'Network error. Please retry without closing this modal.');
+                    $creditSubmitButton.prop('disabled', false).html('<i data-feather="plus-circle" class="me-1"></i> Retry Add Money');
+                    $creditCancelButton.add($creditCloseButton).prop('disabled', false);
+                } finally {
+                    if (window.feather) feather.replace();
+                }
+            });
+        });
+
+        $(window).on('admin:user-presence', function (event) {
+            const presence = event.originalEvent?.detail || event.detail || {};
+            const userId = Number(presence.user_id);
+            const $cell = $('[data-live-status-cell="' + userId + '"]');
+            if (!$cell.length) return;
+
+            const status = presence.live_status === 'active' ? 'active' : 'inactive';
+            const activeFilter = @json($liveStatus ?? null);
+            if (activeFilter && activeFilter !== status) {
+                $cell.closest('tr').remove();
+                return;
             }
 
-            $creditSuccess.text(result.message || 'Wallet credited successfully.').removeClass('d-none');
-            $creditError.addClass('d-none');
-            creditModal.hide();
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({icon: 'success', title: 'Credit successful', text: result.message || 'Wallet credited successfully.', timer: 1800, showConfirmButton: false});
-            }
-        } catch (xhr) {
-            const payload = xhr?.responseJSON || {};
-            let message = payload.message || 'Network error. Please retry without closing this modal.';
-            if (payload.errors) {
-                const firstError = Object.values(payload.errors).flat()[0];
-                if (firstError) message = firstError;
+            $cell.find('[data-live-status]')
+                .attr('data-live-status', status)
+                .text(status.charAt(0).toUpperCase() + status.slice(1))
+                .attr('class', 'badge ' + (status === 'active' ? 'bg-success' : 'bg-secondary'));
+
+            if (presence.last_seen_at) {
+                const date = new Date(presence.last_seen_at);
+                $cell.find('[data-live-last-seen]').text(
+                    Number.isNaN(date.getTime()) ? presence.last_seen_at : date.toLocaleString('en-IN')
+                );
             }
             showCreditError(message);
             setCreditBusy(false);

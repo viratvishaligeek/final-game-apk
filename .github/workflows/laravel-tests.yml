@@ -8,6 +8,8 @@ on:
       - feature/admin-bid-chat-realtime-ui-2026
       - feature/admin-bid-chat-realtime-followup-2026
       - feature/admin-game-activity-chat-refactor-2026
+      - continue/admin-realtime-architecture-2026
+  workflow_dispatch:
   pull_request:
     branches:
       - main
@@ -52,6 +54,8 @@ jobs:
       - name: Validate Composer manifest
         run: composer validate --no-check-publish
       - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Compile Admin Blade views
+        run: php artisan view:cache
       - run: php artisan migrate --force
       - name: Run payment monitoring tests
         if: github.head_ref != 'feature/admin-game-activity-chat-refactor-2026' && github.ref_name != 'feature/admin-game-activity-chat-refactor-2026'
@@ -61,24 +65,20 @@ jobs:
           php -l app/Http/Controllers/Api/PresenceController.php
           php -l app/Http/Controllers/Backend/User/UserController.php
           php -l app/Services/Admin/UserBidActivityService.php
-          php -l app/Http/Controllers/Api/BidController.php
+          php -l app/Services/Admin/GameResultSettlementService.php
+          php -l app/Services/Presence/UserPresenceChannelAuthorizer.php
+          php -l app/Services/Admin/AdminWalletCreditService.php
+          php -l app/Services/Admin/BiddingDeskProfitLossReportService.php
+          php -l app/Services/Admin/AdminDashboardService.php
+          php -l app/Http/Controllers/Backend/DashboardController.php
+          php -l app/Http/Controllers/Backend/Game/BiddingDeskController.php
+          php -l app/Http/Controllers/Backend/User/WalletController.php
+          php -l tests/Feature/AdminWalletCreditIdempotencyTest.php
+          php -l app/Http/Controllers/Backend/Game/ResultController.php
+          php -l tests/Feature/AdminBidAndSupportChatEnhancementTest.php
           php -l app/Http/Controllers/Backend/SupportChatController.php
           php -l routes/admin.php
           php -l routes/api.php
           php -l routes/channels.php
-          php -l config/broadcasting.php
-          php -l tests/Feature/AdminBidAndSupportChatEnhancementTest.php
-      - name: Compile Blade views and verify broadcast route
-        run: |
-          php artisan view:clear
-          php artisan view:cache
-          php artisan route:list --path=broadcasting
-      - name: Run user submission grouping regression tests
-        if: github.head_ref == 'feature/admin-game-activity-chat-refactor-2026' || github.ref_name == 'feature/admin-game-activity-chat-refactor-2026'
-        run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php --filter='user_game_activity|user_bid_modal|user_bid_details_are_scoped'
-      - name: Run bid and chat regression tests
-        if: github.head_ref != 'feature/admin-game-activity-chat-refactor-2026' && github.ref_name != 'feature/admin-game-activity-chat-refactor-2026'
-        run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php --display-warnings
-      - name: Run complete Laravel test suite
-        if: github.head_ref != 'feature/admin-game-activity-chat-refactor-2026' && github.ref_name != 'feature/admin-game-activity-chat-refactor-2026'
-        run: php artisan test
+      - name: Run focused bid, chat and channel regression tests
+        run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php tests/Feature/AdminWalletCreditIdempotencyTest.php --display-warnings

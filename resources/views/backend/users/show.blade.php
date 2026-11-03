@@ -19,6 +19,7 @@
                                     User #{{ $user->id }}
                                     <span class="mx-1">•</span>
                                     {{ $user->phone }}
+                                    <span class="badge bg-secondary ms-2" id="userRealtimePresence">Checking live status…</span>
                                 </div>
                             </div>
                         </div>
@@ -675,7 +676,7 @@
 @section('script')
 <script>
 $(function () {
-    const modalElement = document.getElementById('gameBidsModal');
+    const modalElement = $('#gameBidsModal').get(0);
     if (!modalElement || !window.bootstrap) return;
     const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     const endpoint = @json(route('admin.users.bids', $user->id));
@@ -773,4 +774,47 @@ $(function () {
     });
 });
 </script>
+
+    <script>
+        $(function () {
+            const client = window.adminPusher;
+            const $presence = $('#userRealtimePresence');
+            if (!$presence.length) return;
+            if (!client) {
+                $presence.text('Realtime unavailable');
+                return;
+            }
+
+            const channelName = 'presence-user-presence.' + @json($user->id);
+            const channel = client.subscribe(channelName);
+
+            const refreshPresence = function () {
+                let playerIsPresent = false;
+                if (channel.members && typeof channel.members.each === 'function') {
+                    channel.members.each(function (member) {
+                        if (member && member.info && member.info.type === 'player') playerIsPresent = true;
+                    });
+                }
+                $presence
+                    .text(playerIsPresent ? 'Online now' : 'Offline')
+                    .toggleClass('bg-success', playerIsPresent)
+                    .toggleClass('bg-secondary', !playerIsPresent);
+            };
+
+            channel.bind('pusher:subscription_succeeded', refreshPresence);
+            channel.bind('pusher:member_added', refreshPresence);
+            channel.bind('pusher:member_removed', refreshPresence);
+            channel.bind('pusher:subscription_error', function () {
+                $presence.text('Realtime unavailable').removeClass('bg-success').addClass('bg-secondary');
+            });
+
+            const cleanupPresence = function () {
+                channel.unbind('pusher:subscription_succeeded', refreshPresence);
+                channel.unbind('pusher:member_added', refreshPresence);
+                channel.unbind('pusher:member_removed', refreshPresence);
+                client.unsubscribe(channelName);
+            };
+            $(window).one('pagehide', cleanupPresence);
+        });
+    </script>
 @endsection

@@ -6,13 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Transaction;
 use App\Services\WalletService;
+use App\Services\Admin\AdminWalletCreditService;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class WalletController extends Controller
 {
     public function __construct(
-        protected WalletService $walletService
+        protected WalletService $walletService,
+        protected AdminWalletCreditService $adminWalletCreditService
     ) {}
 
     public function credit(Request $request, string $id)
@@ -23,20 +26,19 @@ class WalletController extends Controller
                 'remark' => ['nullable', 'string', 'max:255'],
                 'idempotency_key' => ['nullable', 'uuid'],
             ]);
-        } catch (ValidationException $e) {
+        } catch (ValidationException $exception) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Please correct the highlighted fields.',
-                    'errors' => $e->errors(),
+                    'errors' => $exception->errors(),
                 ], 422);
             }
 
-            throw $e;
+            throw $exception;
         }
 
         $idempotencyKey = $validated['idempotency_key'] ?? null;
-
         if ($request->expectsJson() && !$idempotencyKey) {
             return response()->json([
                 'success' => false,
@@ -47,40 +49,19 @@ class WalletController extends Controller
         try {
             $user = User::query()->findOrFail($id);
             $amount = round((float) $validated['amount'], 2);
-
-            if ($idempotencyKey) {
-                $existing = Transaction::query()
-                    ->where('idempotency_key', $idempotencyKey)
-                    ->first();
-
-                if ($existing) {
-                    return $this->creditJsonResponse($request, $user, $existing, $amount);
-                }
-            }
-
-            $transaction = $this->walletService->credit(
+            $credit = $this->adminWalletCreditService->credit(
                 $user,
                 $amount,
                 $validated['remark'] ?? null,
-                [
-                    'admin_id' => auth('admin')->id(),
-                    'idempotency_key' => $idempotencyKey,
-                ]
+                $idempotencyKey,
+                auth('admin')->id()
             );
 
-            // A UUID can only credit once. Also reject attempts to reuse an
-            // existing key for a different user or amount.
-            if (
-                (int) $transaction->user_id !== (int) $user->id
-                || round((float) $transaction->amount, 2) !== $amount
-                || $transaction->type !== 'credit'
-            ) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This submission token has already been used for a different credit.',
-                ], 409);
+            if ($credit['duplicate'] && $request->expectsJson()) {
+                return $this->creditJsonResponse($request, $user, $credit['transaction'], $amount);
             }
 
+            $transaction = $credit['transaction'];
             $user->refresh();
 
             if ($request->expectsJson()) {
@@ -98,43 +79,28 @@ class WalletController extends Controller
                 ]);
             }
 
-            return back()->with(
-                'success',
-                '₹' . number_format($amount, 2) . ' credited successfully.'
-            );
-        } catch (ValidationException $e) {
+            return back()->with('success', '₹' . number_format($amount, 2) . ' credited successfully.');
+        } catch (ConflictHttpException $exception) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage() ?: 'The credit request could not be validated.',
-                    'errors' => $e->errors(),
+                    'message' => $exception->getMessage(),
+                ], 409);
+            }
+
+            return back()->with('error', $exception->getMessage());
+        } catch (ValidationException $exception) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $exception->getMessage() ?: 'The credit request could not be validated.',
+                    'errors' => $exception->errors(),
                 ], 422);
             }
 
-            return back()->withErrors($e->errors())->withInput();
-        } catch (\Throwable $e) {
-            // A concurrent retry may lose the unique-key race after the first
-            // request has committed. Resolve it as the same successful request.
-            if ($idempotencyKey) {
-                $existing = Transaction::query()
-                    ->where('idempotency_key', $idempotencyKey)
-                    ->first();
-
-                if ($existing) {
-                    $user = User::query()->find($id);
-
-                    if ($user) {
-                        return $this->creditJsonResponse(
-                            $request,
-                            $user,
-                            $existing,
-                            round((float) $validated['amount'], 2)
-                        );
-                    }
-                }
-            }
-
-            report($e);
+            return back()->withErrors($exception->errors())->withInput();
+        } catch (\Throwable $exception) {
+            report($exception);
 
             if ($request->expectsJson()) {
                 return response()->json([
