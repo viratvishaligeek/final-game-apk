@@ -40,7 +40,7 @@ class PaymentAlertRecorder
         $diagnosticReference = (string) ($context['diagnostic_reference'] ?? (string) Str::uuid());
 
         $displayMessage = $category === 'PAYMENT_GATEWAY_CONFIGURATION_ERROR'
-            ? 'Payment Gateway Configuration Issue: Merchant API plan may have expired or become inactive. Please verify the gateway account.'
+            ? 'Payment Gateway Configuration Issue: The gateway reports that no active plan is available. Verify the merchant API plan and account status.'
             : $message;
 
         $alert = AdminPaymentAlert::query()->firstOrNew(['attempt_id' => $attemptId]);
@@ -80,10 +80,6 @@ class PaymentAlertRecorder
         $normalized = mb_strtolower(trim($message));
         $exactPlanError = preg_replace('/[^a-z0-9]+/', ' ', $normalized);
         if ($exactPlanError === 'active plan not found please buy plan') {
-            return 'PAYMENT_GATEWAY_CONFIGURATION_ERROR';
-        }
-
-        if (in_array(strtoupper($code), ['NO_ACTIVE_PLAN', 'PLAN_EXPIRED', 'MERCHANT_INACTIVE', 'INVALID_API_CREDENTIALS', 'AUTHENTICATION_FAILED'], true)) {
             return 'PAYMENT_GATEWAY_CONFIGURATION_ERROR';
         }
 
