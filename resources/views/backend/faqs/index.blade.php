@@ -92,48 +92,35 @@
 
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            document.addEventListener('click', function(event) {
-                const button = event.target.closest('.delete-faq-btn');
-
-                if (!button) {
-                    return;
-                }
-
-                event.preventDefault();
-
-                const faqId = button.dataset.id;
-                const deleteForm = document.getElementById('delete-form-' + faqId);
-
-                if (!deleteForm) {
-                    console.error('Delete form not found for FAQ:', faqId);
-                    return;
-                }
-
-                if (typeof Swal === 'undefined') {
-                    alert('SweetAlert2 failed to load. Please refresh the page.');
-                    return;
-                }
-
-                Swal.fire({
-                    title: 'Delete FAQ?',
-                    text: 'Are you sure you want to delete this FAQ?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e74a3b',
-                    cancelButtonColor: '#858796',
-                    confirmButtonText: 'Yes, Delete!',
-                    cancelButtonText: 'Cancel',
-                    reverseButtons: true,
-                    focusCancel: true
-                }).then(function(result) {
-                    if (result.isConfirmed) {
-                        deleteForm.submit();
-                    }
-                });
-            });
-
+$(function () {
+    $(document).on('click.adminDelete', '.delete-faq-btn', function (event) {
+        event.preventDefault();
+        const $button = $(this);
+        const id = $button.data('id');
+        const form = document.getElementById('delete-form-' + id);
+        if (!form) {
+            console.error('Delete form not found for faq:', id);
+            return;
+        }
+        if (typeof Swal === 'undefined') {
+            window.alert('SweetAlert2 failed to load. Please refresh the page.');
+            return;
+        }
+        Swal.fire({
+            title: 'Delete FAQ?',
+            text: 'Are you sure you want to delete this FAQ?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e74a3b',
+            cancelButtonColor: '#858796',
+            confirmButtonText: 'Yes, Delete!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            focusCancel: true
+        }).then(function (result) {
+            if (result.isConfirmed) form.submit();
         });
-    </script>
+    });
+});
+</script>
 @endsection
