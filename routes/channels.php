@@ -6,7 +6,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
-$authorizeAdminSiteChannel = static function (\\App\\Models\\Admin $admin, string $siteKey): bool {
+$authorizeAdminSiteChannel = static function (\App\Models\Admin $admin, string $siteKey): bool {
     $currentSiteKey = (string) config('sites.current_key', config('sites.default', 'play-online-khaiwal'));
 
     return $admin->status === 'active' && hash_equals($currentSiteKey, $siteKey);
