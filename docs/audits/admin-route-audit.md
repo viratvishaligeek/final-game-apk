@@ -25,7 +25,7 @@ A feature regression test asserts representative route names and verifies that e
 ## Other route files
 
 - `routes/api.php`: player API and Sanctum broadcast authorization.
-- `routes/channels.php`: player-private channels and the new per-user presence channel with `sanctum` / `admin` guards.
+- `routes/channels.php`: player-private channels and the new per-user presence channel with `sanctum` / `admin` guards; per-user authorization is delegated to `UserPresenceChannelAuthorizer`.
 - `routes/community.php`: community endpoints.
 - `routes/extra.php`: non-admin utility/maintenance routes.
 
