@@ -66,13 +66,22 @@
    const query = phone ? '?phone='+encodeURIComponent(phone) : '';
    const result = await request(root+'/conversations'+query);
    conversations.innerHTML = '';
-   (result.data || []).forEach(c => {
+   const items = result.data || [];
+   items.forEach(c => {
      const button = document.createElement('button');
      button.type='button'; button.className='list-group-item list-group-item-action '+(active===c.id?'active':'');
      button.innerHTML='<div class="d-flex justify-content-between gap-2"><span class="fw-bold">'+esc(c.user?.name || ('User #'+c.id))+'</span>'+(c.unread_count ? '<span class="badge bg-danger">'+c.unread_count+'</span>' : '')+'</div><small>'+esc(c.user?.phone || '')+'</small><div class="small text-muted text-truncate">'+esc(c.last_message_preview || 'No messages yet')+'</div>';
      button.onclick=()=>selectConversation(c);
      conversations.appendChild(button);
    });
+   const requestedId = new URLSearchParams(window.location.search).get('conversation_id');
+   if (!window.__adminChatInitialConversationOpened && requestedId) {
+     const requested = items.find(item => Number(item.id) === Number(requestedId));
+     if (requested) {
+       window.__adminChatInitialConversationOpened = true;
+       void selectConversation(requested);
+     }
+   }
  }
  window.addEventListener('admin:support-message', event => {
    const payload = event.detail || {};
