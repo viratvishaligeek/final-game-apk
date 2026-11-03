@@ -13,6 +13,7 @@ use App\Services\WalletService;
 use App\Services\PaymentAlertRecorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -579,7 +580,7 @@ class WalletController extends Controller
             }
             app(PaymentAlertRecorder::class)->record($walletRequest, [
                 'stage' => 'order_creation_exception',
-                'category' => 'BACKEND_SYSTEM_ERROR',
+                'category' => $e instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR',
                 'message' => $e->getMessage(),
                 'attempt_id' => $clientTxnId,
             ]);
@@ -646,7 +647,7 @@ class WalletController extends Controller
                 report($exception);
                 app(PaymentAlertRecorder::class)->record($walletRequest, [
                     'stage' => 'payment_verification_exception',
-                    'category' => 'BACKEND_SYSTEM_ERROR',
+                    'category' => $exception instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR',
                     'message' => $exception->getMessage(),
                     'error_code' => 'VERIFICATION_EXCEPTION',
                 ]);
@@ -717,7 +718,7 @@ class WalletController extends Controller
             report($exception);
             app(PaymentAlertRecorder::class)->record($walletRequest, [
                 'stage' => 'gateway_return_verification_exception',
-                'category' => 'BACKEND_SYSTEM_ERROR',
+                'category' => $exception instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR',
                 'message' => $exception->getMessage(),
                 'error_code' => 'VERIFICATION_EXCEPTION',
             ]);
@@ -807,7 +808,7 @@ class WalletController extends Controller
             report($e);
             app(PaymentAlertRecorder::class)->record($walletRequest, [
                 'stage' => 'gateway_callback_verification_exception',
-                'category' => 'BACKEND_SYSTEM_ERROR',
+                'category' => $e instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR',
                 'message' => $e->getMessage(),
                 'error_code' => 'CALLBACK_VERIFICATION_EXCEPTION',
             ]);
@@ -988,8 +989,8 @@ class WalletController extends Controller
                 ]);
 
                 // Only a provider-verified automatic gateway credit failure
-                // creates an admin alert. The unique wallet_request_id makes
-                // repeated callbacks idempotent.
+                // creates an admin alert. The internal attempt ID keeps repeated
+                // callbacks for the same attempt idempotent.
                 $providerStatus = strtolower(trim((string) ($data['status'] ?? '')));
                 if (
                     $requestRow->payment_method === 'gateway'
