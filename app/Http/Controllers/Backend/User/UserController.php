@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bid;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -97,12 +98,35 @@ class UserController extends Controller
     {
         $transactions = $user->transactions()->latest('id')->paginate(15, ['*'], 'transactions_page');
 
-        $gameBidStats = $user->bids()
-            ->with('game:id,name')
-            ->selectRaw('game_id, COUNT(*) as total_bids, COALESCE(SUM(amount), 0) as total_amount, MAX(id) as latest_bid_id')
-            ->groupBy('game_id')
+        // A bid submission is identified by order_no. Do not collapse separate
+        // submissions merely because their game, bet type or timestamp match.
+        $submissionStats = $user->bids()
+            ->selectRaw('order_no, COUNT(*) as total_bids, COALESCE(SUM(amount), 0) as total_amount, MIN(id) as representative_bid_id, MAX(id) as latest_bid_id, MIN(created_at) as submitted_at')
+            ->groupBy('order_no')
             ->orderByDesc('latest_bid_id')
             ->get();
+
+        $representativeBids = Bid::query()
+            ->with('game:id,name')
+            ->whereIn('id', $submissionStats->pluck('representative_bid_id'))
+            ->get()
+            ->keyBy('id');
+
+        $gameBidStats = $submissionStats->map(function ($submission) use ($representativeBids) {
+            $representative = $representativeBids->get($submission->representative_bid_id);
+
+            return (object) [
+                'order_no' => $submission->order_no,
+                'total_bids' => (int) $submission->total_bids,
+                'total_amount' => (float) $submission->total_amount,
+                'latest_bid_id' => (int) $submission->latest_bid_id,
+                'submitted_at' => $submission->submitted_at,
+                'game_id' => $representative?->game_id,
+                'game_name' => $representative?->game?->name ?? 'Game Deleted',
+                'type' => $representative?->type ?? 'unknown',
+                'game_date' => $representative?->game_date,
+            ];
+        });
 
         $walletStats = $user->completedTransactions()
             ->selectRaw("
@@ -141,16 +165,18 @@ class UserController extends Controller
     public function bids(Request $request, User $user)
     {
         $validated = $request->validate([
-            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'order_no' => ['required', 'string', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
 
+        // Scope by the route-bound user first; an order number from another
+        // account must never disclose its bids.
         $bids = $user->bids()
             ->with('game:id,name')
-            ->where('game_id', $validated['game_id'])
-            ->latest('id')
-            ->paginate($validated['per_page'] ?? 50)
+            ->where('order_no', $validated['order_no'])
+            ->orderBy('id')
+            ->paginate($validated['per_page'] ?? 100)
             ->withQueryString();
 
         return response()->json([
@@ -170,6 +196,7 @@ class UserController extends Controller
                 'current_page' => $bids->currentPage(),
                 'last_page' => $bids->lastPage(),
                 'total' => $bids->total(),
+                'total_amount' => round((float) $user->bids()->where('order_no', $validated['order_no'])->sum('amount'), 2),
             ],
         ]);
     }
