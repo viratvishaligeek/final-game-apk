@@ -383,7 +383,7 @@
 
 @section('script')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        $(function () {
             const gameSelect =
                 document.getElementById('gameSelect');
             const dateSelect =
@@ -417,6 +417,14 @@
                 new bootstrap.Modal(
                     modalElement
                 );
+            async function getJson(url, data = {}) {
+                try {
+                    return await $.ajax({url, method: 'GET', data, dataType: 'json', headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'}});
+                } catch (xhr) {
+                    throw new Error(xhr.responseJSON?.message || 'Unable to load data.');
+                }
+            }
+
             async function loadBiddingData() {
                 const gameId =
                     gameSelect.value;
@@ -447,28 +455,10 @@
                     .classList
                     .add('d-none');
                 try {
-                    const params =
-                        new URLSearchParams({
-                            game_id: gameId,
-                            date: date,
-                        });
-                    const response =
-                        await fetch(
-                            `{{ route('admin.bidding-desk.data') }}?${params.toString()}`, {
-                                headers: {
-                                    'Accept': 'application/json',
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                }
-                            }
-                        );
-                    const result =
-                        await response.json();
-                    if (!response.ok) {
-                        throw new Error(
-                            result.message ||
-                            'Unable to load data.'
-                        );
-                    }
+                    const result = await getJson(
+                        `{{ route('admin.bidding-desk.data') }}`,
+                        {game_id: gameId, date: date}
+                    );
                     renderNumberGrid(jodiGrid, result.data.jodi, 'jodi', 'jodiTotal');
                     renderNumberGrid(crossingGrid, result.data.crossing, 'cross', 'crossingTotal');
                     renderHaruf(result.data.haruf);
@@ -493,7 +483,7 @@
             }
 
             function renderNumberGrid(container, numbers, type, totalId) {
-                container.replaceChildren();
+                $(container).empty();
                 const grandTotal = (numbers || []).reduce((sum, item) => sum + Number(item.total_amount || 0), 0);
                 const invested = (numbers || []).map(item => Number(item.total_amount || 0)).filter(amount => amount > 0).sort((a, b) => a - b);
                 const highThreshold = invested.length ? invested[Math.max(0, Math.ceil(invested.length * 0.75) - 1)] : 0;
@@ -507,8 +497,8 @@
                     card.innerHTML = '<div class="number-value">' + escapeHtml(item.number) + '</div>' +
                         '<div class="number-amount">₹' + formatMoney(item.total_amount) + '</div>' +
                         '<div class="number-meta">' + Number(item.total_users || 0) + ' users · ' + Number(item.total_bids || 0) + ' bets</div>';
-                    card.addEventListener('click', () => openDetails(item.number, type));
-                    container.appendChild(card);
+                    $(card).on('click.adminBiddingDesk', () => openDetails(item.number, type));
+                    $(container).append(card);
                 });
                 document.getElementById(totalId).textContent = '₹' + formatMoney(grandTotal);
             }
@@ -567,7 +557,7 @@
                 numbers,
                 side
             ) {
-                container.innerHTML = '';
+                $(container).empty();
                 numbers.forEach(item => {
                     const fullNumber =
                         side + '-' + item.number;
@@ -593,14 +583,14 @@
                     ${item.total_bids} bets
                 </div>
                 `;
-                    card.addEventListener(
-                        'click',
+                    $(card).on(
+                        'click.adminBiddingDesk',
                         () => openDetails(
                             fullNumber,
                             'haruf'
                         )
                     );
-                    container.appendChild(card);
+                    $(container).append(card);
                 });
             }
 
@@ -609,8 +599,8 @@
                 if (!gameSelect.value) return;
                 activeDetails = { number, type, page: 1, lastPage: 1 };
                 document.getElementById('modalNumber').textContent = number;
-                document.getElementById('modalBidTable').replaceChildren();
-                document.getElementById('modalUserBreakdown').replaceChildren();
+                $('#modalBidTable').empty();
+                $('#modalUserBreakdown').empty();
                 document.getElementById('modalEmpty').classList.add('d-none');
                 document.getElementById('modalLoadMore').classList.add('d-none');
                 bidModal.show();
@@ -625,39 +615,37 @@
                     document.getElementById('modalBidTable').innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-warning"></div><div class="mt-2 text-muted">Loading...</div></td></tr>';
                 }
                 try {
-                    const params = new URLSearchParams({
-                        game_id: gameSelect.value,
-                        date: dateSelect.value,
-                        number: activeDetails.number,
-                        type: activeDetails.type,
-                        page: page,
-                        per_page: 50,
-                    });
-                    const response = await fetch(`{{ route('admin.bidding-desk.details') }}?${params.toString()}`,
-                        { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }
+                    const result = await getJson(
+                        `{{ route('admin.bidding-desk.details') }}`,
+                        {
+                            game_id: gameSelect.value,
+                            date: dateSelect.value,
+                            number: activeDetails.number,
+                            type: activeDetails.type,
+                            page: page,
+                            per_page: 50
+                        }
                     );
-                    const result = await response.json();
-                    if (!response.ok) throw new Error(result.message || 'Unable to load details.');
                     activeDetails.page = result.data.pagination.current_page;
                     activeDetails.lastPage = result.data.pagination.last_page;
                     renderModalDetails(result.data, append);
                     button.classList.toggle('d-none', activeDetails.page >= activeDetails.lastPage);
                 } catch (error) {
                     const tbody = document.getElementById('modalBidTable');
-                    if (!append) tbody.replaceChildren();
+                    if (!append) $(tbody).empty();
                     const row = document.createElement('tr');
                     const cell = document.createElement('td');
                     cell.colSpan = 9;
                     cell.className = 'text-center text-danger py-4';
                     cell.textContent = error.message || 'Unable to load details.';
                     row.appendChild(cell);
-                    tbody.appendChild(row);
+                    $(tbody).append(row);
                 } finally {
                     button.disabled = false;
                 }
             }
 
-            document.getElementById('modalLoadMore').addEventListener('click', () => {
+            $('#modalLoadMore').on('click.adminBiddingDesk', () => {
                 if (activeDetails && activeDetails.page < activeDetails.lastPage) {
                     void loadDetailsPage(activeDetails.page + 1, true);
                 }
@@ -680,7 +668,7 @@
                         data.summary.total_amount
                     );
                 const userContainer = document.getElementById('modalUserBreakdown');
-                if (!append) userContainer.replaceChildren();
+                if (!append) $(userContainer).empty();
                 (data.users || []).forEach(user => {
                     const card = document.createElement('section');
                     card.className = 'border rounded-3 p-3';
@@ -784,7 +772,7 @@
                         </small>
                     </td>
                     `;
-                        tbody.appendChild(tr);
+                        $(tbody).append(tr);
                     }
                 );
             }
@@ -836,14 +824,8 @@
                     .replaceAll("'", '&#039;');
             }
 
-            gameSelect.addEventListener(
-                'change',
-                loadBiddingData
-            );
-            dateSelect.addEventListener(
-                'change',
-                loadBiddingData
-            );
+            $(gameSelect).on('change.adminBiddingDesk', loadBiddingData);
+            $(dateSelect).on('change.adminBiddingDesk', loadBiddingData);
 
             // Default game select first game
             if (gameSelect.options.length > 1) {
