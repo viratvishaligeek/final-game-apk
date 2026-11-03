@@ -160,3 +160,11 @@
         </div>
     </nav>
 </div>
+
+<script>
+    $(function () {
+        $('#admin-site-select').on('change', function () {
+            if (this.form) this.form.submit();
+        });
+    });
+</script>
