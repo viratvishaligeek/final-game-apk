@@ -478,25 +478,37 @@
                             </div>
                         </div>
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                            <div><h5 class="fw-bold mb-1">Games Played</h5><div class="small text-muted">Select a game to inspect its individual bids.</div></div>
-                            <span class="badge bg-primary-subtle text-primary">{{ $gameBidStats->count() }} games</span>
+                            <div><h5 class="fw-bold mb-1">Betting Submissions</h5><div class="small text-muted">Every separate betting submission is shown as its own activity, irrespective of game or bet type.</div></div>
+                            <span class="badge bg-primary-subtle text-primary">{{ $gameBidStats->count() }} submissions</span>
                         </div>
                         <div class="row g-3" id="user-game-bid-cards">
-                            @forelse($gameBidStats as $gameStatsRow)
+                            @forelse($gameBidStats as $submission)
                                 <div class="col-12 col-sm-6 col-xl-4">
-                                    <button type="button" class="btn btn-light border shadow-sm w-100 text-start p-3 h-100 js-open-game-bids"
-                                        data-game-id="{{ $gameStatsRow->game_id }}" data-game-name="{{ $gameStatsRow->game?->name ?? 'Game Deleted' }}">
+                                    <button type="button" class="btn btn-light border shadow-sm w-100 text-start p-3 h-100 js-open-game-bids submission-card"
+                                        data-order-no="{{ $submission->order_no }}"
+                                        data-game-name="{{ $submission->game_name }}"
+                                        data-bet-type="{{ $submission->type }}"
+                                        data-total-bids="{{ $submission->total_bids }}"
+                                        data-total-amount="{{ number_format($submission->total_amount, 2, '.', '') }}"
+                                        data-game-date="{{ $submission->game_date ? \Illuminate\Support\Carbon::parse($submission->game_date)->format('d M Y') : '-' }}"
+                                        data-submitted-at="{{ $submission->submitted_at ? \Illuminate\Support\Carbon::parse($submission->submitted_at)->timezone(config('app.timezone'))->format('d M Y, h:i A') : '-' }}">
                                         <div class="d-flex align-items-start justify-content-between gap-2">
-                                            <strong class="text-dark">{{ $gameStatsRow->game?->name ?? 'Game Deleted' }}</strong>
-                                            <i data-feather="chevron-right" class="text-muted"></i>
+                                            <strong class="text-dark">{{ $submission->game_name }}</strong>
+                                            <span class="badge bg-primary-subtle text-primary text-uppercase">{{ $submission->type }}</span>
                                         </div>
-                                        <div class="d-flex justify-content-between mt-3"><span class="small text-muted">Bids</span><strong>{{ number_format((int) $gameStatsRow->total_bids) }}</strong></div>
-                                        <div class="d-flex justify-content-between"><span class="small text-muted">Invested</span><strong class="text-primary">₹{{ number_format((float) $gameStatsRow->total_amount, 2) }}</strong></div>
-                                        <div class="small text-primary mt-3">View bid details</div>
+                                        <div class="d-flex flex-wrap gap-2 mt-3">
+                                            <span class="badge bg-light text-dark border">{{ number_format($submission->total_bids) }} bids</span>
+                                            <span class="badge bg-success-subtle text-success">₹{{ number_format($submission->total_amount, 2) }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-3 small text-muted">
+                                            <span>{{ $submission->game_date ? \Illuminate\Support\Carbon::parse($submission->game_date)->format('d M Y') : '-' }}</span>
+                                            <span>{{ $submission->submitted_at ? \Illuminate\Support\Carbon::parse($submission->submitted_at)->timezone(config('app.timezone'))->format('d M, h:i A') : '-' }}</span>
+                                        </div>
+                                        <div class="small text-primary mt-2">View this submission <i class="fas fa-arrow-right ms-1"></i></div>
                                     </button>
                                 </div>
                             @empty
-                                <div class="col-12"><div class="text-center py-5 border rounded text-muted">No bidding history found.</div></div>
+                                <div class="col-12"><div class="text-center py-5 border rounded text-muted">No betting submissions found.</div></div>
                             @endforelse
                         </div>
 
@@ -513,19 +525,14 @@
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header">
-                    <div><h5 class="modal-title fw-bold" id="gameBidsModalTitle">Game bids</h5><div class="small text-muted" id="gameBidsModalMeta"></div></div>
+                    <div><h5 class="modal-title fw-bold" id="gameBidsModalTitle">Betting submission</h5><div class="small text-muted" id="gameBidsModalMeta"></div></div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="gameBidsLoading" class="text-center py-4 d-none"><span class="spinner-border spinner-border-sm me-2"></span>Loading bids…</div>
+                    <div id="gameBidsLoading" class="text-center py-4 d-none"><span class="spinner-border spinner-border-sm me-2"></span>Loading submission…</div>
                     <div id="gameBidsError" class="alert alert-danger d-none" role="alert"></div>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle">
-                            <thead class="table-light"><tr><th>Bid ID</th><th>Order</th><th>Type</th><th>Number</th><th>Play date</th><th>Amount</th><th>Result / status</th><th>Placed at</th></tr></thead>
-                            <tbody id="gameBidsModalRows"></tbody>
-                        </table>
-                    </div>
-                    <div id="gameBidsEmpty" class="text-center text-muted py-4 d-none">No bids found for this game.</div>
+                    <div id="gameBidsModalRows" class="row g-2"></div>
+                    <div id="gameBidsEmpty" class="text-center text-muted py-4 d-none">No bids found in this submission.</div>
                     <div class="d-flex justify-content-between align-items-center mt-3">
                         <small class="text-muted" id="gameBidsPagination"></small>
                         <button type="button" class="btn btn-outline-primary btn-sm" id="gameBidsLoadMore">Load more</button>
@@ -535,7 +542,6 @@
         </div>
     </div>
 
-    {{-- ========================================================= --}}
     {{-- CREDIT MODAL --}}
     {{-- ========================================================= --}}
 
@@ -668,81 +674,103 @@
 
 @section('script')
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+$(function () {
     const modalElement = document.getElementById('gameBidsModal');
     if (!modalElement || !window.bootstrap) return;
-    const modal = new bootstrap.Modal(modalElement);
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     const endpoint = @json(route('admin.users.bids', $user->id));
-    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-    const rows = document.getElementById('gameBidsModalRows');
-    const loading = document.getElementById('gameBidsLoading');
-    const error = document.getElementById('gameBidsError');
-    const empty = document.getElementById('gameBidsEmpty');
-    const more = document.getElementById('gameBidsLoadMore');
-    const meta = document.getElementById('gameBidsModalMeta');
-    let gameId = null, page = 1, lastPage = 1, busy = false;
+    const $rows = $('#gameBidsModalRows');
+    const $loading = $('#gameBidsLoading');
+    const $error = $('#gameBidsError');
+    const $empty = $('#gameBidsEmpty');
+    const $more = $('#gameBidsLoadMore');
+    const $meta = $('#gameBidsModalMeta');
+    let orderNo = null, page = 1, lastPage = 1, request = null;
 
-    const cell = (value, className = '') => {
-        const td = document.createElement('td');
-        if (className) td.className = className;
-        td.textContent = value == null || value === '' ? '-' : String(value);
-        return td;
-    };
-    const load = async (nextPage = 1) => {
-        if (!gameId || busy) return;
-        busy = true;
-        loading.classList.remove('d-none');
-        error.classList.add('d-none');
-        more.disabled = true;
-        try {
-            const params = new URLSearchParams({ game_id: String(gameId), page: String(nextPage), per_page: '50' });
-            const response = await fetch(endpoint + '?' + params.toString(), {
-                credentials: 'same-origin',
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }
-            });
-            const payload = await response.json();
-            if (!response.ok) throw new Error(payload.message || 'Unable to load this game’s bids.');
-            if (nextPage === 1) rows.replaceChildren();
-            (payload.data || []).forEach(bid => {
-                const tr = document.createElement('tr');
-                tr.append(
-                    cell('#' + bid.id, 'fw-semibold'),
-                    cell(bid.order_no),
-                    cell(String(bid.type || '').toUpperCase()),
-                    cell(bid.number, 'fw-bold'),
-                    cell(bid.game_date),
-                    cell('₹' + Number(bid.amount || 0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}), 'fw-semibold'),
-                    cell((bid.status || '-') + (Number(bid.winning_amount) > 0 ? ' · Won ₹' + Number(bid.winning_amount).toFixed(2) : '')),
-                    cell(bid.created_at)
-                );
-                rows.appendChild(tr);
-            });
-            page = payload.pagination?.current_page || nextPage;
-            lastPage = payload.pagination?.last_page || 1;
-            meta.textContent = (payload.pagination?.total || 0) + ' individual bids';
-            document.getElementById('gameBidsPagination').textContent = 'Page ' + page + ' of ' + lastPage;
-            more.classList.toggle('d-none', page >= lastPage);
-            empty.classList.toggle('d-none', rows.children.length > 0);
-        } catch (exception) {
-            error.textContent = exception.message || 'Unable to load bids.';
-            error.classList.remove('d-none');
-        } finally {
-            loading.classList.add('d-none');
-            more.disabled = false;
-            busy = false;
-        }
-    };
-    document.querySelectorAll('.js-open-game-bids').forEach(button => {
-        button.addEventListener('click', () => {
-            gameId = button.dataset.gameId;
-            page = 1;
-            rows.replaceChildren();
-            document.getElementById('gameBidsModalTitle').textContent = button.dataset.gameName || 'Game bids';
-            modal.show();
-            void load(1);
+    const money = value => '₹' + Number(value || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+    function appendBidCard(bid) {
+        const $column = $('<div>', {class: 'col-12 col-sm-6 col-lg-4'});
+        const $card = $('<div>', {class: 'border rounded-3 p-3 h-100 bg-white shadow-sm'});
+        const $top = $('<div>', {class: 'd-flex justify-content-between align-items-center gap-2 mb-3'});
+        $top.append($('<span>', {class: 'badge bg-dark-subtle text-dark'}).text('#' + bid.id));
+        $top.append($('<span>', {class: 'badge bg-primary-subtle text-primary text-uppercase'}).text(bid.type || 'Bid'));
+        $card.append($top);
+        $card.append($('<div>', {class: 'd-flex align-items-center justify-content-between gap-2 mb-3'})
+            .append($('<span>', {class: 'text-muted small'}).text('Number'))
+            .append($('<span>', {class: 'badge bg-warning-subtle text-dark fs-6'}).text(bid.number || '-')));
+        $card.append($('<div>', {class: 'd-flex align-items-center justify-content-between gap-2 mb-2'})
+            .append($('<span>', {class: 'text-muted small'}).text('Bid amount'))
+            .append($('<span>', {class: 'badge bg-success-subtle text-success'}).text(money(bid.amount))));
+        let statusText = String(bid.status || 'pending').toUpperCase();
+        if (Number(bid.winning_amount) > 0) statusText += ' · Won ' + money(bid.winning_amount);
+        const statusClass = bid.status === 'win' ? 'bg-success' : bid.status === 'loss' ? 'bg-danger' : 'bg-secondary';
+        $card.append($('<div>', {class: 'd-flex flex-wrap align-items-center justify-content-between gap-2 mb-2'})
+            .append($('<span>', {class: 'text-muted small'}).text('Result'))
+            .append($('<span>', {class: 'badge ' + statusClass}).text(statusText)));
+        const $details = $('<div>', {class: 'small text-muted border-top pt-2 mt-2'});
+        $details.append($('<div>').text('Bid ID: #' + bid.id));
+        $details.append($('<div>').text('Placed: ' + (bid.created_at || '-')));
+        $details.append($('<div>').text('Play date: ' + (bid.game_date || '-')));
+        $card.append($details);
+        $column.append($card);
+        $rows.append($column);
+    }
+
+    function load(nextPage) {
+        if (!orderNo || request) return;
+        $loading.removeClass('d-none');
+        $error.addClass('d-none');
+        $more.prop('disabled', true);
+        request = $.ajax({
+            url: endpoint,
+            method: 'GET',
+            dataType: 'json',
+            data: {order_no: orderNo, page: nextPage, per_page: 100},
+            headers: {'Accept': 'application/json'}
+        }).done(function (payload) {
+            if (nextPage === 1) $rows.empty();
+            $.each(payload.data || [], function (_, bid) { appendBidCard(bid); });
+            page = Number(payload.pagination?.current_page || nextPage);
+            lastPage = Number(payload.pagination?.last_page || 1);
+            $meta.text((payload.pagination?.total || 0) + ' bids · ' + money(payload.pagination?.total_amount || 0) + ' total');
+            $('#gameBidsPagination').text('Page ' + page + ' of ' + lastPage);
+            $more.toggleClass('d-none', page >= lastPage);
+            $empty.toggleClass('d-none', $rows.children().length > 0);
+        }).fail(function (xhr) {
+            if (xhr.statusText === 'abort') return;
+            $error.text(xhr.responseJSON?.message || 'Unable to load this betting submission.').removeClass('d-none');
+        }).always(function () {
+            request = null;
+            $loading.addClass('d-none');
+            $more.prop('disabled', false);
         });
+    }
+
+    $(document).on('click', '.js-open-game-bids', function () {
+        const $button = $(this);
+        if (request) request.abort();
+        request = null;
+        orderNo = String($button.data('order-no') || '');
+        page = 1;
+        lastPage = 1;
+        $rows.empty();
+        $error.addClass('d-none');
+        $('#gameBidsModalTitle').text($button.data('game-name') || 'Betting submission');
+        $meta.text(
+            String($button.data('bet-type') || '').toUpperCase() + ' · ' +
+            ($button.data('total-bids') || 0) + ' bids · ' +
+            money($button.data('total-amount')) + ' · ' +
+            ($button.data('game-date') || '-') + ' · ' +
+            ($button.data('submitted-at') || '-')
+        );
+        modal.show();
+        load(1);
     });
-    more.addEventListener('click', () => { if (page < lastPage) void load(page + 1); });
+
+    $more.on('click', function () {
+        if (page < lastPage) load(page + 1);
+    });
 });
 </script>
 @endsection
