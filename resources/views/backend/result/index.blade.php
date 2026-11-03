@@ -23,7 +23,7 @@
                     class="d-inline-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm border">
                     <span class="fw-bold text-secondary ps-2">Date:</span>
                     <input type="date" name="date" class="form-control form-control-sm border-0 fw-bold text-primary"
-                        value="{{ $selectedDate }}" onchange="this.form.submit()">
+                        value="{{ $selectedDate }}" class="form-control form-control-sm border-0 fw-bold text-primary js-auto-submit-date">
                     @if (\Carbon\Carbon::parse($selectedDate)->isToday())
                         <span class="badge bg-danger text-uppercase px-2 py-2">● Live Today</span>
                     @else
@@ -125,8 +125,7 @@
 
                                             @if ($hasValidResult)
                                                 <form action="{{ route('admin.results.revert') }}" method="POST"
-                                                    onsubmit="return confirm('Are you sure you want to revert this result to Wait? User balances will be adjusted.');"
-                                                    class="d-inline">
+                                                    class="d-inline js-confirm-result-revert">
                                                     @csrf
                                                     <input type="hidden" name="game_id" value="{{ $game->id }}">
                                                     <input type="hidden" name="game_date" value="{{ $gameDate }}">
@@ -151,4 +150,20 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('script')
+<script>
+$(function () {
+    $(document).on('change.adminResults', '.js-auto-submit-date', function () {
+        $(this).closest('form').trigger('submit');
+    });
+
+    $(document).on('submit.adminResults', '.js-confirm-result-revert', function (event) {
+        if (!window.confirm('Are you sure you want to revert this result to Wait? User balances will be adjusted.')) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
 @endsection
