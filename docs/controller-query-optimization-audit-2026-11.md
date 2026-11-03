@@ -34,6 +34,7 @@
 - Admin user search is bounded to 50 rows and does not query conversations once per user.
 - The existing unique support_conversations.user_id constraint is the final duplicate-prevention guard. User-row locking serializes concurrent conversation creation attempts on transactional databases.
 - The existing per-admin read marker remains the source of unread state. Search and global badge refreshes compute the exact count instead of incrementing from both HTTP and Pusher events.
+- The global conversations response now includes `meta.total_unread_count`, calculated across all site-scoped user messages with a left-joined per-admin read marker. The 500-row inbox list limit therefore does not truncate the header badge total.
 
 ## Deliberately not refactored
 
