@@ -169,16 +169,10 @@
         let chatSnapshotInitialized = false;
         const chatSoundEnabled = @json((string) setting('notification_sound_chat', 'default') !== 'mute');
         const soundPreferenceEnabled = (() => { try { return localStorage.getItem('admin_notification_sound_enabled') === '1'; } catch (error) { return false; } })();
-        const setSoundStatus = value => {
-            const label = document.getElementById('admin-sound-status');
-            if (label) label.textContent = value;
-        };
+        const setSoundStatus = value => $('#admin-sound-status').text(value);
         if (soundPreferenceEnabled) setSoundStatus('Sound enabled');
 
-        const setText = (id, value) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = value == null || value === '' ? '—' : String(value);
-        };
+        const setText = (id, value) => $('#' + id).text(value == null || value === '' ? '—' : String(value));
         const stopSound = () => {
             paymentAudio.pause();
             paymentAudio.currentTime = 0;
@@ -200,7 +194,7 @@
             chatAudio.currentTime = 0;
             chatAudio.play().catch(() => setSoundStatus('Tap to enable sound'));
         };
-        document.getElementById('admin-enable-alert-sounds')?.addEventListener('click', async () => {
+        $('#admin-enable-alert-sounds').on('click', async () => {
             try {
                 for (const audio of [paymentAudio, chatAudio]) {
                     const wasPlaying = !audio.paused;
@@ -220,8 +214,8 @@
                 setSoundStatus('Tap to enable sound');
             }
         });
-        window.addEventListener('admin:incoming-chat-message', event => playChatNotification(event.detail || {}));
-        window.addEventListener('admin:refresh-chat-unread', () => { void refreshHeaderChatNotifications(); });
+        $(window).on('admin:incoming-chat-message', event => playChatNotification(event.originalEvent?.detail || event.detail || {}));
+        $(window).on('admin:refresh-chat-unread', () => { void refreshHeaderChatNotifications(); });
         const formatDate = value => {
             if (!value) return '—';
             const date = new Date(value);
@@ -252,7 +246,7 @@
             modal.show();
             startSound();
         };
-        modalElement.addEventListener('hidden.bs.modal', () => {
+        $(modalElement).on('hidden.bs.modal', () => {
             if (!modalClosing) return;
             modalClosing = false;
             presentNext();
@@ -278,9 +272,12 @@
         };
         const loadPending = async () => {
             try {
-                const response = await fetch(endpoint + '/pending', {credentials: 'same-origin', headers: {'Accept': 'application/json'}});
-                if (!response.ok) return;
-                const payload = await response.json();
+                const payload = await $.ajax({
+                    url: endpoint + '/pending',
+                    method: 'GET',
+                    dataType: 'json',
+                    headers: {'Accept': 'application/json'}
+                });
                 window.dispatchEvent(new CustomEvent('admin:conversations-snapshot', {detail: payload}));
                 (payload.data || []).forEach(addAlert);
             } catch (error) {
@@ -288,19 +285,20 @@
             }
         };
 
-        document.getElementById('payment-alert-acknowledge')?.addEventListener('click', async () => {
+        $('#payment-alert-acknowledge').on('click', async function () {
             if (!activeAlert) return;
             const alert = activeAlert;
-            const button = document.getElementById('payment-alert-acknowledge');
-            button.disabled = true;
+            const $button = $(this).prop('disabled', true);
             try {
-                const response = await fetch(endpoint + '/' + encodeURIComponent(alert.id) + '/acknowledge', {
+                await $.ajax({
+                    url: endpoint + '/' + encodeURIComponent(alert.id) + '/acknowledge',
                     method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf},
-                    body: JSON.stringify({})
+                    data: JSON.stringify({}),
+                    processData: false,
+                    contentType: 'application/json; charset=UTF-8',
+                    dataType: 'json',
+                    headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': csrf}
                 });
-                if (!response.ok) throw new Error('Acknowledgement failed');
                 acknowledged.add(Number(alert.id));
                 activeAlert = null;
                 stopSound();
@@ -311,23 +309,23 @@
                 console.error(error);
                 window.alert('Unable to acknowledge this alert. Please try again.');
             } finally {
-                button.disabled = false;
+                $button.prop('disabled', false);
             }
         });
 
         void loadPending();
 
         const refreshHeaderChatNotifications = async () => {
-            const badge = document.getElementById('admin-chat-unread-badge');
-            const container = document.getElementById('admin-chat-notification-items');
-            if (!badge || !container) return;
+            const $badge = $('#admin-chat-unread-badge');
+            const $container = $('#admin-chat-notification-items');
+            if (!$badge.length || !$container.length) return;
             try {
-                const response = await fetch('/admin/support-chat/conversations', {
-                    credentials: 'same-origin',
+                const payload = await $.ajax({
+                    url: '/admin/support-chat/conversations',
+                    method: 'GET',
+                    dataType: 'json',
                     headers: {'Accept': 'application/json'}
                 });
-                if (!response.ok) return;
-                const payload = await response.json();
                 (payload.data || []).forEach(item => {
                     const messageId = Number(item.last_message_id || 0);
                     const previousId = lastSeenChatMessageIds.get(Number(item.id)) || 0;
@@ -340,31 +338,27 @@
                 chatSnapshotInitialized = true;
                 const unread = (payload.data || []).filter(item => Number(item.unread_count) > 0);
                 const total = Number(payload.meta?.total_unread_count ?? unread.reduce((sum, item) => sum + Number(item.unread_count || 0), 0));
-                badge.textContent = total > 99 ? '99+' : String(total);
-                badge.classList.toggle('d-none', total === 0);
-                container.replaceChildren();
+                $badge.text(total > 99 ? '99+' : String(total)).toggleClass('d-none', total === 0);
+                $container.empty();
+
                 if (!unread.length) {
-                    const empty = document.createElement('div');
-                    empty.className = 'dropdown-item small text-muted';
-                    empty.textContent = 'No unread support messages.';
-                    container.appendChild(empty);
+                    $container.append($('<div>', {class: 'dropdown-item small text-muted'})
+                        .text('No unread support messages.'));
                     return;
                 }
+
                 unread.slice(0, 6).forEach(item => {
-                    const link = document.createElement('a');
-                    link.className = 'dropdown-item dropdown-notifications-item';
-                    link.href = '/admin/support-chat?conversation_id=' + encodeURIComponent(item.id);
-                    const copy = document.createElement('div');
-                    copy.className = 'dropdown-notifications-item-content';
-                    const preview = document.createElement('div');
-                    preview.className = 'dropdown-notifications-item-content-text';
-                    preview.textContent = item.last_message_preview || 'New support message';
-                    const details = document.createElement('div');
-                    details.className = 'dropdown-notifications-item-content-details';
-                    details.textContent = (item.user?.name || 'User') + ' · ' + (item.user?.phone || '') + ' · ' + item.unread_count + ' unread';
-                    copy.append(preview, details);
-                    link.appendChild(copy);
-                    container.appendChild(link);
+                    const $link = $('<a>', {
+                        class: 'dropdown-item dropdown-notifications-item',
+                        href: '/admin/support-chat?conversation_id=' + encodeURIComponent(item.id)
+                    });
+                    const $copy = $('<div>', {class: 'dropdown-notifications-item-content'});
+                    $copy.append($('<div>', {class: 'dropdown-notifications-item-content-text'})
+                        .text(item.last_message_preview || 'New support message'));
+                    $copy.append($('<div>', {class: 'dropdown-notifications-item-content-details'})
+                        .text((item.user?.name || 'User') + ' · ' + (item.user?.phone || '') + ' · ' + item.unread_count + ' unread'));
+                    $link.append($copy);
+                    $container.append($link);
                 });
             } catch (error) {
                 console.warn('Unable to refresh support message notifications.', error);
@@ -386,8 +380,8 @@
             if (fallbackRefreshTimer) window.clearInterval(fallbackRefreshTimer);
             fallbackRefreshTimer = null;
         };
-        window.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
+        $(document).on('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
                 void loadPending();
                 void refreshHeaderChatNotifications();
                 window.dispatchEvent(new Event('admin:recovery-tick'));
