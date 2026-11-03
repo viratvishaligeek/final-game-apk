@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias(['admin.site' => \App\Http\Middleware\SelectAdminSite::class]);
     })
     ->withBroadcasting(__DIR__.'/../routes/channels.php', [
-        'middleware' => ['web', 'auth:admin', 'admin.site'],
+        'middleware' => ['web', 'admin.site'],
     ])
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
