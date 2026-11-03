@@ -178,6 +178,51 @@
 
         void loadPending();
 
+        const refreshHeaderChatNotifications = async () => {
+            const badge = document.getElementById('admin-chat-unread-badge');
+            const container = document.getElementById('admin-chat-notification-items');
+            if (!badge || !container) return;
+            try {
+                const response = await fetch('/admin/support-chat/conversations', {
+                    credentials: 'same-origin',
+                    headers: {'Accept': 'application/json'}
+                });
+                if (!response.ok) return;
+                const payload = await response.json();
+                const unread = (payload.data || []).filter(item => Number(item.unread_count) > 0);
+                const total = unread.reduce((sum, item) => sum + Number(item.unread_count || 0), 0);
+                badge.textContent = total > 99 ? '99+' : String(total);
+                badge.classList.toggle('d-none', total === 0);
+                container.replaceChildren();
+                if (!unread.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'dropdown-item small text-muted';
+                    empty.textContent = 'No unread support messages.';
+                    container.appendChild(empty);
+                    return;
+                }
+                unread.slice(0, 6).forEach(item => {
+                    const link = document.createElement('a');
+                    link.className = 'dropdown-item dropdown-notifications-item';
+                    link.href = '/admin/support-chat?conversation_id=' + encodeURIComponent(item.id);
+                    const copy = document.createElement('div');
+                    copy.className = 'dropdown-notifications-item-content';
+                    const preview = document.createElement('div');
+                    preview.className = 'dropdown-notifications-item-content-text';
+                    preview.textContent = item.last_message_preview || 'New support message';
+                    const details = document.createElement('div');
+                    details.className = 'dropdown-notifications-item-content-details';
+                    details.textContent = (item.user?.name || 'User') + ' · ' + (item.user?.phone || '') + ' · ' + item.unread_count + ' unread';
+                    copy.append(preview, details);
+                    link.appendChild(copy);
+                    container.appendChild(link);
+                });
+            } catch (error) {
+                console.warn('Unable to refresh support message notifications.', error);
+            }
+        };
+        void refreshHeaderChatNotifications();
+
         const config = window.ADMIN_PAYMENT_ALERT_BROADCAST || {};
         if (config.key && window.Pusher) {
             try {
@@ -200,6 +245,9 @@
                 });
                 client.subscribe('private-admin.support-chat').bind('support.message.created', payload => {
                     window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
+                });
+                client.channel('private-admin.support-chat').bind('support.message.created', () => {
+                    void refreshHeaderChatNotifications();
                 });
             } catch (error) {
                 console.error('Admin payment alert realtime connection failed.', error);
