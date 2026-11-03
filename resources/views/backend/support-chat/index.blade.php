@@ -70,19 +70,19 @@
 <script>
 (() => {
  const root = @json(url('/admin/support-chat'));
- const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+ const token = $('meta[name="csrf-token"]').attr('content') || '';
  const playChatSound = @json(($chatSoundEnabled ?? true) === true);
  let active = null, lastId = 0, busy = false, recordedFile = null, recorder = null, stream = null, chunks = [];
  let conversationVersion = 0, pendingMessageRefresh = false, pendingMessageReset = false;
- const conversations = document.getElementById('conversations');
- const messages = document.getElementById('messages');
- const status = document.getElementById('connection-status');
- const conversationSearch = document.getElementById('conversation-search');
+ const conversations = $('#conversations');
+ const messages = $('#messages');
+ const status = $('#connection-status');
+ const conversationSearch = $('#conversation-search');
  let conversationSearchTimer = null;
  let userSearchTimer = null;
  let userSearchRequest = 0;
- const userSearch = document.getElementById('user-search');
- const userSearchResults = document.getElementById('user-search-results');
+ const userSearch = $('#user-search');
+ const userSearchResults = $('#user-search-results');
  let realtimeConnected = false;
  let conversationSearchRequest = 0;
  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -107,7 +107,7 @@
  }
  async function loadConversations(snapshot = null) {
     const requestId = ++conversationSearchRequest;
-    const phone = conversationSearch ? conversationSearch.value.trim() : '';
+    const phone = conversationSearch.length ? String(conversationSearch.val() || '').trim() : '';
     const query = phone ? '?phone=' + encodeURIComponent(phone) : '';
     const result = snapshot && !phone ? snapshot : await request(root + '/conversations' + query);
     if (requestId !== conversationSearchRequest) return;
@@ -151,7 +151,7 @@
 
   async function searchUsers() {
     const requestId = ++userSearchRequest;
-    const term = userSearch ? userSearch.value.trim() : '';
+    const term = userSearch.length ? String(userSearch.val() || '').trim() : '';
     const $results = $(userSearchResults).empty();
     if (!term) {
       $results.append($('<div>', { class: 'list-group-item small text-muted' })
@@ -244,14 +244,14 @@
    }
  });
  $(window).on('admin:conversations-snapshot.adminChat', (event, snapshotArg) => {
-   if (conversationSearch?.value.trim()) return;
+   if (String(conversationSearch.val() || '').trim()) return;
    void loadConversations(event.originalEvent?.detail || event.detail || snapshotArg || null).catch(error => console.warn('Realtime inbox snapshot failed', error));
  });
  function notifyAdmin(message) {
    window.dispatchEvent(new CustomEvent('admin:incoming-chat-message', { detail: { ...message, sender: 'user' } }));
    if ('Notification' in window && Notification.permission === 'granted') {
      const notification = new Notification('New support message', {body: message.body || 'User sent an attachment.'});
-     notification.onclick = () => window.focus();
+     $(notification).on('click.adminChat', () => window.focus());
    }
  }
  async function selectConversation(c) {
@@ -270,7 +270,8 @@
    const requestedConversation = active;
    const requestedVersion = conversationVersion;
    try {
-     const wasNearBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 100;
+     const messageElement = messages.get(0);
+    const wasNearBottom = messageElement.scrollHeight - messages.scrollTop() - messages.innerHeight() < 100;
      const query = !reset ? '?after_id='+encodeURIComponent(String(lastId)) : '';
      const result=await request(root+'/'+requestedConversation+'/messages'+query);
      if (requestedVersion !== conversationVersion || requestedConversation !== active) return;
@@ -297,10 +298,10 @@
      }
      if (all.length) lastId=Math.max(lastId,...all.map(m=>Number(m.id)||0));
      if (!reset && all.length >= 200) pendingMessageRefresh = true;
-     if (reset || (rendered && wasNearBottom)) messages.scrollTop=messages.scrollHeight;
-     status.textContent='Connected · refreshes automatically'; status.className='badge bg-success';
+     if (reset || (rendered && wasNearBottom)) messages.scrollTop(messageElement.scrollHeight);
+     status.text('Connected · refreshes automatically').attr('class', 'badge bg-success');
    } catch(e) {
-     status.textContent='Reconnecting…'; status.className='badge bg-secondary';
+     status.text('Reconnecting…').attr('class', 'badge bg-secondary');
      console.warn('Support chat sync failed',e);
    } finally {
      busy=false;
@@ -316,7 +317,7 @@
      if (conversationSearchTimer) clearTimeout(conversationSearchTimer);
      conversationSearchTimer = window.setTimeout(() => {
        loadConversations().catch(error => {
-         status.textContent = 'Search unavailable';
+         status.text('Search unavailable');
          status.className = 'badge bg-danger';
          console.warn('Conversation search failed', error);
        });
@@ -368,14 +369,14 @@
      alert('Unable to disable admin push: ' + (error?.message || 'Unknown error'));
    }
  });
- const recordButton = document.getElementById('record-voice');
- const recordingStatus = document.getElementById('recording-status');
+ const recordButton = $('#record-voice');
+ const recordingStatus = $('#recording-status');
  $(recordButton).on('click.adminChat', async () => {
    if (recorder && recorder.state === 'recording') {
      recorder.stop();
-     recordButton.textContent='Record';
-     recordButton.classList.remove('btn-danger'); recordButton.classList.add('btn-outline-secondary');
-     recordingStatus.textContent='Preparing voice attachment…';
+     recordButton.text('Record');
+     recordButton.removeClass('btn-danger').addClass('btn-outline-secondary');
+     recordingStatus.text('Preparing voice attachment…');
      return;
    }
    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return alert('Voice recording is not supported by this browser.');
@@ -387,23 +388,23 @@
      recorder.onstop=()=>{
        const type=recorder.mimeType||'audio/webm'; const ext=type.includes('mp4')?'mp4':'webm';
        recordedFile=new File([new Blob(chunks,{type})],'voice-message.'+ext,{type});
-       document.getElementById('attachment').value='';
-       recordingStatus.textContent='Voice message ready to send'; recordingStatus.classList.remove('d-none');
+       $('#attachment').val('');
+       recordingStatus.text('Voice message ready to send').removeClass('d-none');
        stream?.getTracks().forEach(t=>t.stop()); stream=null;
      };
-     recorder.start(); recordButton.textContent='Stop'; recordButton.classList.remove('btn-outline-secondary'); recordButton.classList.add('btn-danger');
-     recordingStatus.textContent='Recording… press Stop to attach'; recordingStatus.classList.remove('d-none');
+     recorder.start(); recordButton.text('Stop').removeClass('btn-outline-secondary').addClass('btn-danger');
+     recordingStatus.text('Recording… press Stop to attach').removeClass('d-none');
    } catch(e) { alert('Microphone permission was denied or unavailable.'); }
  });
- $('#attachment').on('change.adminChat',()=>{recordedFile=null;recordingStatus.classList.add('d-none');});
+ $('#attachment').on('change.adminChat',()=>{recordedFile=null;recordingStatus.addClass('d-none');});
  $('#send-form').on('submit.adminChat', async event=>{
    event.preventDefault(); if(!active) return alert('Select a conversation first.');
-   const body=document.getElementById('body'), file=document.getElementById('attachment');
-   if(!body.value.trim()&&!file.files.length&&!recordedFile) return;
+   const body=$('#body'), file=$('#attachment');
+   if(!String(body.val() || '').trim()&&!file.get(0).files.length&&!recordedFile) return;
    if (recorder && recorder.state === 'recording') return alert('Stop recording before sending.');
-   const data=new FormData(); if(body.value.trim()) data.append('body',body.value.trim());
+   const data=new FormData(); if(String(body.val() || '').trim()) data.append('body',String(body.val()).trim());
    const attachment = recordedFile || file.files[0]; if(attachment) data.append('attachment',attachment);
-   try { await request(root+'/'+active+'/send',{method:'POST',body:data}); body.value=''; file.value=''; recordedFile=null; recordingStatus.classList.add('d-none'); await loadMessages(true); await loadConversations(); }
+   try { await request(root+'/'+active+'/send',{method:'POST',body:data}); body.val(''); file.val(''); recordedFile=null; recordingStatus.addClass('d-none'); await loadMessages(true); await loadConversations(); }
    catch(error){ alert(error.message); }
  });
  $(window).on('admin:broadcast-state.adminChat', (event, stateArg) => {
@@ -412,10 +413,10 @@
    realtimeConnected = connected;
    if (connected) {
      if (active) void loadMessages();
-     status.textContent = 'Live · Pusher';
+     status.text('Live · Pusher');
      status.className = 'badge bg-success';
    } else {
-     status.textContent = 'Reconnecting…';
+     status.text('Reconnecting…');
      status.className = 'badge bg-secondary';
    }
  });
@@ -424,9 +425,9 @@
  });
  loadConversations().then(()=>{
    if (window.adminPusher?.connection?.state === 'connected') realtimeConnected = true;
-   status.textContent = realtimeConnected ? 'Live · Pusher' : 'Connected · recovery sync';
+   status.text(realtimeConnected ? 'Live · Pusher' : 'Connected · recovery sync');
    status.className = 'badge bg-success';
- }).catch(()=>{status.textContent='Reconnecting…';status.className='badge bg-secondary';});
+ }).catch(()=>{status.text('Reconnecting…').attr('class', 'badge bg-secondary');});
  $(window).one('beforeunload.adminChat',()=>{ stream?.getTracks().forEach(t=>t.stop()); });
 })();
 </script>
