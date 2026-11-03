@@ -47,8 +47,16 @@ class SupportChatController extends Controller
             ->limit(50)
             ->get(['id', 'name', 'phone', 'status']);
 
+        $adminId = (int) auth('admin')->id();
         $conversations = SupportConversation::query()
+            ->with(['latestMessage:id,conversation_id,body,sender_type,created_at'])
             ->whereIn('user_id', $users->pluck('id'))
+            ->withCount(['messages as unread_count' => function ($query) use ($adminId) {
+                $query->where('sender_type', 'user')->whereRaw(
+                    'id > COALESCE((SELECT last_read_message_id FROM support_conversation_admin_reads WHERE support_conversation_admin_reads.conversation_id = support_messages.conversation_id AND support_conversation_admin_reads.admin_id = ?), 0)',
+                    [$adminId]
+                );
+            }])
             ->get(['id', 'user_id'])
             ->keyBy('user_id');
 
@@ -62,6 +70,9 @@ class SupportChatController extends Controller
                     'status' => $user->status,
                     'conversation_id' => $conversation?->id,
                     'has_conversation' => (bool) $conversation,
+                    'unread_count' => (int) ($conversation?->unread_count ?? 0),
+                    'last_message_preview' => $conversation?->latestMessage?->body
+                        ?: ($conversation?->latestMessage ? 'Attachment' : ''),
                 ];
             })->values(),
         ]);

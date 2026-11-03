@@ -133,8 +133,8 @@
        const name = document.createElement('strong');
        name.textContent = user.name || ('User #' + user.id);
        const state = document.createElement('span');
-       state.className = 'badge ' + (user.has_conversation ? 'bg-success' : 'bg-primary');
-       state.textContent = user.has_conversation ? 'Existing chat' : 'Start chat';
+       state.className = 'badge ' + (Number(user.unread_count) > 0 ? 'bg-danger' : user.has_conversation ? 'bg-success' : 'bg-primary');
+       state.textContent = Number(user.unread_count) > 0 ? Number(user.unread_count) + ' unread' : user.has_conversation ? 'Existing chat' : 'Start chat';
        title.append(name, state);
        const meta = document.createElement('small');
        meta.className = 'text-muted d-block';
