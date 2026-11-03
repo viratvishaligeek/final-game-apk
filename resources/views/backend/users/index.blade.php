@@ -433,5 +433,24 @@
             });
 
         });
+
+        window.addEventListener('admin:user-presence', function (event) {
+            const presence = event.detail || {};
+            const cell = document.querySelector('[data-live-status-cell="' + Number(presence.user_id) + '"]');
+            if (!cell) return;
+
+            const badge = cell.querySelector('[data-live-status]');
+            if (badge) {
+                const status = presence.live_status === 'active' ? 'active' : 'inactive';
+                badge.dataset.liveStatus = status;
+                badge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                badge.className = 'badge ' + (status === 'active' ? 'bg-success' : 'bg-secondary');
+            }
+            const lastSeen = cell.querySelector('[data-live-last-seen]');
+            if (lastSeen && presence.last_seen_at) {
+                const date = new Date(presence.last_seen_at);
+                lastSeen.textContent = Number.isNaN(date.getTime()) ? presence.last_seen_at : date.toLocaleString('en-IN');
+            }
+        });
     </script>
 @endsection
