@@ -31,4 +31,9 @@ class SupportConversation extends Model
     {
         return $this->hasMany(SupportMessage::class, 'conversation_id');
     }
+
+    public function latestMessage()
+    {
+        return $this->hasOne(SupportMessage::class, 'conversation_id')->latestOfMany();
+    }
 }
