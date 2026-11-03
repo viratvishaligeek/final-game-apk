@@ -162,20 +162,30 @@ class BiddingDeskController extends Controller
         $totalUsers = (clone $baseQuery)->distinct('user_id')->count('user_id');
         $totalAmount = (float) (clone $baseQuery)->sum('amount');
 
-        $matchingBids = (clone $baseQuery)
-            ->with(['user:id,name,phone'])
-            ->orderByDesc('id')
+        // Paginate distinct users rather than bid rows so a user is never split
+        // across pages and each user's complete same-day number list is coherent.
+        $userPaginator = (clone $baseQuery)
+            ->select('user_id')
+            ->distinct()
+            ->orderBy('user_id')
             ->paginate($validated['per_page'] ?? 50);
 
-        $bidIds = $matchingBids->getCollection()->pluck('id');
+        $userIds = $userPaginator->getCollection()->pluck('user_id')->unique()->values();
+        $matchingBids = $userIds->isEmpty()
+            ? collect()
+            : (clone $baseQuery)
+                ->whereIn('user_id', $userIds)
+                ->with(['user:id,name,phone'])
+                ->orderByDesc('id')
+                ->get();
+
+        $bidIds = $matchingBids->pluck('id');
         $transactionIds = $bidIds->isEmpty()
             ? collect()
             : Transaction::query()
                 ->whereIn('bid_id', $bidIds)
                 ->get(['id', 'bid_id'])
                 ->keyBy('bid_id');
-
-        $userIds = $matchingBids->getCollection()->pluck('user_id')->unique()->values();
         $userNumbers = $userIds->isEmpty()
             ? collect()
             : Bid::query()
@@ -242,12 +252,12 @@ class BiddingDeskController extends Controller
                     'total_amount' => round($totalAmount, 2),
                 ],
                 'users' => $users,
-                'bids' => $matchingBids->getCollection()->map($formatBid)->values(),
+                'bids' => $matchingBids->map($formatBid)->values(),
                 'pagination' => [
-                    'current_page' => $matchingBids->currentPage(),
-                    'last_page' => $matchingBids->lastPage(),
-                    'per_page' => $matchingBids->perPage(),
-                    'total' => $matchingBids->total(),
+                    'current_page' => $userPaginator->currentPage(),
+                    'last_page' => $userPaginator->lastPage(),
+                    'per_page' => $userPaginator->perPage(),
+                    'total' => $userPaginator->total(),
                 ],
             ],
         ]);
