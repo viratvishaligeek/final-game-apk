@@ -14,6 +14,7 @@ return new class extends Migration {
 
         Schema::create('user_presence_sessions', function (Blueprint $table) {
             $table->id();
+            $table->string('site_key', 64)->default('play-online-khaiwal')->index();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('session_id', 64)->unique();
             $table->string('platform', 20)->nullable();
