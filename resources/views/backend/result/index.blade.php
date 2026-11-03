@@ -22,8 +22,8 @@
                 <form action="{{ route('admin.results.index') }}" method="GET"
                     class="d-inline-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm border">
                     <span class="fw-bold text-secondary ps-2">Date:</span>
-                    <input type="date" name="date" class="form-control form-control-sm border-0 fw-bold text-primary"
-                        value="{{ $selectedDate }}" class="js-result-date-filter">
+                    <input type="date" name="date" class="form-control form-control-sm border-0 fw-bold text-primary js-result-date-filter"
+                        value="{{ $selectedDate }}">
                     @if (\Carbon\Carbon::parse($selectedDate)->isToday())
                         <span class="badge bg-danger text-uppercase px-2 py-2">● Live Today</span>
                     @else
@@ -125,8 +125,7 @@
 
                                             @if ($hasValidResult)
                                                 <form action="{{ route('admin.results.revert') }}" method="POST"
-                                                    class="d-inline js-confirm-result-revert" data-confirm-message="Are you sure you want to revert this result to Wait? User balances will be adjusted?"
-                                                    class="d-inline">
+                                                    class="d-inline js-confirm-result-revert" data-confirm-message="Are you sure you want to revert this result to Wait? User balances will be adjusted?">
                                                     @csrf
                                                     <input type="hidden" name="game_id" value="{{ $game->id }}">
                                                     <input type="hidden" name="game_date" value="{{ $gameDate }}">
