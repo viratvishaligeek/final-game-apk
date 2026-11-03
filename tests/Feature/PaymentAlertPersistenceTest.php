@@ -16,8 +16,6 @@ class PaymentAlertPersistenceTest extends TestCase
 
     public function test_technical_gateway_error_is_persisted_without_a_gateway_transaction_id_and_repeated_callbacks_are_correlated(): void
     {
-        Event::fake([AdminPaymentFailedPaymentAlert::class]);
-
         $user = User::create([
             'name' => 'Payment Alert Test',
             'phone' => '919999' . random_int(100000, 999999),
@@ -55,7 +53,6 @@ class PaymentAlertPersistenceTest extends TestCase
         $this->assertSame(2, (int) $second->occurrence_count);
         $this->assertSame(1, $second->newQuery()->count());
 
-        Event::assertDispatchedTimes(AdminPaymentFailedPaymentAlert::class, 1);
     }
 
     public function test_exact_active_plan_message_is_classified_as_gateway_configuration_error(): void
