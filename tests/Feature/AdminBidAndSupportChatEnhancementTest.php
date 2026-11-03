@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Http\Controllers\Backend\Game\BiddingDeskController;
 use App\Http\Controllers\Backend\SupportChatController;
 use App\Http\Controllers\Api\PresenceController;
-use App\Console\Commands\ExpireStaleUserPresence;
 use App\Http\Controllers\Backend\User\UserController;
 use App\Events\AdminPaymentFailedPaymentAlert;
 use App\Events\SupportMessageCreated;
