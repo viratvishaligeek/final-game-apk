@@ -4,8 +4,8 @@
     <div class="container-fluid px-4 py-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div>
-                <h1 class="h3 fw-bold mb-1">Admin Wallet {{ ucfirst($type) }}s</h1>
-                <p class="text-muted mb-0">Completed direct admin wallet adjustments. Approved Add Money and withdrawal requests remain in their existing request summaries.</p>
+                <h1 class="h3 fw-bold mb-1">{{ ucfirst($source) }} Wallet {{ ucfirst($type) }}s</h1>
+                <p class="text-muted mb-0">Completed wallet ledger movements. These totals are informational and are not added again to game profit/loss or approved request totals.</p>
             </div>
             <a href="{{ route('admin.bidding-desk.profit_loss', ['from' => $from, 'to' => $to]) }}" class="btn btn-outline-secondary">Back to Profit / Loss</a>
         </div>
@@ -36,6 +36,7 @@
                         <tr>
                             <th>Transaction ID</th>
                             <th>User</th>
+                            <th>Source</th>
                             <th>Admin</th>
                             <th>Type</th>
                             <th class="text-end">Amount</th>
@@ -52,7 +53,8 @@
                                     <div class="fw-semibold">{{ $transaction->user?->name ?? 'Deleted user' }}</div>
                                     <small class="text-muted">ID: {{ $transaction->user_id }} · {{ $transaction->user?->phone ?? '-' }}</small>
                                 </td>
-                                <td>{{ $transaction->admin?->name ?? ('Admin #' . $transaction->admin_id) }}</td>
+                                <td>{{ $transaction->admin_id ? 'Admin' : 'User / System' }}</td>
+                                <td>{{ $transaction->admin?->name ?? ($transaction->admin_id ? 'Admin #' . $transaction->admin_id : '—') }}</td>
                                 <td><span class="badge {{ $type === 'credit' ? 'bg-success' : 'bg-danger' }}">{{ ucfirst($type) }}</span></td>
                                 <td class="text-end fw-bold {{ $type === 'credit' ? 'text-success' : 'text-danger' }}">₹{{ number_format((float) $transaction->amount, 2) }}</td>
                                 <td>{{ $transaction->subject ?: '-' }}</td>
@@ -60,7 +62,7 @@
                                 <td>{{ $transaction->created_at?->timezone(config('app.timezone'))->format('d M Y, h:i A') ?? '-' }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="text-center text-muted py-5">No completed admin wallet adjustments found for this period.</td></tr>
+                            <tr><td colspan="9" class="text-center text-muted py-5">No completed admin wallet adjustments found for this period.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
