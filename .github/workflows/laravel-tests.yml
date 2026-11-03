@@ -38,7 +38,7 @@ jobs:
       CACHE_STORE: array
       SESSION_DRIVER: array
       QUEUE_CONNECTION: sync
-      BROADCAST_CONNECTION: null
+      BROADCAST_CONNECTION: 'null'
       MAIL_MAILER: array
     steps:
       - uses: actions/checkout@v4
