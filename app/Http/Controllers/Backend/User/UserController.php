@@ -147,6 +147,16 @@ class UserController extends Controller
             COALESCE(SUM(CAST(amount AS DECIMAL(15,2))), 0) as total_amount
         ")->first();
 
+        $bidTypeStats = $user->bids()
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN type = 'jodi' THEN 1 ELSE 0 END), 0) as jodi_count,
+                COALESCE(SUM(CASE WHEN type = 'haruf' THEN 1 ELSE 0 END), 0) as haruf_count,
+                COALESCE(SUM(CASE WHEN type = 'cross' THEN 1 ELSE 0 END), 0) as crossing_count,
+                COALESCE(SUM(CASE WHEN type = 'jodi' THEN amount ELSE 0 END), 0) as jodi_amount,
+                COALESCE(SUM(CASE WHEN type = 'haruf' THEN amount ELSE 0 END), 0) as haruf_amount,
+                COALESCE(SUM(CASE WHEN type = 'cross' THEN amount ELSE 0 END), 0) as crossing_amount
+            ")->first();
+
         return view('backend.users.show', [
             'pageName'     => 'User Details',
             'user'         => $user,
@@ -154,6 +164,7 @@ class UserController extends Controller
             'bids'         => $bids,
             'walletStats'  => $walletStats,
             'gameStats'    => $gameStats,
+            'bidTypeStats' => $bidTypeStats,
         ]);
     }
 
