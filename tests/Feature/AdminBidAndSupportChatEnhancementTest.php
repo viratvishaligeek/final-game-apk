@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Http\Controllers\Backend\Game\BiddingDeskController;
 use App\Http\Controllers\Backend\SupportChatController;
 use App\Http\Controllers\Api\PresenceController;
+use App\Services\Presence\UserPresenceChannelAuthorizer;
 use App\Http\Controllers\Backend\User\UserController;
 use App\Events\AdminPaymentFailedPaymentAlert;
 use App\Events\SupportMessageCreated;
@@ -529,44 +530,21 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame($owner->id, UserPresenceSession::query()->where('session_id', 'owned-device-session')->value('user_id'));
     }
 
-    public function test_player_presence_channel_only_authorizes_the_matching_account(): void
+    public function test_player_presence_channel_authorizer_allows_only_the_matching_account(): void
     {
-        config([
-            'broadcasting.default' => 'pusher',
-            'broadcasting.connections.pusher.app_id' => 'test-app',
-            'broadcasting.connections.pusher.key' => 'test-key',
-            'broadcasting.connections.pusher.secret' => 'test-secret',
-            'broadcasting.connections.pusher.options.cluster' => 'ap2',
-        ]);
-
         $user = $this->makeUser('9876500091');
         $otherUser = $this->makeUser('9876500092');
-        Auth::guard('sanctum')->setUser($user);
-        Auth::shouldUse('sanctum');
+        $authorizer = app(UserPresenceChannelAuthorizer::class);
 
-        $request = Request::create('/api/broadcasting/auth', 'POST', [
-            'socket_id' => '123.456',
-            'channel_name' => 'presence-user-presence.' . $user->id,
-        ]);
-        $request->setUserResolver(fn ($guard = null) => Auth::guard($guard)->user());
-
-        $this->assertNotEmpty(Broadcast::auth($request));
-
-        $request->request->set('channel_name', 'presence-user-presence.' . $otherUser->id);
-        $this->expectException(AccessDeniedHttpException::class);
-        Broadcast::auth($request);
+        $this->assertSame([
+            'id' => 'player-' . $user->id,
+            'type' => 'player',
+        ], $authorizer->authorize($user, $user->id));
+        $this->assertFalse($authorizer->authorize($user, $otherUser->id));
     }
 
-    public function test_admin_presence_channel_is_restricted_to_users_in_the_selected_site(): void
+    public function test_admin_presence_channel_authorizer_enforces_site_scope_and_active_status(): void
     {
-        config([
-            'broadcasting.default' => 'pusher',
-            'broadcasting.connections.pusher.app_id' => 'test-app',
-            'broadcasting.connections.pusher.key' => 'test-key',
-            'broadcasting.connections.pusher.secret' => 'test-secret',
-            'broadcasting.connections.pusher.options.cluster' => 'ap2',
-        ]);
-
         $user = $this->makeUser('9876500093');
         $admin = Admin::query()->create([
             'name' => 'Presence Admin',
@@ -574,22 +552,20 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             'password' => 'test-password',
             'status' => 'active',
         ]);
-        Auth::guard('admin')->setUser($admin);
-        Auth::shouldUse('admin');
+        $authorizer = app(UserPresenceChannelAuthorizer::class);
+
         config(['sites.current_key' => $user->site_key]);
-
-        $request = Request::create('/broadcasting/auth', 'POST', [
-            'socket_id' => '123.456',
-            'channel_name' => 'presence-user-presence.' . $user->id,
-        ]);
-        $request->setUserResolver(fn ($guard = null) => Auth::guard($guard)->user());
-
-        $this->assertNotEmpty(Broadcast::auth($request));
+        $this->assertSame([
+            'id' => 'admin-' . $admin->id,
+            'type' => 'admin',
+        ], $authorizer->authorize($admin, $user->id));
 
         config(['sites.current_key' => 'different-site']);
-        $request->request->set('channel_name', 'presence-user-presence.' . $user->id);
-        $this->expectException(AccessDeniedHttpException::class);
-        Broadcast::auth($request);
+        $this->assertFalse($authorizer->authorize($admin, $user->id));
+
+        $admin->forceFill(['status' => 'inactive'])->save();
+        config(['sites.current_key' => $user->site_key]);
+        $this->assertFalse($authorizer->authorize($admin->fresh(), $user->id));
     }
 
     public function test_admin_private_channel_authorization_rejects_a_different_site(): void
