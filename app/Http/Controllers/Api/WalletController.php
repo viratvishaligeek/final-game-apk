@@ -862,9 +862,9 @@ class WalletController extends Controller
                         ['wallet_request_id' => $requestRow->id],
                         [
                             'user_id' => $requestRow->user_id,
-                            'transaction_id' => (string) ($data['id'] ?? $requestRow->client_txn_id),
+                            'transaction_id' => filled($data['id'] ?? null) ? (string) $data['id'] : (string) $requestRow->client_txn_id,
                             'amount' => $requestRow->amount,
-                            'gateway' => (string) ($requestRow->payment_method ?: 'gateway'),
+                            'gateway' => (string) ($data['gateway'] ?? $data['provider'] ?? 'UPI Gateway'),
                             'failure_reason' => mb_substr(
                                 (string) ($data['failure_reason'] ?? $data['reason'] ?? $data['message'] ?? 'Payment provider reported failure.'),
                                 0,
