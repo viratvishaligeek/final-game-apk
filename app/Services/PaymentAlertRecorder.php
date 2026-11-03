@@ -95,7 +95,11 @@ class PaymentAlertRecorder
             return 'BACKEND_SYSTEM_ERROR';
         }
 
-        if ($httpStatus === 401 || $httpStatus === 403 || ($httpStatus !== null && $httpStatus >= 500)) {
+        if ($httpStatus === 401 || $httpStatus === 403) {
+            return 'PAYMENT_GATEWAY_CONFIGURATION_ERROR';
+        }
+
+        if ($httpStatus !== null && $httpStatus >= 500) {
             return 'PAYMENT_GATEWAY_API_ERROR';
         }
 
