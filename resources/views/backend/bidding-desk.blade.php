@@ -44,25 +44,39 @@
         <div id="emptyBox" class="alert alert-info border-0 shadow-sm rounded-4 d-none">
             Please select a game.
         </div>
-        <div id="jodiCrossingSection" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
+        <div id="betSummary" class="row g-2 mb-3 d-none">
+            <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Jodi · <span id="summary-jodi-count">0</span> bets</small><strong id="summary-jodi-amount">₹0</strong><span class="small text-muted"><span id="summary-jodi-empty">0</span> unplayed numbers</span></div></div>
+            <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Haruf · <span id="summary-haruf-count">0</span> bets</small><strong id="summary-haruf-amount">₹0</strong><span class="small text-muted"><span id="summary-haruf-empty">0</span> unplayed numbers</span></div></div>
+            <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Crossing · <span id="summary-crossing-count">0</span> bets</small><strong id="summary-crossing-amount">₹0</strong><span class="small text-muted"><span id="summary-crossing-empty">0</span> unplayed numbers</span></div></div>
+        </div>
+        <div id="jodiSection" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
             <div class="card-header bg-info text-white border-0 rounded-top-4 p-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="text-dark mb-0 fw-bold">
-                            🎯 Jodi + 🔀 Crossing
+                            🎯 Jodi
                         </h4>
                         <small class="text-dark">
-                            Jodi and Crossing combined
+                            Jodi · 00–99
                         </small>
                     </div>
-                    <span id="jodiCrossingTotal" class="badge bg-warning text-dark fs-6">
+                    <span id="jodiTotal" class="badge bg-warning text-dark fs-6">
                         ₹0
                     </span>
                 </div>
             </div>
             <div class="card-body p-2">
-                <div id="jodiCrossingGrid" class="number-grid"></div>
+                <div id="jodiGrid" class="number-grid"></div>
             </div>
+        </div>
+        <div id="crossingSection" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
+            <div class="card-header bg-info text-white border-0 rounded-top-4 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div><h4 class="text-dark mb-0 fw-bold">🔀 Crossing</h4><small class="text-dark">Crossing · 00–99</small></div>
+                    <span id="crossingTotal" class="badge bg-warning text-dark fs-6">₹0</span>
+                </div>
+            </div>
+            <div class="card-body p-2"><div id="crossingGrid" class="number-grid"></div></div>
         </div>
         <div id="harufSection" class="card border-0 shadow-sm rounded-4 d-none">
             <div class="card-header bg-info text-white border-0 rounded-top-4 p-3">
@@ -146,6 +160,7 @@
                             </div>
                         </div>
                     </div>
+                    <div id="modalUserBreakdown" class="d-grid gap-3 mb-3"></div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-dark">
@@ -355,18 +370,15 @@
                 document.getElementById('loadingBox');
             const emptyBox =
                 document.getElementById('emptyBox');
-            const jodiCrossingSection =
-                document.getElementById(
-                    'jodiCrossingSection'
-                );
+            const jodiSection = document.getElementById('jodiSection');
+            const crossingSection = document.getElementById('crossingSection');
+            const betSummary = document.getElementById('betSummary');
             const harufSection =
                 document.getElementById(
                     'harufSection'
                 );
-            const jodiCrossingGrid =
-                document.getElementById(
-                    'jodiCrossingGrid'
-                );
+            const jodiGrid = document.getElementById('jodiGrid');
+            const crossingGrid = document.getElementById('crossingGrid');
             const anderGrid =
                 document.getElementById(
                     'anderGrid'
@@ -389,9 +401,9 @@
                 const date =
                     dateSelect.value;
                 if (!gameId) {
-                    jodiCrossingSection
-                        .classList
-                        .add('d-none');
+                    jodiSection.classList.add('d-none');
+                    crossingSection.classList.add('d-none');
+                    betSummary.classList.add('d-none');
                     harufSection
                         .classList
                         .add('d-none');
@@ -406,9 +418,9 @@
                 loadingBox
                     .classList
                     .remove('d-none');
-                jodiCrossingSection
-                    .classList
-                    .add('d-none');
+                jodiSection.classList.add('d-none');
+                crossingSection.classList.add('d-none');
+                betSummary.classList.add('d-none');
                 harufSection
                     .classList
                     .add('d-none');
@@ -435,15 +447,13 @@
                             'Unable to load data.'
                         );
                     }
-                    renderJodiCrossing(
-                        result.data.jodi_crossing
-                    );
-                    renderHaruf(
-                        result.data.haruf
-                    );
-                    jodiCrossingSection
-                        .classList
-                        .remove('d-none');
+                    renderNumberGrid(jodiGrid, result.data.jodi, 'jodi', 'jodiTotal');
+                    renderNumberGrid(crossingGrid, result.data.crossing, 'cross', 'crossingTotal');
+                    renderHaruf(result.data.haruf);
+                    renderBetSummary(result.data.summary);
+                    betSummary.classList.remove('d-none');
+                    jodiSection.classList.remove('d-none');
+                    crossingSection.classList.remove('d-none');
                     harufSection
                         .classList
                         .remove('d-none');
@@ -460,49 +470,30 @@
                 }
             }
 
-            function renderJodiCrossing(numbers) {
-                jodiCrossingGrid.innerHTML = '';
-                let grandTotal = 0;
-                numbers.forEach(item => {
-                    grandTotal +=
-                        Number(
-                            item.total_amount || 0
-                        );
-                    const card =
-                        document.createElement('div');
-                    card.className =
-                        'number-card' +
-                        (
-                            item.total_bids > 0 ?
-                            ' has-bet' :
-                            ''
-                        );
-                    card.innerHTML = `
-                    <div class="number-value">
-                    ${escapeHtml(item.number)}
-                </div>
-                <div class="number-amount">
-                    ₹${formatMoney(item.total_amount)}
-                </div>
-                <div class="number-meta">
-                    ${item.total_users} users
-                    ·
-                    ${item.total_bids} bets
-                </div>
-                `;
-                    card.addEventListener(
-                        'click',
-                        () => openDetails(
-                            item.number
-                        )
-                    );
-                    jodiCrossingGrid
-                        .appendChild(card);
+            function renderNumberGrid(container, numbers, type, totalId) {
+                container.replaceChildren();
+                const grandTotal = (numbers || []).reduce((sum, item) => sum + Number(item.total_amount || 0), 0);
+                (numbers || []).forEach(item => {
+                    const card = document.createElement('button');
+                    card.type = 'button';
+                    card.className = 'number-card text-start' + (item.total_bids > 0 ? ' has-bet' : '');
+                    card.setAttribute('aria-label', type + ' ' + item.number + ', ' + item.total_bids + ' bets');
+                    card.innerHTML = '<div class="number-value">' + escapeHtml(item.number) + '</div>' +
+                        '<div class="number-amount">₹' + formatMoney(item.total_amount) + '</div>' +
+                        '<div class="number-meta">' + Number(item.total_users || 0) + ' users · ' + Number(item.total_bids || 0) + ' bets</div>';
+                    card.addEventListener('click', () => openDetails(item.number, type));
+                    container.appendChild(card);
                 });
-                document.getElementById(
-                        'jodiCrossingTotal'
-                    ).textContent =
-                    '₹' + formatMoney(grandTotal);
+                document.getElementById(totalId).textContent = '₹' + formatMoney(grandTotal);
+            }
+
+            function renderBetSummary(summary) {
+                ['jodi', 'haruf', 'crossing'].forEach(type => {
+                    const item = summary?.[type] || {};
+                    document.getElementById('summary-' + type + '-count').textContent = Number(item.total_bets || 0).toLocaleString('en-IN');
+                    document.getElementById('summary-' + type + '-amount').textContent = '₹' + formatMoney(item.total_amount);
+                    document.getElementById('summary-' + type + '-empty').textContent = Number(item.unplayed_numbers || 0);
+                });
             }
 
             function renderHaruf(haruf) {
@@ -578,14 +569,15 @@
                     card.addEventListener(
                         'click',
                         () => openDetails(
-                            fullNumber
+                            fullNumber,
+                            'haruf'
                         )
                     );
                     container.appendChild(card);
                 });
             }
 
-            async function openDetails(number) {
+            async function openDetails(number, type = 'jodi') {
                 const gameId =
                     gameSelect.value;
                 const date =
@@ -621,6 +613,7 @@
                             game_id: gameId,
                             date: date,
                             number: number,
+                            type: type,
                         });
                     const response =
                         await fetch(
@@ -678,6 +671,38 @@
                     formatMoney(
                         data.summary.total_amount
                     );
+                const userContainer = document.getElementById('modalUserBreakdown');
+                userContainer.replaceChildren();
+                (data.users || []).forEach(user => {
+                    const card = document.createElement('section');
+                    card.className = 'border rounded-3 p-3';
+                    const heading = document.createElement('div');
+                    heading.className = 'd-flex flex-wrap justify-content-between gap-2 mb-2';
+                    const identity = document.createElement('div');
+                    const name = document.createElement('strong');
+                    name.textContent = user.user_name || ('User #' + user.user_id);
+                    const meta = document.createElement('div');
+                    meta.className = 'small text-muted';
+                    meta.textContent = 'User #' + user.user_id + ' · ' + (user.user_phone || '-');
+                    identity.append(name, meta);
+                    const selectedTotal = document.createElement('span');
+                    selectedTotal.className = 'badge bg-warning text-dark align-self-start';
+                    selectedTotal.textContent = (user.matching_bids || []).length + ' matching bids';
+                    heading.append(identity, selectedTotal);
+                    const numbers = document.createElement('div');
+                    numbers.className = 'd-flex flex-wrap gap-2';
+                    (user.numbers || []).forEach(number => {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge ' + (String(number.number) === String(data.number) ? 'bg-warning text-dark' : 'bg-light text-dark border') + ' p-2';
+                        badge.textContent = number.number + ' · ' + number.total_bids + ' × ₹' + formatMoney(number.total_amount);
+                        numbers.appendChild(badge);
+                    });
+                    const bids = document.createElement('div');
+                    bids.className = 'small text-muted mt-2';
+                    bids.textContent = (user.matching_bids || []).map(bid => 'Bid #' + bid.id + (bid.transaction_id ? ' · Txn #' + bid.transaction_id : '') + ' · ₹' + formatMoney(bid.amount) + ' · ' + (bid.created_at || '-')).join(' | ');
+                    card.append(heading, numbers, bids);
+                    userContainer.appendChild(card);
+                });
                 const tbody =
                     document.getElementById(
                         'modalBidTable'
