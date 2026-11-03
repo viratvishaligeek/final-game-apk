@@ -55,6 +55,9 @@
  const conversations = document.getElementById('conversations');
  const messages = document.getElementById('messages');
  const status = document.getElementById('connection-status');
+ const conversationSearch = document.getElementById('conversation-search');
+ let conversationSearchTimer = null;
+ let conversationSearchRequest = 0;
  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  async function request(url, options={}) {
    const response = await fetch(url, {credentials:'same-origin', ...options, headers:{'X-CSRF-TOKEN':token, 'Accept':'application/json', ...(options.headers||{})}});
@@ -62,11 +65,20 @@
    return response.json();
  }
  async function loadConversations() {
-   const phone = conversationSearch?.value.trim() || '';
+   const requestId = ++conversationSearchRequest;
+   const phone = conversationSearch ? conversationSearch.value.trim() : '';
    const query = phone ? '?phone='+encodeURIComponent(phone) : '';
    const result = await request(root+'/conversations'+query);
-   conversations.innerHTML = '';
-   const items = result.data || [];
+   if (requestId !== conversationSearchRequest) return;
+   conversations.replaceChildren();
+   const items = Array.isArray(result.data) ? result.data : [];
+   if (!items.length) {
+     const empty = document.createElement('div');
+     empty.className = 'list-group-item text-muted small py-3';
+     empty.textContent = phone ? 'No conversations found for this phone number.' : 'No conversations yet.';
+     conversations.appendChild(empty);
+     return;
+   }
    items.forEach(c => {
      const button = document.createElement('button');
      button.type='button'; button.className='list-group-item list-group-item-action '+(active===c.id?'active':'');
@@ -140,10 +152,18 @@
      console.warn('Support chat sync failed',e);
    } finally { busy=false; }
  }
- conversationSearch?.addEventListener('input', () => {
-   if (conversationSearchTimer) clearTimeout(conversationSearchTimer);
-   conversationSearchTimer = setTimeout(() => loadConversations().catch(error => console.warn('Conversation search failed', error)), 250);
- });
+ if (conversationSearch) {
+   conversationSearch.addEventListener('input', () => {
+     if (conversationSearchTimer) clearTimeout(conversationSearchTimer);
+     conversationSearchTimer = window.setTimeout(() => {
+       loadConversations().catch(error => {
+         status.textContent = 'Search unavailable';
+         status.className = 'badge bg-danger';
+         console.warn('Conversation search failed', error);
+       });
+     }, 250);
+   });
+ }
   document.getElementById('enable-desktop-alerts').addEventListener('click', async () => {
    if (!('Notification' in window)) return alert('Notifications are not supported by this browser.');
    const permission = await Notification.requestPermission();
