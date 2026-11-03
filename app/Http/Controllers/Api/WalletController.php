@@ -944,6 +944,25 @@ class WalletController extends Controller
             // All terminal states are immutable. In particular, a delayed
             // provider success must never credit a request rejected by an admin.
             if (in_array($requestRow->status, ['approved', 'rejected', 'failed'], true)) {
+                $providerStatus = strtolower(trim((string) ($data['status'] ?? '')));
+                if (
+                    $requestRow->status === 'failed'
+                    && $status === 'failure'
+                    && $requestRow->payment_method === 'gateway'
+                    && $requestRow->request_type === 'credit'
+                    && $providerStatus === 'failure'
+                ) {
+                    app(PaymentAlertRecorder::class)->record($requestRow, [
+                        'stage' => 'provider_callback',
+                        'category' => 'PAYMENT_FAILURE',
+                        'message' => $data['failure_reason'] ?? $data['reason'] ?? $data['message'] ?? 'Payment provider repeated the failure status.',
+                        'error_code' => $data['error_code'] ?? $data['code'] ?? '',
+                        'gateway_transaction_id' => $data['id'] ?? null,
+                        'gateway_order_id' => $data['order_id'] ?? null,
+                        'gateway' => $data['gateway'] ?? $data['provider'] ?? 'UPI Gateway',
+                    ]);
+                }
+
                 return;
             }
 
