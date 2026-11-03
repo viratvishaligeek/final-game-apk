@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Events\AdminPaymentFailedPaymentAlert;
-use App\Models\AdminPaymentAlert;
 use App\Models\Bid;
 use App\Models\Transaction;
 use App\Models\User;
@@ -12,6 +10,7 @@ use App\Models\WalletRequest;
 use App\Services\AppSettingsService;
 use App\Services\ReferralService;
 use App\Services\WalletService;
+use App\Services\PaymentAlertRecorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
