@@ -222,7 +222,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
 
         foreach ([['25', 40], ['26', 60]] as [$number, $amount]) {
             Bid::query()->create([
-                'order_no' => null,
+                'order_no' => '',
                 'user_id' => $user->id,
                 'game_id' => $game->id,
                 'game_date' => '2026-11-03',
@@ -240,7 +240,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertCount(2, $groups);
         $this->assertSame([1, 1], $groups->pluck('total_bids')->all());
         $this->assertEquals([60, 40], $groups->pluck('total_amount')->all());
-        $this->assertTrue($groups->every(fn ($group) => $group->order_no === null));
+        $this->assertTrue($groups->every(fn ($group) => $group->order_no === ''));
     }
 
     public function test_user_bid_details_are_scoped_to_the_requested_submission(): void
