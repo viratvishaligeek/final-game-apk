@@ -69,6 +69,7 @@
                             @forelse($allGames as $game)
                                 @php
                                     $result = $existingResults->get($game->id);
+                                    $gameDate = $gameDates->get($game->id, $selectedDate);
                                     $hasValidResult = $result && $result->number !== 'Wait';
                                 @endphp
                                 <tr>
@@ -87,7 +88,7 @@
                                         @endif
                                     </td>
                                     <td class="text-center">
-                                        @if (\Carbon\Carbon::parse($selectedDate)->isToday())
+                                        @if ($isCurrentCalendarDate)
                                             <span
                                                 class="badge bg-success-subtle text-success border border-success px-2 py-1">
                                                 Auto Winner & Payout
@@ -105,7 +106,7 @@
                                                 class="d-inline-flex align-items-center gap-1">
                                                 @csrf
                                                 <input type="hidden" name="game_id" value="{{ $game->id }}">
-                                                <input type="hidden" name="game_date" value="{{ $selectedDate }}">
+                                                <input type="hidden" name="game_date" value="{{ $gameDate }}">
 
                                                 <input type="text" name="result"
                                                 {{ $hasValidResult ? 'disabled' : '' }}
@@ -127,7 +128,7 @@
                                                     class="d-inline">
                                                     @csrf
                                                     <input type="hidden" name="game_id" value="{{ $game->id }}">
-                                                    <input type="hidden" name="game_date" value="{{ $selectedDate }}">
+                                                    <input type="hidden" name="game_date" value="{{ $gameDate }}">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm"
                                                         title="Revert Result">
                                                         Reset
