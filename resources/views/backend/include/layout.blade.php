@@ -150,11 +150,11 @@
 
     <script>
     (() => {
-        const modalElement = document.getElementById('adminPaymentFailureModal');
+        const modalElement = $('#adminPaymentFailureModal').get(0);
         if (!modalElement || !window.bootstrap) return;
 
         const modal = new bootstrap.Modal(modalElement, {backdrop: 'static', keyboard: false});
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const csrf = $('meta[name="csrf-token"]').attr('content') || '';
         const endpoint = '/admin/payment-alerts';
         const acknowledged = new Set();
         const queued = new Map();
