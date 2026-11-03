@@ -100,39 +100,31 @@
 
 @section('script')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const selectAll = document.getElementById('selectAll');
-            const permissionCheckboxes = document.querySelectorAll('.permission-checkbox');
-            const groupSelects = document.querySelectorAll('.group-select');
-            if (selectAll) {
-                selectAll.addEventListener('change', function() {
-                    const isChecked = this.checked;
-                    permissionCheckboxes.forEach(cb => cb.checked = isChecked);
-                    groupSelects.forEach(cb => cb.checked = isChecked);
-                });
-            }
-            groupSelects.forEach(groupCB => {
-                groupCB.addEventListener('change', function() {
-                    const groupSlug = this.getAttribute('data-group');
-                    const groupItems = document.querySelectorAll(`.group-item-${groupSlug}`);
-                    groupItems.forEach(cb => cb.checked = this.checked);
-                    updateSelectAllState();
-                });
-            });
+$(function () {
+    const $selectAll = $('#selectAll');
+    const $permissionCheckboxes = $('.permission-checkbox');
+    const $groupSelects = $('.group-select');
 
-            permissionCheckboxes.forEach(cb => {
-                cb.addEventListener('change', updateSelectAllState);
-            });
+    function updateSelectAllState() {
+        if ($selectAll.length) {
+            $selectAll.prop('checked', $permissionCheckboxes.length > 0 &&
+                $permissionCheckboxes.filter(':checked').length === $permissionCheckboxes.length);
+        }
+    }
 
-            function updateSelectAllState() {
-                if (selectAll) {
-                    const allChecked = Array.from(permissionCheckboxes).every(cb => cb.checked);
-                    selectAll.checked = allChecked;
-                }
-            }
+    $selectAll.on('change.adminRoles', function () {
+        const checked = $(this).is(':checked');
+        $permissionCheckboxes.add($groupSelects).prop('checked', checked);
+    });
 
-            // Initial check on page load
-            updateSelectAllState();
-        });
-    </script>
+    $groupSelects.on('change.adminRoles', function () {
+        const groupSlug = String($(this).data('group') || '');
+        $('.group-item-' + groupSlug).prop('checked', $(this).is(':checked'));
+        updateSelectAllState();
+    });
+
+    $permissionCheckboxes.on('change.adminRoles', updateSelectAllState);
+    updateSelectAllState();
+});
+</script>
 @endsection
