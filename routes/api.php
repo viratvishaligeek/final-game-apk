@@ -15,6 +15,10 @@ use App\Http\Controllers\Api\WalletController;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Services\AppSettingsService;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
+
+// Sanctum-authenticated private-channel auth for the Vue player application.
+Broadcast::routes(['middleware' => ['auth:sanctum', EnsureUserIsActive::class]]);
 
 Route::prefix('v1')->group(function () {
     Route::get('faqs', [SupportFaqController::class, 'index'])->middleware('throttle:60,1');

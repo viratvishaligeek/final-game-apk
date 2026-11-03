@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\SupportConversation;
 use App\Models\SupportMessage;
 use App\Models\SupportConversationAdminRead;
+use App\Models\User;
+use App\Events\SupportMessageCreated;
+use Illuminate\Support\Facades\DB;
 use App\Services\NotificationService;
 use App\Services\ProjectStorage;
 use Illuminate\Http\Request;
@@ -19,6 +22,78 @@ class SupportChatController extends Controller
     {
         $chatSoundEnabled = (string) $settings->value('notification_sound_chat', 'default') !== 'mute';
         return view('backend.support-chat.index', compact('chatSoundEnabled'));
+    }
+
+    public function searchUsers(Request $request)
+    {
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:80'],
+        ]);
+        $term = trim((string) ($validated['q'] ?? ''));
+
+        if ($term === '') {
+            return response()->json(['data' => []]);
+        }
+
+        $users = User::query()
+            ->where(function ($query) use ($term) {
+                $query->where('phone', 'like', '%' . $term . '%')
+                    ->orWhere('name', 'like', '%' . $term . '%');
+                if (ctype_digit($term)) {
+                    $query->orWhereKey((int) $term);
+                }
+            })
+            ->orderBy('name')
+            ->limit(50)
+            ->get(['id', 'name', 'phone', 'status']);
+
+        $conversations = SupportConversation::query()
+            ->whereIn('user_id', $users->pluck('id'))
+            ->get(['id', 'user_id'])
+            ->keyBy('user_id');
+
+        return response()->json([
+            'data' => $users->map(function (User $user) use ($conversations) {
+                $conversation = $conversations->get($user->id);
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'status' => $user->status,
+                    'conversation_id' => $conversation?->id,
+                    'has_conversation' => (bool) $conversation,
+                ];
+            })->values(),
+        ]);
+    }
+
+    public function startConversation(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'min:1'],
+        ]);
+        $adminId = (int) auth('admin')->id();
+
+        $conversation = DB::transaction(function () use ($validated, $adminId) {
+            // Lock the user row so simultaneous admin starts serialize before
+            // the unique support_conversations.user_id constraint is checked.
+            $user = User::query()->lockForUpdate()->findOrFail($validated['user_id']);
+
+            return SupportConversation::query()->firstOrCreate(
+                ['user_id' => $user->id],
+                ['assigned_admin_id' => $adminId]
+            );
+        });
+
+        $conversation->load('user:id,name,phone');
+
+        return response()->json([
+            'data' => [
+                'id' => $conversation->id,
+                'user' => $conversation->user?->only(['id', 'name', 'phone']),
+                'created' => $conversation->wasRecentlyCreated,
+            ],
+        ], $conversation->wasRecentlyCreated ? 201 : 200);
     }
 
     public function conversations(Request $request)
@@ -112,8 +187,12 @@ class SupportChatController extends Controller
             $data['media_mime'] = $file->getMimeType();
             $data['media_name'] = mb_substr($file->getClientOriginalName(), 0, 255);
         }
-        $message = $conversation->messages()->create($data);
-        $conversation->forceFill(['assigned_admin_id' => auth('admin')->id()])->touch();
+        $message = DB::transaction(function () use ($conversation, $data) {
+            $message = $conversation->messages()->create($data);
+            $conversation->forceFill(['assigned_admin_id' => auth('admin')->id()])->touch();
+            return $message;
+        });
+        SupportMessageCreated::dispatch($message->id);
 
         // Persist the reply in the user's notification history and attempt push delivery.
         if ($conversation->user) {

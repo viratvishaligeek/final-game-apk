@@ -45,6 +45,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admi
     Route::delete('push-subscribe', [AdminPushSubscriptionController::class, 'unsubscribe'])->name('push-unsubscribe');
     Route::get('support-chat', [SupportChatController::class, 'index'])->name('support-chat.index');
     Route::get('support-chat/conversations', [SupportChatController::class, 'conversations'])->name('support-chat.conversations');
+    Route::get('support-chat/users', [SupportChatController::class, 'searchUsers'])->name('support-chat.users');
+    Route::post('support-chat/conversations', [SupportChatController::class, 'startConversation'])->name('support-chat.start');
     Route::get('support-chat/media/{message}', [SupportChatController::class, 'media'])->name('support-chat.media');
     Route::get('support-chat/{conversation}/messages', [SupportChatController::class, 'messages'])->name('support-chat.messages');
     Route::post('support-chat/{conversation}/send', [SupportChatController::class, 'send'])->name('support-chat.send');
