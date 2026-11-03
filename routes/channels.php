@@ -1,7 +1,6 @@
 <?php
 
-use App\Models\Admin;
-use App\Models\User;
+use App\Services\Presence\UserPresenceChannelAuthorizer;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
@@ -29,14 +28,8 @@ Broadcast::channel('users.{id}', function (\App\Models\User $user, $id) {
  * contains role-only labels, never names, phone numbers, or wallet data.
  */
 Broadcast::channel('user-presence.{id}', function ($principal, $id) {
-    if ($principal instanceof User) {
-        return (int) $principal->id === (int) $id
-            ? ['id' => 'player-' . $principal->id, 'type' => 'player']
-            : false;
-    }
-
-    if ($principal instanceof Admin && $principal->status === 'active') {
-        $targetUser = User::query()->find($id);
+    return app(UserPresenceChannelAuthorizer::class)->authorize($principal, $id);
+}, ['guards' => ['sanctum', 'admin']]);
 
         return $targetUser
             ? ['id' => 'admin-' . $principal->id, 'type' => 'admin']
