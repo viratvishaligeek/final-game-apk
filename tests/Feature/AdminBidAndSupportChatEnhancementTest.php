@@ -77,11 +77,11 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $payload = app(BiddingDeskController::class)->data($request)->getData(true)['data'];
 
         $this->assertSame(2, $payload['summary']['jodi']['total_bets']);
-        $this->assertSame(150.0, $payload['summary']['jodi']['total_amount']);
+        $this->assertEquals(150, $payload['summary']['jodi']['total_amount']);
         $this->assertSame(1, $payload['summary']['crossing']['total_bets']);
-        $this->assertSame(200.0, $payload['summary']['crossing']['total_amount']);
+        $this->assertEquals(200, $payload['summary']['crossing']['total_amount']);
         $this->assertSame(1, $payload['summary']['haruf']['total_bets']);
-        $this->assertSame(25.0, $payload['summary']['haruf']['total_amount']);
+        $this->assertEquals(25, $payload['summary']['haruf']['total_amount']);
         $this->assertSame(98, $payload['summary']['jodi']['unplayed_numbers']);
     }
 

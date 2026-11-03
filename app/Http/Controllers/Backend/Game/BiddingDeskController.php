@@ -222,7 +222,7 @@ class BiddingDeskController extends Controller
             ];
         };
 
-        $selectedByUser = $matchingBids->getCollection()->groupBy('user_id');
+        $selectedByUser = $matchingBids->groupBy('user_id');
         $users = $selectedByUser->map(function ($rows, $userId) use ($userNumbers, $formatBid) {
             $user = $rows->first()->user;
             $numbers = $userNumbers->get($userId, collect())->map(fn ($row) => [
