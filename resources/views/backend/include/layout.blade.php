@@ -44,7 +44,7 @@
     <div class="modal fade" id="adminPaymentFailureModal" tabindex="-1" aria-hidden="true"
         data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered" style="width:90vw;max-width:1100px">
-            <div class="modal-content border-0 shadow-lg" style="min-height:80vh;border:5px solid #dc3545!important">
+            <div class="modal-content border-0 shadow-lg" style="min-height:90vh;border:5px solid #dc3545!important">
                 <div class="modal-header bg-danger text-white">
                     <h4 class="modal-title fw-bold"><i class="fas fa-triangle-exclamation me-2"></i>Automatic Payment Failed</h4>
                 </div>
