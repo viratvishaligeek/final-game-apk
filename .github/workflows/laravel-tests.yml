@@ -43,6 +43,8 @@ jobs:
       MAIL_MAILER: array
     steps:
       - uses: actions/checkout@v4
+      - name: Create empty local environment file for test tooling
+        run: touch .env
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4.1'
