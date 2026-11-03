@@ -589,10 +589,14 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $otherUser = $this->makeUser('9876500092');
         $authorizer = app(UserPresenceChannelAuthorizer::class);
 
+        $firstConnection = $authorizer->authorize($user, $user->id);
+        $secondConnection = $authorizer->authorize($user, $user->id);
+
         $this->assertSame([
             'id' => 'player-' . $user->id,
             'type' => 'player',
-        ], $authorizer->authorize($user, $user->id));
+        ], $firstConnection);
+        $this->assertSame($firstConnection, $secondConnection, 'All tabs/devices for the same account share one presence member identity.');
         $this->assertFalse($authorizer->authorize($user, $otherUser->id));
     }
 
