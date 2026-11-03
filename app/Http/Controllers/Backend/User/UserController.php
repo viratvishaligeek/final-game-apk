@@ -75,7 +75,8 @@ class UserController extends Controller
                 $this->walletService->credit(
                     $user,
                     $initialBalance,
-                    'Initial wallet balance assigned by admin'
+                    'Initial wallet balance assigned by admin',
+                    ['admin_id' => auth('admin')->id()]
                 );
             }
         });
