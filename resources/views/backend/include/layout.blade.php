@@ -35,39 +35,92 @@
             <footer class="footer-admin mt-auto footer-light">
                 <div class="container-xl px-4">
                     <div class="row">
-                        <div class="col-md-6 small">{{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Play Online Khaiwal')) }}</div>
+                        <div class="col-md-6 small">
+                            {{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', 'Play Online Khaiwal')) }}
+                        </div>
                     </div>
                 </div>
             </footer>
         </div>
     </div>
-    <div class="modal fade" id="adminPaymentFailureModal" tabindex="-1" aria-hidden="true"
-        data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal fade" id="adminPaymentFailureModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
+        data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered" style="width:90vw;max-width:1100px">
             <div class="modal-content border-0 shadow-lg" style="min-height:90vh;border:5px solid #dc3545!important">
                 <div class="modal-header bg-danger text-white">
-                    <h4 class="modal-title fw-bold"><i class="fas fa-triangle-exclamation me-2"></i>Automatic Payment Failed</h4>
+                    <h4 class="modal-title fw-bold"><i class="fas fa-triangle-exclamation me-2"></i>Automatic Payment
+                        Failed</h4>
                 </div>
                 <div class="modal-body d-flex flex-column justify-content-center p-4 p-md-5">
                     <div class="text-center text-danger mb-4">
-                        <div style="font-size:clamp(3rem,9vw,6rem);line-height:1"><i class="fas fa-circle-exclamation"></i></div>
+                        <div style="font-size:clamp(3rem,9vw,6rem);line-height:1"><i
+                                class="fas fa-circle-exclamation"></i></div>
                         <h2 class="fw-bold mt-3">Payment requires attention</h2>
                     </div>
                     <div class="row g-3">
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">User</small><strong id="payment-alert-user">—</strong><div class="small text-muted" id="payment-alert-user-meta"></div></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Transaction ID</small><strong id="payment-alert-transaction">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Amount</small><strong class="text-danger fs-3" id="payment-alert-amount">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway / Failed at</small><strong id="payment-alert-gateway">—</strong><div class="small text-muted" id="payment-alert-time"></div></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Internal payment attempt ID</small><strong id="payment-alert-attempt">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway order ID</small><strong id="payment-alert-order">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Error category / severity</small><strong id="payment-alert-category">—</strong><div class="small text-muted" id="payment-alert-severity"></div></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Error code / HTTP status</small><strong id="payment-alert-code">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Processing stage</small><strong id="payment-alert-stage">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Diagnostic reference</small><strong id="payment-alert-diagnostic">—</strong></div></div>
-                        <div class="col-12 col-md-6"><div class="border rounded p-3 h-100"><small class="text-muted d-block">Occurrences</small><strong id="payment-alert-occurrences">—</strong><div class="small text-muted" id="payment-alert-occurrence-range"></div></div></div>
-                        <div class="col-12"><div class="border border-danger rounded p-3"><small class="text-muted d-block">Failure reason</small><div class="fw-semibold" id="payment-alert-reason">Not provided by gateway.</div></div></div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">User</small><strong
+                                    id="payment-alert-user">—</strong>
+                                <div class="small text-muted" id="payment-alert-user-meta"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Transaction
+                                    ID</small><strong id="payment-alert-transaction">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small
+                                    class="text-muted d-block">Amount</small><strong class="text-danger fs-3"
+                                    id="payment-alert-amount">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway / Failed
+                                    at</small><strong id="payment-alert-gateway">—</strong>
+                                <div class="small text-muted" id="payment-alert-time"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Internal payment
+                                    attempt ID</small><strong id="payment-alert-attempt">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Gateway order
+                                    ID</small><strong id="payment-alert-order">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Error category /
+                                    severity</small><strong id="payment-alert-category">—</strong>
+                                <div class="small text-muted" id="payment-alert-severity"></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Error code / HTTP
+                                    status</small><strong id="payment-alert-code">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Processing
+                                    stage</small><strong id="payment-alert-stage">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small class="text-muted d-block">Diagnostic
+                                    reference</small><strong id="payment-alert-diagnostic">—</strong></div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded p-3 h-100"><small
+                                    class="text-muted d-block">Occurrences</small><strong
+                                    id="payment-alert-occurrences">—</strong>
+                                <div class="small text-muted" id="payment-alert-occurrence-range"></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="border border-danger rounded p-3"><small class="text-muted d-block">Failure
+                                    reason</small>
+                                <div class="fw-semibold" id="payment-alert-reason">Not provided by gateway.</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-center mt-5"><button type="button" class="btn btn-danger btn-lg px-5 fw-bold" id="payment-alert-acknowledge">Mark as Read</button></div>
+                    <div class="text-center mt-5"><button type="button" class="btn btn-danger btn-lg px-5 fw-bold"
+                            id="payment-alert-acknowledge">Mark as Read</button></div>
                 </div>
             </div>
         </div>
