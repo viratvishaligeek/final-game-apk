@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Events\AdminPaymentFailedPaymentAlert;
+use App\Models\AdminPaymentAlert;
 use App\Models\Bid;
 use App\Models\Transaction;
 use App\Models\User;
@@ -846,6 +848,31 @@ class WalletController extends Controller
                 $requestRow->update([
                     'status' => 'failed',
                 ]);
+
+                // Only a provider-verified automatic gateway credit failure
+                // creates an admin alert. The unique wallet_request_id makes
+                // repeated callbacks idempotent.
+                if ($requestRow->payment_method === 'gateway' && $requestRow->request_type === 'credit') {
+                    $alert = AdminPaymentAlert::query()->firstOrCreate(
+                        ['wallet_request_id' => $requestRow->id],
+                        [
+                            'user_id' => $requestRow->user_id,
+                            'transaction_id' => (string) ($data['id'] ?? $requestRow->client_txn_id),
+                            'amount' => $requestRow->amount,
+                            'gateway' => (string) ($requestRow->payment_method ?: 'gateway'),
+                            'failure_reason' => mb_substr(
+                                (string) ($data['failure_reason'] ?? $data['reason'] ?? $data['message'] ?? 'Payment provider reported failure.'),
+                                0,
+                                2000
+                            ),
+                            'failed_at' => now(),
+                        ]
+                    );
+
+                    if ($alert->wasRecentlyCreated) {
+                        AdminPaymentFailedPaymentAlert::dispatch($alert->id);
+                    }
+                }
             }
         });
     }
