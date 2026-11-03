@@ -58,7 +58,6 @@
  const playChatSound = @json(($chatSoundEnabled ?? true) === true);
  let active = null, lastId = 0, busy = false, recordedFile = null, recorder = null, stream = null, chunks = [];
  let conversationVersion = 0, pendingMessageRefresh = false, pendingMessageReset = false;
- let pollTimer = null, pollDelay = 30000;
  const conversations = document.getElementById('conversations');
  const messages = document.getElementById('messages');
  const status = document.getElementById('connection-status');
@@ -355,46 +354,30 @@
    try { await request(root+'/'+active+'/send',{method:'POST',body:data}); body.value=''; file.value=''; recordedFile=null; recordingStatus.classList.add('d-none'); await loadMessages(true); await loadConversations(); }
    catch(error){ alert(error.message); }
  });
- async function tick(){
-   try {
-     await loadConversations();
-     if(active) await loadMessages();
-     else {status.textContent='Connected';status.className='badge bg-success';}
-     pollDelay = 30000;
-   } catch(e) {
-     pollDelay = Math.min(60000, pollDelay * 2);
-     status.textContent='Reconnecting…'; status.className='badge bg-secondary';
-   } finally {
-     if (!realtimeConnected) pollTimer = window.setTimeout(tick, pollDelay);
-   }
- }
  window.addEventListener('admin:broadcast-state', event => {
    const connected = event.detail?.current === 'connected';
    realtimeConnected = connected;
    if (connected) {
-     if (pollTimer) clearTimeout(pollTimer);
-     pollTimer = null;
      void loadConversations();
      if (active) void loadMessages();
      status.textContent = 'Live · Pusher';
      status.className = 'badge bg-success';
-   } else if (!pollTimer) {
-     pollTimer = window.setTimeout(tick, 30000);
+   } else {
+     status.textContent = 'Reconnecting…';
+     status.className = 'badge bg-secondary';
    }
+ });
+ window.addEventListener('admin:recovery-tick', () => {
+   if (realtimeConnected) return;
+   void loadConversations().catch(error => console.warn('Recovery inbox refresh failed', error));
+   if (active) void loadMessages(false);
  });
  loadConversations().then(()=>{
    if (window.adminPusher?.connection?.state === 'connected') realtimeConnected = true;
    status.textContent = realtimeConnected ? 'Live · Pusher' : 'Connected · recovery sync';
    status.className = 'badge bg-success';
  }).catch(()=>{status.textContent='Reconnecting…';status.className='badge bg-secondary';});
- if (window.adminPusher?.connection?.state === 'connected') {
-   realtimeConnected = true;
-   if (pollTimer) clearTimeout(pollTimer);
-   pollTimer = null;
- } else if (!realtimeConnected) {
-   pollTimer=window.setTimeout(tick,pollDelay);
- }
- window.addEventListener('beforeunload',()=>{ if(pollTimer) clearTimeout(pollTimer); stream?.getTracks().forEach(t=>t.stop()); });
+ window.addEventListener('beforeunload',()=>{ stream?.getTracks().forEach(t=>t.stop()); });
 })();
 </script>
 @endsection
