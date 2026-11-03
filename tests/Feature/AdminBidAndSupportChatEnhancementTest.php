@@ -109,6 +109,19 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             ]);
         }
 
+        $otherUser = $this->makeUser('9876543212');
+        Bid::query()->create([
+            'order_no' => 'TEST-OTHER-USER',
+            'user_id' => $otherUser->id,
+            'game_id' => $game->id,
+            'game_date' => '2026-11-03',
+            'type' => 'jodi',
+            'number' => '25',
+            'amount' => 300,
+            'status' => 'pending',
+            'winning_amount' => 0,
+        ]);
+
         $request = Request::create('/admin/bidding-desk/details', 'GET', [
             'game_id' => $game->id,
             'date' => '2026-11-03',
@@ -118,12 +131,15 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $payload = app(BiddingDeskController::class)->details($request)->getData(true)['data'];
 
         $this->assertSame('jodi', $payload['type']);
-        $this->assertCount(1, $payload['users']);
-        $numbers = collect($payload['users'][0]['numbers'])->pluck('number')->all();
+        $this->assertCount(2, $payload['users']);
+        $selectedUser = collect($payload['users'])->firstWhere('user_id', $user->id);
+        $otherUserDetails = collect($payload['users'])->firstWhere('user_id', $otherUser->id);
+        $numbers = collect($selectedUser['numbers'])->pluck('number')->all();
         $this->assertContains('25', $numbers);
         $this->assertContains('01', $numbers);
         $this->assertNotContains('ander-2', $numbers);
-        $this->assertCount(1, $payload['bids']);
+        $this->assertNotContains('01', collect($otherUserDetails['numbers'])->pluck('number')->all());
+        $this->assertCount(2, $payload['bids']);
         $this->assertSame('jodi', $payload['bids'][0]['type']);
     }
 
@@ -179,6 +195,13 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             'POST',
             ['user_id' => $user->id]
         ));
+        $secondAdmin = Admin::query()->create([
+            'name' => 'Second Conversation Admin',
+            'email' => 'conversation-admin-two@example.test',
+            'password' => 'test-password',
+            'status' => 'active',
+        ]);
+        Auth::guard('admin')->setUser($secondAdmin);
         $second = $controller->startConversation(Request::create(
             '/admin/support-chat/conversations',
             'POST',
