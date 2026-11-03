@@ -106,103 +106,122 @@
    });
  }
  async function loadConversations(snapshot = null) {
-   const requestId = ++conversationSearchRequest;
-   const phone = conversationSearch ? conversationSearch.value.trim() : '';
-   const query = phone ? '?phone='+encodeURIComponent(phone) : '';
-   const result = snapshot && !phone ? snapshot : await request(root+'/conversations'+query);
-   if (requestId !== conversationSearchRequest) return;
-   $(conversations).empty();
-   const items = Array.isArray(result.data) ? result.data : [];
-   if (!items.length) {
-     const empty = document.createElement('div');
-     empty.className = 'list-group-item text-muted small py-3';
-     empty.textContent = phone ? 'No conversations found for this phone number.' : 'No conversations yet.';
-     $(conversations).append(empty);
-     return;
-   }
-   items.forEach(c => {
-     const button = document.createElement('button');
-     button.type='button'; button.className='list-group-item list-group-item-action '+(active===c.id?'active':'');
-     button.innerHTML='<div class="d-flex justify-content-between gap-2"><span class="fw-bold">'+esc(c.user?.name || ('User #'+c.id))+'</span>'+(c.unread_count ? '<span class="badge bg-danger">'+c.unread_count+'</span>' : '')+'</div><small>'+esc(c.user?.phone || '')+'</small><div class="small text-muted text-truncate">'+esc(c.last_message_preview || 'No messages yet')+'</div>';
-     button.onclick=()=>selectConversation(c);
-     $(conversations).append(button);
-   });
- async function searchUsers() {
-   const requestId = ++userSearchRequest;
-   const term = userSearch ? userSearch.value.trim() : '';
-   $(userSearchResults).empty();
-   if (!term) {
-     const empty = document.createElement('div');
-     empty.className = 'list-group-item small text-muted';
-     empty.textContent = 'Search by name, phone number or user ID.';
-     $(userSearchResults).append(empty);
-     return;
-   }
-   const loading = document.createElement('div');
-   loading.className = 'list-group-item small text-muted';
-   loading.textContent = 'Searching registered users…';
-   $(userSearchResults).append(loading);
-   try {
-     const result = await request(root + '/users?q=' + encodeURIComponent(term));
-     if (requestId !== userSearchRequest) return;
-     userSearchResults.replaceChildren();
-     const users = Array.isArray(result.data) ? result.data : [];
-     if (!users.length) {
-       const empty = document.createElement('div');
-       empty.className = 'list-group-item small text-muted';
-       empty.textContent = 'No registered users found.';
-       userSearchResults.appendChild(empty);
-       return;
-     }
-     users.forEach(user => {
-       const button = document.createElement('button');
-       button.type = 'button';
-       button.className = 'list-group-item list-group-item-action py-2';
-       const title = document.createElement('div');
-       title.className = 'd-flex justify-content-between gap-2';
-       const name = document.createElement('strong');
-       name.textContent = user.name || ('User #' + user.id);
-       const state = document.createElement('span');
-       state.className = 'badge ' + (Number(user.unread_count) > 0 ? 'bg-danger' : user.has_conversation ? 'bg-success' : 'bg-primary');
-       state.textContent = Number(user.unread_count) > 0 ? Number(user.unread_count) + ' unread' : user.has_conversation ? 'Existing chat' : 'Start chat';
-       title.append(name, state);
-       const meta = document.createElement('small');
-       meta.className = 'text-muted d-block';
-       meta.textContent = (user.phone || 'No phone') + ' · User #' + user.id + ' · ' + (user.status || 'unknown');
-       button.append(title, meta);
-       $(button).on('click.adminChat', async () => {
-         button.disabled = true;
-         try {
-           const started = await request(root + '/conversations', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ user_id: user.id })
-           });
-           await loadConversations();
-           await selectConversation({
-             id: started.data.id,
-             user: started.data.user || { id: user.id, name: user.name, phone: user.phone }
-           });
-           userSearchResults.replaceChildren();
-           userSearch.value = '';
-         } catch (error) {
-           window.alert(error.message || 'Unable to open this user conversation.');
-         } finally {
-           button.disabled = false;
-         }
-       });
-       $(userSearchResults).append(button);
-     });
-   } catch (error) {
-     if (requestId !== userSearchRequest) return;
-     userSearchResults.replaceChildren();
-     const failure = document.createElement('div');
-     failure.className = 'list-group-item small text-danger';
-     failure.textContent = error.message || 'User search failed. Please retry.';
-     $(userSearchResults).append(failure);
-   }
- }
- if (userSearch) {
+    const requestId = ++conversationSearchRequest;
+    const phone = conversationSearch ? conversationSearch.value.trim() : '';
+    const query = phone ? '?phone=' + encodeURIComponent(phone) : '';
+    const result = snapshot && !phone ? snapshot : await request(root + '/conversations' + query);
+    if (requestId !== conversationSearchRequest) return;
+
+    const $list = $(conversations).empty();
+    const items = Array.isArray(result.data) ? result.data : [];
+    if (!items.length) {
+      $list.append($('<div>', { class: 'list-group-item text-muted small py-3' })
+        .text(phone ? 'No conversations found for this phone number.' : 'No conversations yet.'));
+      return;
+    }
+
+    items.forEach(conversation => {
+      const $button = $('<button>', {
+        type: 'button',
+        class: 'list-group-item list-group-item-action' + (active === conversation.id ? ' active' : '')
+      });
+      const $heading = $('<div>', { class: 'd-flex justify-content-between gap-2' });
+      $heading.append($('<span>', { class: 'fw-bold' })
+        .text(conversation.user?.name || ('User #' + conversation.id)));
+      if (conversation.unread_count) {
+        $heading.append($('<span>', { class: 'badge bg-danger' }).text(conversation.unread_count));
+      }
+      $button.append($heading);
+      $button.append($('<small>').text(conversation.user?.phone || ''));
+      $button.append($('<div>', { class: 'small text-muted text-truncate' })
+        .text(conversation.last_message_preview || 'No messages yet'));
+      $button.on('click.adminChat', () => selectConversation(conversation));
+      $list.append($button);
+    });
+
+    const requestedId = new URLSearchParams(window.location.search).get('conversation_id');
+    if (!window.__adminChatInitialConversationOpened && requestedId) {
+      const requested = items.find(item => Number(item.id) === Number(requestedId));
+      if (requested) {
+        window.__adminChatInitialConversationOpened = true;
+        void selectConversation(requested);
+      }
+    }
+  }
+
+  async function searchUsers() {
+    const requestId = ++userSearchRequest;
+    const term = userSearch ? userSearch.value.trim() : '';
+    const $results = $(userSearchResults).empty();
+    if (!term) {
+      $results.append($('<div>', { class: 'list-group-item small text-muted' })
+        .text('Search by name, phone number or user ID.'));
+      return;
+    }
+
+    $results.append($('<div>', { class: 'list-group-item small text-muted' })
+      .text('Searching registered users…'));
+
+    try {
+      const result = await request(root + '/users?q=' + encodeURIComponent(term));
+      if (requestId !== userSearchRequest) return;
+      $results.empty();
+      const users = Array.isArray(result.data) ? result.data : [];
+      if (!users.length) {
+        $results.append($('<div>', { class: 'list-group-item small text-muted' })
+          .text('No registered users found.'));
+        return;
+      }
+
+      users.forEach(user => {
+        const $button = $('<button>', {
+          type: 'button',
+          class: 'list-group-item list-group-item-action py-2'
+        });
+        const $title = $('<div>', { class: 'd-flex justify-content-between gap-2' });
+        $title.append($('<strong>').text(user.name || ('User #' + user.id)));
+        const stateClass = Number(user.unread_count) > 0
+          ? 'bg-danger'
+          : user.has_conversation ? 'bg-success' : 'bg-primary';
+        const stateText = Number(user.unread_count) > 0
+          ? Number(user.unread_count) + ' unread'
+          : user.has_conversation ? 'Existing chat' : 'Start chat';
+        $title.append($('<span>', { class: 'badge ' + stateClass }).text(stateText));
+        $button.append($title);
+        $button.append($('<small>', { class: 'text-muted d-block' }).text(
+          (user.phone || 'No phone') + ' · User #' + user.id + ' · ' + (user.status || 'unknown')
+        ));
+
+        $button.on('click.adminChat', async function () {
+          const $clicked = $(this).prop('disabled', true);
+          try {
+            const started = await request(root + '/conversations', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id: user.id })
+            });
+            await loadConversations();
+            await selectConversation({
+              id: started.data.id,
+              user: started.data.user || { id: user.id, name: user.name, phone: user.phone }
+            });
+            $results.empty();
+            $(userSearch).val('');
+          } catch (error) {
+            window.alert(error.message || 'Unable to open this user conversation.');
+          } finally {
+            $clicked.prop('disabled', false);
+          }
+        });
+        $results.append($button);
+      });
+    } catch (error) {
+      if (requestId !== userSearchRequest) return;
+      $results.empty().append($('<div>', { class: 'list-group-item small text-danger' })
+        .text(error.message || 'User search failed. Please retry.'));
+    }
+  }
+  if (userSearch) {
    $(userSearch).on('input.adminChat', () => {
      if (userSearchTimer) clearTimeout(userSearchTimer);
      userSearchTimer = window.setTimeout(() => { void searchUsers(); }, 300);
@@ -237,7 +256,7 @@
  }
  async function selectConversation(c) {
    active=c.id; lastId=0; conversationVersion += 1;
-   document.getElementById('chat-title').textContent=(c.user?.name || 'User')+' · '+(c.user?.phone || '');
+   $('#chat-title').text((c.user?.name || 'User') + ' · ' + (c.user?.phone || ''));
    await loadMessages(true); await loadConversations();
  }
  async function loadMessages(reset=false) {
