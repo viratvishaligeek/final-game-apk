@@ -13,3 +13,7 @@ Broadcast::channel('admin.payment-alerts', function (\App\Models\Admin $admin) {
 Broadcast::channel('admin.user-presence', function (\App\Models\Admin $admin) {
     return $admin->status === 'active';
 }, ['guards' => ['admin']]);
+
+Broadcast::channel('admin.support-chat', function (\App\Models\Admin $admin) {
+    return $admin->status === 'active';
+}, ['guards' => ['admin']]);
