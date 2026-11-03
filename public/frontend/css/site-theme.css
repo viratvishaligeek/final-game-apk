@@ -1798,7 +1798,7 @@ svg {
 }
 
 .disclaimer-inner {
-    display: grid;
+    /* display: grid; */
     grid-template-columns: 52px 1fr auto;
     align-items: center;
     gap: 19px

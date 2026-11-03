@@ -21,8 +21,6 @@
             @foreach ($navPages ?? collect() as $navPage)
                 <a href="{{ route('page', ['page' => $navPage->slug]) }}">{{ $navPage->name }}</a>
             @endforeach
-            <a class="nav-search" href="{{ setting('app_download_url') }}" target="_blank" aria-label="Download App">↓
-                <span>Download App</span></a>
         </nav>
     </div>
 </header>

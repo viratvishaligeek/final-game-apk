@@ -50,7 +50,7 @@
                             }
                         }
                         .animate-blink {
-                            animation: blink 1300ms infinite;
+                            animation: blink 2000ms infinite;
                         }
                     </style>
                     <div class="d-flex flex-wrap align-items-center gap-3 mb-3" style="place-content: center">
