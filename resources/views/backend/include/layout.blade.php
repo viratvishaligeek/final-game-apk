@@ -176,8 +176,7 @@
         if (soundPreferenceEnabled) setSoundStatus('Sound enabled');
 
         const setText = (id, value) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = value == null || value === '' ? '—' : String(value);
+            $('#' + id).text(value == null || value === '' ? '—' : String(value));
         };
         const stopSound = () => {
             paymentAudio.pause();
@@ -200,7 +199,7 @@
             chatAudio.currentTime = 0;
             chatAudio.play().catch(() => setSoundStatus('Tap to enable sound'));
         };
-        document.getElementById('admin-enable-alert-sounds')?.addEventListener('click', async () => {
+        $('#admin-enable-alert-sounds').on('click.adminNotifications', async () => {
             try {
                 for (const audio of [paymentAudio, chatAudio]) {
                     const wasPlaying = !audio.paused;
@@ -220,8 +219,8 @@
                 setSoundStatus('Tap to enable sound');
             }
         });
-        window.addEventListener('admin:incoming-chat-message', event => playChatNotification(event.detail || {}));
-        window.addEventListener('admin:refresh-chat-unread', () => { void refreshHeaderChatNotifications(); });
+        $(window).on('admin:incoming-chat-message.adminNotifications', event => playChatNotification(event.originalEvent?.detail || event.detail || {}));
+        $(window).on('admin:refresh-chat-unread.adminNotifications', () => { void refreshHeaderChatNotifications(); });
         const formatDate = value => {
             if (!value) return '—';
             const date = new Date(value);
@@ -252,7 +251,7 @@
             modal.show();
             startSound();
         };
-        modalElement.addEventListener('hidden.bs.modal', () => {
+        $(modalElement).on('hidden.bs.modal.adminNotifications', () => {
             if (!modalClosing) return;
             modalClosing = false;
             presentNext();
@@ -278,28 +277,32 @@
         };
         const loadPending = async () => {
             try {
-                const response = await fetch(endpoint + '/pending', {credentials: 'same-origin', headers: {'Accept': 'application/json'}});
-                if (!response.ok) return;
-                const payload = await response.json();
+                const payload = await $.ajax({
+                    url: endpoint + '/pending',
+                    method: 'GET',
+                    dataType: 'json',
+                    headers: {'Accept': 'application/json'}
+                });
                 (payload.data || []).forEach(addAlert);
             } catch (error) {
                 console.warn('Unable to restore pending payment alerts.', error);
             }
         };
 
-        document.getElementById('payment-alert-acknowledge')?.addEventListener('click', async () => {
+        $('#payment-alert-acknowledge').on('click.adminNotifications', async () => {
             if (!activeAlert) return;
             const alert = activeAlert;
             const button = document.getElementById('payment-alert-acknowledge');
             button.disabled = true;
             try {
-                const response = await fetch(endpoint + '/' + encodeURIComponent(alert.id) + '/acknowledge', {
+                await $.ajax({
+                    url: endpoint + '/' + encodeURIComponent(alert.id) + '/acknowledge',
                     method: 'POST',
-                    credentials: 'same-origin',
-                    headers: {'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf},
-                    body: JSON.stringify({})
+                    data: JSON.stringify({}),
+                    contentType: 'application/json; charset=UTF-8',
+                    dataType: 'json',
+                    headers: {'Accept': 'application/json', 'X-CSRF-TOKEN': csrf}
                 });
-                if (!response.ok) throw new Error('Acknowledgement failed');
                 acknowledged.add(Number(alert.id));
                 activeAlert = null;
                 stopSound();
@@ -317,16 +320,18 @@
         void loadPending();
 
         const refreshHeaderChatNotifications = async () => {
-            const badge = document.getElementById('admin-chat-unread-badge');
-            const container = document.getElementById('admin-chat-notification-items');
-            if (!badge || !container) return;
+            const $badge = $('#admin-chat-unread-badge');
+            const $container = $('#admin-chat-notification-items');
+            if (!$badge.length || !$container.length) return;
+            const badge = $badge[0];
+            const container = $container[0];
             try {
-                const response = await fetch('/admin/support-chat/conversations', {
-                    credentials: 'same-origin',
+                const payload = await $.ajax({
+                    url: '/admin/support-chat/conversations',
+                    method: 'GET',
+                    dataType: 'json',
                     headers: {'Accept': 'application/json'}
                 });
-                if (!response.ok) return;
-                const payload = await response.json();
                 window.dispatchEvent(new CustomEvent('admin:conversations-snapshot', {detail: payload}));
                 (payload.data || []).forEach(item => {
                     const messageId = Number(item.last_message_id || 0);
@@ -342,12 +347,12 @@
                 const total = Number(payload.meta?.total_unread_count ?? unread.reduce((sum, item) => sum + Number(item.unread_count || 0), 0));
                 badge.textContent = total > 99 ? '99+' : String(total);
                 badge.classList.toggle('d-none', total === 0);
-                container.replaceChildren();
+                $(container).empty();
                 if (!unread.length) {
                     const empty = document.createElement('div');
                     empty.className = 'dropdown-item small text-muted';
                     empty.textContent = 'No unread support messages.';
-                    container.appendChild(empty);
+                    $(container).append(empty);
                     return;
                 }
                 unread.slice(0, 6).forEach(item => {
@@ -364,7 +369,7 @@
                     details.textContent = (item.user?.name || 'User') + ' · ' + (item.user?.phone || '') + ' · ' + item.unread_count + ' unread';
                     copy.append(preview, details);
                     link.appendChild(copy);
-                    container.appendChild(link);
+                    $(container).append(link);
                 });
             } catch (error) {
                 console.warn('Unable to refresh support message notifications.', error);
@@ -386,7 +391,7 @@
             if (fallbackRefreshTimer) window.clearInterval(fallbackRefreshTimer);
             fallbackRefreshTimer = null;
         };
-        window.addEventListener('visibilitychange', () => {
+        $(document).on('visibilitychange.adminNotifications', () => {
             if (!document.hidden) {
                 void loadPending();
                 void refreshHeaderChatNotifications();
