@@ -345,6 +345,7 @@
                 };
                 const client = window.adminPusher || new Pusher(config.key, options);
                 window.adminPusher = client;
+                window.adminPusher = client;
                 if (!window.adminPusherLifecycleBound) {
                     window.adminPusherLifecycleBound = true;
                     client.connection.bind('state_change', state => {
