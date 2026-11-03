@@ -779,7 +779,11 @@ $(function () {
         $(function () {
             const client = window.adminPusher;
             const $presence = $('#userRealtimePresence');
-            if (!client || !$presence.length) return;
+            if (!$presence.length) return;
+            if (!client) {
+                $presence.text('Realtime unavailable');
+                return;
+            }
 
             const channelName = 'presence-user-presence.' + @json($user->id);
             const channel = client.subscribe(channelName);
@@ -800,6 +804,9 @@ $(function () {
             channel.bind('pusher:subscription_succeeded', refreshPresence);
             channel.bind('pusher:member_added', refreshPresence);
             channel.bind('pusher:member_removed', refreshPresence);
+            channel.bind('pusher:subscription_error', function () {
+                $presence.text('Realtime unavailable').removeClass('bg-success').addClass('bg-secondary');
+            });
 
             const cleanupPresence = function () {
                 channel.unbind('pusher:subscription_succeeded', refreshPresence);
