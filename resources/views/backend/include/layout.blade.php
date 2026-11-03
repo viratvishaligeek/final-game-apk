@@ -161,85 +161,182 @@
             let activeAlert = null;
             let modalClosing = false;
 
-        const setText = (id, value) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = value == null || value === '' ? '—' : String(value);
-        };
-        const stopSound = () => {
-            if (!sound) return;
-            sound.pause();
-            sound.currentTime = 0;
-            sound = null;
-        };
-        const startSound = () => {
-            stopSound();
-            sound = new Audio('/sound/wow.wav');
-            sound.loop = true;
-            sound.play().catch(() => {});
-        };
-        const formatDate = value => {
-            if (!value) return '—';
-            const date = new Date(value);
-            return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('en-IN');
-        };
-        const presentNext = () => {
-            if (activeAlert || modalClosing || queued.size === 0) return;
-            const [id, alert] = queued.entries().next().value;
-            queued.delete(id);
-            activeAlert = alert;
-            setText('payment-alert-user', alert.user_name);
-            setText('payment-alert-user-meta', 'User ID: ' + alert.user_id + (alert.phone ? ' · ' + alert.phone : ''));
-            setText('payment-alert-transaction', alert.transaction_id || 'Not generated');
-            setText('payment-alert-attempt', alert.attempt_id);
-            setText('payment-alert-order', alert.gateway_order_id);
-            setText('payment-alert-category', alert.error_category);
-            setText('payment-alert-severity', alert.severity);
-            setText('payment-alert-code', (alert.error_code || '—') + (alert.http_status ? ' · HTTP ' + alert.http_status : ''));
-            setText('payment-alert-stage', alert.processing_stage);
-            setText('payment-alert-diagnostic', alert.diagnostic_reference);
-            setText('payment-alert-occurrences', (alert.related_occurrences || 1) + ' correlated attempts · ' + (alert.occurrence_count || 1) + ' events for this attempt');
-            setText('payment-alert-occurrence-range', formatDate(alert.related_first_occurred_at || alert.first_occurred_at) + ' – ' + formatDate(alert.related_latest_occurred_at || alert.latest_occurred_at));
-            setText('payment-alert-amount', '₹' + Number(alert.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
-            setText('payment-alert-gateway', alert.gateway);
-            setText('payment-alert-time', formatDate(alert.failed_at));
-            setText('payment-alert-reason', alert.failure_reason || 'Not provided by gateway.');
-            modal.show();
-            startSound();
-        };
-        modalElement.addEventListener('hidden.bs.modal', () => {
-            if (!modalClosing) return;
-            modalClosing = false;
-            presentNext();
-        });
-        const addAlert = alert => {
-            if (!alert?.id || acknowledged.has(Number(alert.id)) || Number(activeAlert?.id) === Number(alert.id)) return;
-            if (alert.fingerprint && activeAlert?.fingerprint === alert.fingerprint) {
-                activeAlert = {...activeAlert, ...alert};
-                setText('payment-alert-occurrences', (alert.related_occurrences || 1) + ' correlated attempts · ' + (alert.occurrence_count || 1) + ' events for this attempt');
-                setText('payment-alert-occurrence-range', formatDate(alert.related_first_occurred_at || alert.first_occurred_at) + ' – ' + formatDate(alert.related_latest_occurred_at || alert.latest_occurred_at));
-                return;
-            }
-            if (alert.fingerprint) {
-                for (const [queuedId, queuedAlert] of queued.entries()) {
-                    if (queuedAlert.fingerprint === alert.fingerprint) {
-                        queued.set(queuedId, {...queuedAlert, ...alert});
-                        return;
+            const setText = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value == null || value === '' ? '—' : String(value);
+            };
+            let sound = null;
+            let audioUnlocked = false;
+
+            const SOUND_URL = "{{ asset('sound/emergency.wav') }}";
+
+            const initializeSound = () => {
+                if (sound) return;
+
+                sound = new Audio(SOUND_URL);
+                sound.loop = true;
+                sound.preload = 'auto';
+                sound.volume = 1;
+
+                sound.addEventListener('canplaythrough', () => {
+                    console.log('Payment alert audio loaded successfully.');
+                });
+
+                sound.addEventListener('error', () => {
+                    console.error('Audio file error:', sound.error);
+                    console.error('Audio URL:', SOUND_URL);
+                });
+            };
+
+            const startSound = async () => {
+                initializeSound();
+
+                if (!audioUnlocked) {
+                    console.warn('Waiting for user interaction to enable audio.');
+                    return;
+                }
+
+                try {
+                    sound.muted = false;
+                    sound.currentTime = 0;
+
+                    await sound.play();
+
+                    console.log('Payment alert sound is PLAYING.');
+                } catch (error) {
+                    console.error('Payment alert playback error:', error);
+                }
+            };
+
+            const stopSound = () => {
+                if (!sound) return;
+
+                sound.pause();
+                sound.currentTime = 0;
+            };
+
+            const unlockAudio = async () => {
+                initializeSound();
+
+                if (audioUnlocked) return;
+
+                try {
+                    // Must be initiated directly by a user interaction.
+                    sound.muted = true;
+
+                    await sound.play();
+
+                    sound.pause();
+                    sound.currentTime = 0;
+                    sound.muted = false;
+
+                    audioUnlocked = true;
+
+                    console.log('Audio successfully unlocked.');
+
+                    // IMPORTANT:
+                    // If payment alert is already visible,
+                    // start its sound immediately.
+                    if (activeAlert) {
+                        startSound();
+                    }
+
+                } catch (error) {
+                    console.warn('Audio unlock failed. Waiting for another interaction:', error);
+                }
+            };
+
+            // Keep listening until audio is successfully unlocked.
+            document.addEventListener('click', unlockAudio);
+            document.addEventListener('keydown', unlockAudio);
+            document.addEventListener('touchstart', unlockAudio);
+
+            const formatDate = value => {
+                if (!value) return '—';
+                const date = new Date(value);
+                return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString('en-IN');
+            };
+            const presentNext = () => {
+                if (activeAlert || modalClosing || queued.size === 0) return;
+                const [id, alert] = queued.entries().next().value;
+                queued.delete(id);
+                activeAlert = alert;
+                setText('payment-alert-user', alert.user_name);
+                setText('payment-alert-user-meta', 'User ID: ' + alert.user_id + (alert.phone ? ' · ' + alert
+                    .phone : ''));
+                setText('payment-alert-transaction', alert.transaction_id || 'Not generated');
+                setText('payment-alert-attempt', alert.attempt_id);
+                setText('payment-alert-order', alert.gateway_order_id);
+                setText('payment-alert-category', alert.error_category);
+                setText('payment-alert-severity', alert.severity);
+                setText('payment-alert-code', (alert.error_code || '—') + (alert.http_status ? ' · HTTP ' + alert
+                    .http_status : ''));
+                setText('payment-alert-stage', alert.processing_stage);
+                setText('payment-alert-diagnostic', alert.diagnostic_reference);
+                setText('payment-alert-occurrences', (alert.related_occurrences || 1) + ' correlated attempts · ' +
+                    (alert.occurrence_count || 1) + ' events for this attempt');
+                setText('payment-alert-occurrence-range', formatDate(alert.related_first_occurred_at || alert
+                    .first_occurred_at) + ' – ' + formatDate(alert.related_latest_occurred_at || alert
+                    .latest_occurred_at));
+                setText('payment-alert-amount', '₹' + Number(alert.amount || 0).toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }));
+                setText('payment-alert-gateway', alert.gateway);
+                setText('payment-alert-time', formatDate(alert.failed_at));
+                setText('payment-alert-reason', alert.failure_reason || 'Not provided by gateway.');
+                modal.show();
+                startSound();
+            };
+            modalElement.addEventListener('hidden.bs.modal', () => {
+                if (!modalClosing) return;
+                modalClosing = false;
+                presentNext();
+            });
+            const addAlert = alert => {
+                if (!alert?.id || acknowledged.has(Number(alert.id)) || Number(activeAlert?.id) === Number(alert
+                        .id)) return;
+                if (alert.fingerprint && activeAlert?.fingerprint === alert.fingerprint) {
+                    activeAlert = {
+                        ...activeAlert,
+                        ...alert
+                    };
+                    setText('payment-alert-occurrences', (alert.related_occurrences || 1) +
+                        ' correlated attempts · ' + (alert.occurrence_count || 1) + ' events for this attempt');
+                    setText('payment-alert-occurrence-range', formatDate(alert.related_first_occurred_at || alert
+                        .first_occurred_at) + ' – ' + formatDate(alert.related_latest_occurred_at || alert
+                        .latest_occurred_at));
+                    return;
+                }
+                if (alert.fingerprint) {
+                    for (const [queuedId, queuedAlert] of queued.entries()) {
+                        if (queuedAlert.fingerprint === alert.fingerprint) {
+                            queued.set(queuedId, {
+                                ...queuedAlert,
+                                ...alert
+                            });
+                            return;
+                        }
                     }
                 }
-            }
-            queued.set(Number(alert.id), alert);
-            presentNext();
-        };
-        const loadPending = async () => {
-            try {
-                const response = await fetch(endpoint + '/pending', {credentials: 'same-origin', headers: {'Accept': 'application/json'}});
-                if (!response.ok) return;
-                const payload = await response.json();
-                (payload.data || []).forEach(addAlert);
-            } catch (error) {
-                console.warn('Unable to restore pending payment alerts.', error);
-            }
-        };
+                queued.set(Number(alert.id), alert);
+                presentNext();
+            };
+            const loadPending = async () => {
+                try {
+                    const response = await fetch(endpoint + '/pending', {
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (!response.ok) return;
+                    const payload = await response.json();
+                    (payload.data || []).forEach(addAlert);
+                } catch (error) {
+                    console.warn('Unable to restore pending payment alerts.', error);
+                }
+            };
 
             document.getElementById('payment-alert-acknowledge')?.addEventListener('click', async () => {
                 if (!activeAlert) return;
@@ -324,40 +421,54 @@
             };
             void refreshHeaderChatNotifications();
 
-        const config = window.ADMIN_PAYMENT_ALERT_BROADCAST || {};
-        if (['pusher', 'reverb'].includes(config.driver) && config.key && window.Pusher) {
-            try {
-                const options = {
-                    forceTLS: config.forceTLS !== false,
-                    authEndpoint: '/broadcasting/auth',
-                    auth: {headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'}}
-                };
-                if (config.driver === 'reverb') {
-                    throw new Error('Reverb is not installed in this Laravel dependency set. Use Pusher or install and validate laravel/reverb before selecting Reverb.');
+            const config = window.ADMIN_PAYMENT_ALERT_BROADCAST || {};
+            if (['pusher', 'reverb'].includes(config.driver) && config.key && window.Pusher) {
+                try {
+                    const options = {
+                        forceTLS: config.forceTLS !== false,
+                        authEndpoint: '/broadcasting/auth',
+                        auth: {
+                            headers: {
+                                'X-CSRF-TOKEN': csrf,
+                                'Accept': 'application/json'
+                            }
+                        }
+                    };
+                    if (config.driver === 'reverb') {
+                        throw new Error(
+                            'Reverb is not installed in this Laravel dependency set. Use Pusher or install and validate laravel/reverb before selecting Reverb.'
+                        );
+                    }
+                    if (!config.cluster) throw new Error('Pusher is selected but PUSHER_APP_CLUSTER is missing.');
+                    options.cluster = config.cluster;
+                    const client = new Pusher(config.key, options);
+                    client.connection.bind('state_change', state => {
+                        window.dispatchEvent(new CustomEvent('admin:broadcast-state', {
+                            detail: state
+                        }));
+                    });
+                    client.subscribe('private-admin.payment-alerts').bind('payment.failed', addAlert);
+                    client.subscribe('private-admin.user-presence').bind('presence.changed', payload => {
+                        window.dispatchEvent(new CustomEvent('admin:user-presence', {
+                            detail: payload
+                        }));
+                    });
+                    client.subscribe('private-admin.support-chat').bind('support.message.created', payload => {
+                        window.dispatchEvent(new CustomEvent('admin:support-message', {
+                            detail: payload
+                        }));
+                    });
+                    client.channel('private-admin.support-chat').bind('support.message.created', () => {
+                        void refreshHeaderChatNotifications();
+                    });
+                } catch (error) {
+                    console.error('Admin payment alert realtime connection failed.', error);
                 }
-                if (!config.cluster) throw new Error('Pusher is selected but PUSHER_APP_CLUSTER is missing.');
-                options.cluster = config.cluster;
-                const client = new Pusher(config.key, options);
-                client.connection.bind('state_change', state => {
-                    window.dispatchEvent(new CustomEvent('admin:broadcast-state', {detail: state}));
-                });
-                client.subscribe('private-admin.payment-alerts').bind('payment.failed', addAlert);
-                client.subscribe('private-admin.user-presence').bind('presence.changed', payload => {
-                    window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
-                });
-                client.subscribe('private-admin.support-chat').bind('support.message.created', payload => {
-                    window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
-                });
-                client.channel('private-admin.support-chat').bind('support.message.created', () => {
-                    void refreshHeaderChatNotifications();
-                });
-            } catch (error) {
-                console.error('Admin payment alert realtime connection failed.', error);
+            } else if (config.driver !== 'null') {
+                console.warn(
+                    'Admin realtime broadcasting is not configured. Pending alerts will still be restored by HTTP.');
             }
-        } else if (config.driver !== 'null') {
-            console.warn('Admin realtime broadcasting is not configured. Pending alerts will still be restored by HTTP.');
-        }
-    })();
+        })();
     </script>
 
     @yield('script')
