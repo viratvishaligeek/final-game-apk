@@ -542,6 +542,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $user = $this->makeUser('9876500091');
         $otherUser = $this->makeUser('9876500092');
         Auth::guard('sanctum')->setUser($user);
+        Auth::shouldUse('sanctum');
 
         $request = Request::create('/api/broadcasting/auth', 'POST', [
             'socket_id' => '123.456',
@@ -574,6 +575,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             'status' => 'active',
         ]);
         Auth::guard('admin')->setUser($admin);
+        Auth::shouldUse('admin');
         config(['sites.current_key' => $user->site_key]);
 
         $request = Request::create('/broadcasting/auth', 'POST', [
