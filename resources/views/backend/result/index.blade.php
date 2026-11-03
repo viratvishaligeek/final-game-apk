@@ -23,7 +23,7 @@
                     class="d-inline-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm border">
                     <span class="fw-bold text-secondary ps-2">Date:</span>
                     <input type="date" name="date" class="form-control form-control-sm border-0 fw-bold text-primary"
-                        value="{{ $selectedDate }}" onchange="this.form.submit()">
+                        value="{{ $selectedDate }}" class="js-result-date-filter">
                     @if (\Carbon\Carbon::parse($selectedDate)->isToday())
                         <span class="badge bg-danger text-uppercase px-2 py-2">● Live Today</span>
                     @else
@@ -125,7 +125,7 @@
 
                                             @if ($hasValidResult)
                                                 <form action="{{ route('admin.results.revert') }}" method="POST"
-                                                    onsubmit="return confirm('Are you sure you want to revert this result to Wait? User balances will be adjusted.');"
+                                                    class="d-inline js-confirm-result-revert" data-confirm-message="Are you sure you want to revert this result to Wait? User balances will be adjusted?"
                                                     class="d-inline">
                                                     @csrf
                                                     <input type="hidden" name="game_id" value="{{ $game->id }}">
@@ -151,4 +151,20 @@
             </div>
         </div>
     </div>
+@endsection
+
+
+@section('script')
+    <script>
+        $(function () {
+            $('.js-result-date-filter').on('change', function () {
+                if (this.form) this.form.submit();
+            });
+
+            $('.js-confirm-result-revert').on('submit', function (event) {
+                const message = $(this).data('confirm-message');
+                if (!window.confirm(message)) event.preventDefault();
+            });
+        });
+    </script>
 @endsection
