@@ -373,13 +373,6 @@ class WalletController extends Controller
         $returnUrl = $this->gatewayValue('return_url', 'services.upi_gateway.return_url');
         $webhookUrl = $this->gatewayValue('webhook_url', 'services.upi_gateway.webhook_url');
 
-        if (!$gatewayKey || !$createOrderUrl || !$statusUrl || !$returnUrl) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Payment gateway is not fully configured. Please contact support.',
-            ], 503);
-        }
-
         $walletRequest = DB::transaction(function () use ($user, $clientTxnId, $validated) {
             User::query()->lockForUpdate()->findOrFail($user->id);
 
@@ -407,6 +400,21 @@ class WalletController extends Controller
                 'remark' => 'Automated UPI gateway payment',
             ]);
         });
+        if (!$gatewayKey || !$createOrderUrl || !$statusUrl || !$returnUrl) {
+            app(PaymentAlertRecorder::class)->record($walletRequest, [
+                'stage' => 'configuration_check',
+                'category' => 'PAYMENT_GATEWAY_CONFIGURATION_ERROR',
+                'message' => 'Payment gateway is not fully configured. Required gateway settings are missing.',
+                'gateway' => 'UPI Gateway',
+                'attempt_id' => $clientTxnId,
+            ]);
+            $walletRequest->update(['status' => 'failed', 'gateway_status' => 'configuration_error']);
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment gateway is not fully configured. Please contact support.',
+            ], 503);
+        }
+
         try {
             $response = Http::timeout(30)
                 ->acceptJson()
@@ -433,6 +441,14 @@ class WalletController extends Controller
                     'gateway_status' => 'gateway_error',
                     'remark' => 'Gateway order creation failed.',
                 ]);
+                $gatewayError = $response->json();
+                app(PaymentAlertRecorder::class)->record($walletRequest, [
+                    'stage' => 'order_creation',
+                    'message' => is_array($gatewayError) ? ($gatewayError['msg'] ?? $gatewayError['message'] ?? 'Gateway order creation failed.') : 'Gateway order creation failed.',
+                    'error_code' => is_array($gatewayError) ? ($gatewayError['code'] ?? $gatewayError['error_code'] ?? '') : '',
+                    'http_status' => $response->status(),
+                    'attempt_id' => $clientTxnId,
+                ]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Unable to create payment order.',
@@ -443,7 +459,13 @@ class WalletController extends Controller
                 $walletRequest->update([
                     'status' => 'failed',
                     'gateway_status' => 'order_creation_failed',
-                    'remark' => $result['msg'] ?? 'Gateway rejected order.',
+                    'remark' => 'Gateway rejected order.',
+                ]);
+                app(PaymentAlertRecorder::class)->record($walletRequest, [
+                    'stage' => 'order_creation',
+                    'message' => $result['msg'] ?? $result['message'] ?? 'Gateway rejected order.',
+                    'error_code' => $result['code'] ?? $result['error_code'] ?? '',
+                    'attempt_id' => $clientTxnId,
                 ]);
                 return response()->json([
                     'success' => false,
@@ -460,6 +482,12 @@ class WalletController extends Controller
 
                 Log::warning('UPI gateway returned no valid payment URL.', [
                     'wallet_request_id' => $walletRequest->id,
+                ]);
+                app(PaymentAlertRecorder::class)->record($walletRequest, [
+                    'stage' => 'order_creation',
+                    'message' => 'Gateway returned an invalid payment URL.',
+                    'error_code' => 'INVALID_PAYMENT_URL',
+                    'attempt_id' => $clientTxnId,
                 ]);
 
                 return response()->json([
@@ -484,6 +512,12 @@ class WalletController extends Controller
             $walletRequest->update([
                 'status' => 'failed',
                 'gateway_status' => 'exception',
+            ]);
+            app(PaymentAlertRecorder::class)->record($walletRequest, [
+                'stage' => 'order_creation_exception',
+                'category' => 'BACKEND_SYSTEM_ERROR',
+                'message' => $e->getMessage(),
+                'attempt_id' => $clientTxnId,
             ]);
             return response()->json([
                 'success' => false,
@@ -858,25 +892,15 @@ class WalletController extends Controller
                     && $requestRow->request_type === 'credit'
                     && $providerStatus === 'failure'
                 ) {
-                    $alert = AdminPaymentAlert::query()->firstOrCreate(
-                        ['wallet_request_id' => $requestRow->id],
-                        [
-                            'user_id' => $requestRow->user_id,
-                            'transaction_id' => filled($data['id'] ?? null) ? (string) $data['id'] : (string) $requestRow->client_txn_id,
-                            'amount' => $requestRow->amount,
-                            'gateway' => (string) ($data['gateway'] ?? $data['provider'] ?? 'UPI Gateway'),
-                            'failure_reason' => mb_substr(
-                                (string) ($data['failure_reason'] ?? $data['reason'] ?? $data['message'] ?? 'Payment provider reported failure.'),
-                                0,
-                                2000
-                            ),
-                            'failed_at' => now(),
-                        ]
-                    );
-
-                    if ($alert->wasRecentlyCreated) {
-                        AdminPaymentFailedPaymentAlert::dispatch($alert->id);
-                    }
+                    app(PaymentAlertRecorder::class)->record($requestRow, [
+                        'stage' => 'provider_callback',
+                        'category' => 'PAYMENT_FAILURE',
+                        'message' => $data['failure_reason'] ?? $data['reason'] ?? $data['message'] ?? 'Payment provider reported failure.',
+                        'error_code' => $data['error_code'] ?? $data['code'] ?? '',
+                        'gateway_transaction_id' => $data['id'] ?? null,
+                        'gateway_order_id' => $data['order_id'] ?? null,
+                        'gateway' => $data['gateway'] ?? $data['provider'] ?? 'UPI Gateway',
+                    ]);
                 }
             }
         });
