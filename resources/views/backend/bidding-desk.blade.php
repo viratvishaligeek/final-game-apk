@@ -496,7 +496,7 @@
                 container.replaceChildren();
                 const grandTotal = (numbers || []).reduce((sum, item) => sum + Number(item.total_amount || 0), 0);
                 const invested = (numbers || []).map(item => Number(item.total_amount || 0)).filter(amount => amount > 0).sort((a, b) => a - b);
-                const highThreshold = invested.length ? invested[Math.floor((invested.length - 1) * 0.75)] : 0;
+                const highThreshold = invested.length ? invested[Math.max(0, Math.ceil(invested.length * 0.75) - 1)] : 0;
                 (numbers || []).forEach(item => {
                     const amount = Number(item.total_amount || 0);
                     const investmentClass = amount <= 0 ? ' empty-number' : amount >= highThreshold && highThreshold > 0 ? ' high-investment' : ' low-investment';
