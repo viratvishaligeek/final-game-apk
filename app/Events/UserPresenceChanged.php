@@ -21,7 +21,11 @@ class UserPresenceChanged implements ShouldBroadcastNow, ShouldDispatchAfterComm
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('admin.user-presence')];
+        $user = User::query()->find($this->userId);
+
+        return $user
+            ? [new PrivateChannel('admin.user-presence.' . $user->site_key)]
+            : [];
     }
 
     public function broadcastAs(): string
