@@ -43,6 +43,29 @@ class AdminWalletCreditIdempotencyTest extends TestCase
         $creditService->credit($user, 300.00, 'Different amount', $key, null);
     }
 
+    public function test_admin_credit_key_cannot_be_replayed_against_a_different_user(): void
+    {
+        $owner = User::factory()->create([
+            'status' => 'active',
+            'balance' => 500.00,
+        ]);
+        $other = User::factory()->create([
+            'status' => 'active',
+            'balance' => 300.00,
+        ]);
+
+        $notificationService = Mockery::mock(NotificationService::class);
+        $notificationService->shouldReceive('create')->once();
+        $walletService = new WalletService($notificationService);
+        $creditService = new AdminWalletCreditService($walletService);
+        $key = (string) Str::uuid();
+
+        $creditService->credit($owner, 100.00, 'First user', $key, null);
+
+        $this->expectException(ConflictHttpException::class);
+        $creditService->credit($other, 100.00, 'Second user', $key, null);
+    }
+
     public function test_repeating_the_same_credit_key_does_not_credit_the_wallet_twice(): void
     {
         $user = User::factory()->create([
