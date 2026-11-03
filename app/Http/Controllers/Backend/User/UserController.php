@@ -100,9 +100,12 @@ class UserController extends Controller
 
         // A bid submission is identified by order_no. Do not collapse separate
         // submissions merely because their game, bet type or timestamp match.
+        // Historical rows may predate order_no. NULL/empty identifiers are
+        // intentionally isolated by bid id so unrelated legacy bets never merge.
+        $submissionGroup = "CASE WHEN order_no IS NULL OR order_no = '' THEN CONCAT('legacy-', id) ELSE order_no END";
         $submissionStats = $user->bids()
-            ->selectRaw('order_no, COUNT(*) as total_bids, COALESCE(SUM(amount), 0) as total_amount, MIN(id) as representative_bid_id, MAX(id) as latest_bid_id, MIN(created_at) as submitted_at')
-            ->groupBy('order_no')
+            ->selectRaw("order_no, {$submissionGroup} as submission_group_key, COUNT(*) as total_bids, COALESCE(SUM(amount), 0) as total_amount, MIN(id) as representative_bid_id, MAX(id) as latest_bid_id, MIN(created_at) as submitted_at")
+            ->groupByRaw($submissionGroup)
             ->orderByDesc('latest_bid_id')
             ->get();
 
