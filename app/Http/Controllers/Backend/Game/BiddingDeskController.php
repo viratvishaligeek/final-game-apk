@@ -271,6 +271,21 @@ class BiddingDeskController extends Controller
             ->whereBetween('created_at', [$startDateTime, $endDateTime])
             ->sum('amount');
 
+        // Non-admin wallet ledger movements are shown separately from request
+        // summaries and game profit so they are not added twice to net P&L.
+        $userCreditTotal = Transaction::query()
+            ->whereNull('admin_id')
+            ->where('type', 'credit')
+            ->whereIn('status', $successfulStatuses)
+            ->whereBetween('created_at', [$startDateTime, $endDateTime])
+            ->sum('amount');
+        $userDebitTotal = Transaction::query()
+            ->whereNull('admin_id')
+            ->where('type', 'debit')
+            ->whereIn('status', $successfulStatuses)
+            ->whereBetween('created_at', [$startDateTime, $endDateTime])
+            ->sum('amount');
+
         $games = Game::where('status', 'active')
             ->orderBy('serial', 'asc')
             ->get();
@@ -314,6 +329,8 @@ class BiddingDeskController extends Controller
             'totalTrans',
             'adminCreditTotal',
             'adminDebitTotal',
+            'userCreditTotal',
+            'userDebitTotal',
             'grandTotalBid',
             'grandTotalWin',
             'grandProfitLoss',
@@ -333,6 +350,7 @@ class BiddingDeskController extends Controller
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'type' => ['required', 'in:credit,debit'],
+            'source' => ['required', 'in:admin,user'],
         ]);
 
         $from = Carbon::parse($validated['from'] ?? Carbon::today()->toDateString())->toDateString();
@@ -340,7 +358,11 @@ class BiddingDeskController extends Controller
 
         $transactions = Transaction::query()
             ->with(['user:id,name,phone', 'admin:id,name'])
-            ->whereNotNull('admin_id')
+            ->when(
+                $validated['source'] === 'admin',
+                fn ($query) => $query->whereNotNull('admin_id'),
+                fn ($query) => $query->whereNull('admin_id')
+            )
             ->where('type', $validated['type'])
             ->whereIn('status', ['completed', 'success', 'successful'])
             ->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59'])
@@ -349,9 +371,10 @@ class BiddingDeskController extends Controller
             ->withQueryString();
 
         return view('backend.profit_loss_transactions', [
-            'pageName' => 'Admin Wallet ' . ucfirst($validated['type']) . 's',
+            'pageName' => ucfirst($validated['source']) . ' Wallet ' . ucfirst($validated['type']) . 's',
             'transactions' => $transactions,
             'type' => $validated['type'],
+            'source' => $validated['source'],
             'from' => $from,
             'to' => $to,
         ]);

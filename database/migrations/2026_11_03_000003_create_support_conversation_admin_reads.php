@@ -6,6 +6,7 @@ return new class extends Migration {
     public function up(): void {
         Schema::create('support_conversation_admin_reads', function (Blueprint $table) {
             $table->id();
+            $table->string('site_key', 64)->default('play-online-khaiwal')->index();
             $table->foreignId('conversation_id')->constrained('support_conversations')->cascadeOnDelete();
             $table->foreignId('admin_id')->constrained('admins')->cascadeOnDelete();
             $table->unsignedBigInteger('last_read_message_id')->default(0);

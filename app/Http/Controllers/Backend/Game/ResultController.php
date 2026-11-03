@@ -76,11 +76,22 @@ class ResultController extends Controller
         $validated = $request->validate([
             'game_id' => ['required', 'integer', 'exists:games,id'],
             'game_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'is_live_business_date' => ['sometimes', 'boolean'],
             'result' => ['required', 'digits:2'],
         ]);
 
         $gameId = (int) $validated['game_id'];
         $gameDate = $validated['game_date'];
+        if (!empty($validated['is_live_business_date'])) {
+            $game = Game::query()->findOrFail($gameId);
+            $expectedBusinessDate = $game->businessDate();
+            if ($gameDate !== $expectedBusinessDate) {
+                return redirect()->back()->with(
+                    'error',
+                    'The live business date changed. Refresh the result console before declaring this result.'
+                );
+            }
+        }
         $jodi = str_pad((string) $validated['result'], 2, '0', STR_PAD_LEFT);
         $ah = $jodi[0];
         $bh = $jodi[1];

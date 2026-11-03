@@ -87,7 +87,7 @@
                 </div>
 
                 <div class="col-6 col-md-6 col-xl-6 mb-4">
-                    <a class="text-decoration-none" href="{{ route('admin.bidding-desk.profit_loss_transactions', ['from' => $from, 'to' => $to, 'type' => 'credit']) }}">
+                    <a class="text-decoration-none" href="{{ route('admin.bidding-desk.profit_loss_transactions', ['from' => $from, 'to' => $to, 'type' => 'credit', 'source' => 'admin']) }}">
                         <div class="card border-start-lg border-start-success h-100">
                             <div class="card-body">
                                 <div class="small text-muted mb-1">Direct Admin Wallet Credits</div>
@@ -98,12 +98,34 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-6 col-xl-6 mb-4">
-                    <a class="text-decoration-none" href="{{ route('admin.bidding-desk.profit_loss_transactions', ['from' => $from, 'to' => $to, 'type' => 'debit']) }}">
+                    <a class="text-decoration-none" href="{{ route('admin.bidding-desk.profit_loss_transactions', ['from' => $from, 'to' => $to, 'type' => 'debit', 'source' => 'admin']) }}">
                         <div class="card border-start-lg border-start-danger h-100">
                             <div class="card-body">
                                 <div class="small text-muted mb-1">Direct Admin Wallet Debits</div>
                                 <div class="h4 mb-0 text-danger">₹ {{ number_format($adminDebitTotal ?? 0, 2) }}</div>
                                 <div class="small text-muted mt-2">View completed admin adjustments</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-6 col-xl-6 mb-4">
+                    <a class="text-decoration-none" href="{{ route('admin.bidding-desk.profit_loss_transactions', ['from' => $from, 'to' => $to, 'type' => 'credit', 'source' => 'user']) }}">
+                        <div class="card border-start-lg border-start-info h-100">
+                            <div class="card-body">
+                                <div class="small text-muted mb-1">Non-admin Wallet Credits</div>
+                                <div class="h4 mb-0 text-info">₹ {{ number_format($userCreditTotal ?? 0, 2) }}</div>
+                                <div class="small text-muted mt-2">Ledger movement · not extra profit</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-6 col-md-6 col-xl-6 mb-4">
+                    <a class="text-decoration-none" href="{{ route('admin.bidding-desk.profit_loss_transactions', ['from' => $from, 'to' => $to, 'type' => 'debit', 'source' => 'user']) }}">
+                        <div class="card border-start-lg border-start-secondary h-100">
+                            <div class="card-body">
+                                <div class="small text-muted mb-1">Non-admin Wallet Debits</div>
+                                <div class="h4 mb-0 text-secondary">₹ {{ number_format($userDebitTotal ?? 0, 2) }}</div>
+                                <div class="small text-muted mt-2">Ledger movement · not extra loss</div>
                             </div>
                         </div>
                     </a>
