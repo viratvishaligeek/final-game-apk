@@ -198,6 +198,9 @@
                 client.subscribe('private-admin.user-presence').bind('presence.changed', payload => {
                     window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
                 });
+                client.subscribe('private-admin.support-chat').bind('support.message.created', payload => {
+                    window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
+                });
             } catch (error) {
                 console.error('Admin payment alert realtime connection failed.', error);
             }
