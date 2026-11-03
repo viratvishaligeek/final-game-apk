@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Admin;
+use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
@@ -19,3 +21,27 @@ Broadcast::channel('admin.support-chat.{siteKey}', $authorizeAdminSiteChannel, [
 Broadcast::channel('users.{id}', function (\App\Models\User $user, $id) {
     return (int) $user->id === (int) $id;
 }, ['guards' => ['sanctum']]);
+
+/*
+ * A per-account presence channel avoids a site-wide player roster. The player
+ * can join only their own channel; an active Admin can inspect only users
+ * visible in the currently selected site scope. Presence member metadata
+ * contains role-only labels, never names, phone numbers, or wallet data.
+ */
+Broadcast::channel('user-presence.{id}', function ($principal, $id) {
+    if ($principal instanceof User) {
+        return (int) $principal->id === (int) $id
+            ? ['id' => 'player-' . $principal->id, 'type' => 'player']
+            : false;
+    }
+
+    if ($principal instanceof Admin && $principal->status === 'active') {
+        $targetUser = User::query()->find($id);
+
+        return $targetUser
+            ? ['id' => 'admin-' . $principal->id, 'type' => 'admin']
+            : false;
+    }
+
+    return false;
+}, ['guards' => ['sanctum', 'admin']]);
