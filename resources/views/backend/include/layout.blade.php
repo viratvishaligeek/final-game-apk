@@ -143,10 +143,13 @@
         document.getElementById('admin-enable-alert-sounds')?.addEventListener('click', async () => {
             try {
                 for (const audio of [paymentAudio, chatAudio]) {
+                    const wasPlaying = !audio.paused;
                     audio.volume = 0;
                     await audio.play();
-                    audio.pause();
-                    audio.currentTime = 0;
+                    if (!wasPlaying) {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    }
                     audio.volume = 1;
                 }
                 setSoundStatus('Sounds enabled');

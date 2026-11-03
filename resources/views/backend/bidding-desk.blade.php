@@ -241,6 +241,20 @@
                     #fffdf2,
                     #fff8d9);
         }
+        .number-card.empty-number {
+            border-style: dashed;
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+        .number-card.low-investment {
+            border-color: #b6d4fe;
+            background: #f8fbff;
+        }
+        .number-card.high-investment {
+            border-color: #dc3545;
+            background: #fff5f5;
+            box-shadow: inset 0 0 0 1px rgba(220, 53, 69, .08);
+        }
 
         .number-value {
             font-size: 16px;
@@ -473,10 +487,15 @@
             function renderNumberGrid(container, numbers, type, totalId) {
                 container.replaceChildren();
                 const grandTotal = (numbers || []).reduce((sum, item) => sum + Number(item.total_amount || 0), 0);
+                const invested = (numbers || []).map(item => Number(item.total_amount || 0)).filter(amount => amount > 0).sort((a, b) => a - b);
+                const median = invested.length ? invested[Math.floor((invested.length - 1) / 2)] : 0;
+                const highThreshold = invested.length ? invested[Math.floor((invested.length - 1) * 0.75)] : 0;
                 (numbers || []).forEach(item => {
+                    const amount = Number(item.total_amount || 0);
+                    const investmentClass = amount <= 0 ? ' empty-number' : amount >= highThreshold && highThreshold > 0 ? ' high-investment' : ' low-investment';
                     const card = document.createElement('button');
                     card.type = 'button';
-                    card.className = 'number-card text-start' + (item.total_bids > 0 ? ' has-bet' : '');
+                    card.className = 'number-card text-start' + (item.total_bids > 0 ? ' has-bet' : '') + investmentClass;
                     card.setAttribute('aria-label', type + ' ' + item.number + ', ' + item.total_bids + ' bets');
                     card.innerHTML = '<div class="number-value">' + escapeHtml(item.number) + '</div>' +
                         '<div class="number-amount">₹' + formatMoney(item.total_amount) + '</div>' +
