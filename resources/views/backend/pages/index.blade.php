@@ -92,51 +92,5 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            document.addEventListener('click', function(event) {
-                const button = event.target.closest('.delete-page-btn');
-
-                if (!button) {
-                    return;
-                }
-
-                event.preventDefault();
-
-                const pageId = button.dataset.id;
-                const pageName = button.dataset.name;
-                const deleteForm = document.getElementById('delete-form-' + pageId);
-
-                if (!deleteForm) {
-                    console.error('Delete form not found for page:', pageId);
-                    return;
-                }
-
-                if (typeof Swal === 'undefined') {
-                    alert('SweetAlert2 failed to load. Please refresh the page.');
-                    return;
-                }
-
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'Do you really want to delete "' + pageName +
-                        '"? This action cannot be undone.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e74a3b',
-                    cancelButtonColor: '#858796',
-                    confirmButtonText: 'Yes, delete it!',
-                    cancelButtonText: 'Cancel',
-                    reverseButtons: true,
-                    focusCancel: true
-                }).then(function(result) {
-                    if (result.isConfirmed) {
-                        deleteForm.submit();
-                    }
-                });
-            });
-
-        });
-    </script>
+    
 @endsection
