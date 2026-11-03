@@ -143,6 +143,34 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame('jodi', $payload['bids'][0]['type']);
     }
 
+    public function test_user_bid_modal_endpoint_returns_paginated_individual_bid_details(): void
+    {
+        $game = $this->makeGame();
+        $user = $this->makeUser('9876543214');
+        Bid::query()->create([
+            'order_no' => 'USER-SHOW-ORDER',
+            'user_id' => $user->id,
+            'game_id' => $game->id,
+            'game_date' => '2026-11-03',
+            'type' => 'jodi',
+            'number' => '42',
+            'amount' => 125,
+            'status' => 'pending',
+            'winning_amount' => 0,
+        ]);
+
+        $response = app(UserController::class)->bids(
+            Request::create('/admin/users/' . $user->id . '/bids', 'GET', ['game_id' => $game->id]),
+            $user
+        );
+        $payload = $response->getData(true);
+
+        $this->assertCount(1, $payload['data']);
+        $this->assertSame('42', $payload['data'][0]['number']);
+        $this->assertSame('03 Nov 2026', $payload['data'][0]['game_date']);
+        $this->assertSame(125.0, $payload['data'][0]['amount']);
+    }
+
     public function test_admin_can_search_registered_users_without_existing_conversations(): void
     {
         $admin = Admin::query()->create([
