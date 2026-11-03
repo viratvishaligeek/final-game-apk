@@ -92,6 +92,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admi
         Route::get('/data', 'data')->name('data');
         Route::get('/details', 'details')->name('details');
         Route::get('/profit-loss', 'profitLoss')->name('profit_loss');
+        Route::get('/profit-loss/transactions', 'profitLossTransactions')->name('profit_loss_transactions');
     });
 
     Route::resource('setting', SettingController::class);
