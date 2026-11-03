@@ -107,6 +107,7 @@
                                                 @csrf
                                                 <input type="hidden" name="game_id" value="{{ $game->id }}">
                                                 <input type="hidden" name="game_date" value="{{ $gameDate }}">
+                                                <input type="hidden" name="is_live_business_date" value="{{ $isCurrentCalendarDate ? 1 : 0 }}">
 
                                                 <input type="text" name="result"
                                                 {{ $hasValidResult ? 'disabled' : '' }}
@@ -129,6 +130,7 @@
                                                     @csrf
                                                     <input type="hidden" name="game_id" value="{{ $game->id }}">
                                                     <input type="hidden" name="game_date" value="{{ $gameDate }}">
+                                                    <input type="hidden" name="is_live_business_date" value="{{ $isCurrentCalendarDate ? 1 : 0 }}">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger shadow-sm"
                                                         title="Revert Result">
                                                         Reset
