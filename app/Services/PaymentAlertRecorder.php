@@ -39,9 +39,14 @@ class PaymentAlertRecorder
         $category = strtoupper((string) ($context['category'] ?? $this->classify($message, $code, $httpStatus, $stage)));
         $diagnosticReference = (string) ($context['diagnostic_reference'] ?? (string) Str::uuid());
 
-        $displayMessage = $category === 'PAYMENT_GATEWAY_CONFIGURATION_ERROR'
-            ? 'Payment Gateway Configuration Issue: The gateway reports that no active plan is available. Verify the merchant API plan and account status.'
-            : $message;
+        $normalizedMessage = preg_replace('/[^a-z0-9]+/', ' ', mb_strtolower(trim($message)));
+        $displayMessage = match (true) {
+            $category !== 'PAYMENT_GATEWAY_CONFIGURATION_ERROR' => $message,
+            $httpStatus === 401 => 'Payment Gateway Configuration Issue: Gateway authentication failed. Verify the API credentials and merchant account permissions.',
+            $httpStatus === 403 => 'Payment Gateway Configuration Issue: Gateway access was denied. Verify the merchant account is active and its API plan/permissions are valid.',
+            $normalizedMessage === 'active plan not found please buy plan' => 'Payment Gateway Configuration Issue: The gateway reports that no active plan is available. Verify the merchant API plan and account status.',
+            default => 'Payment Gateway Configuration Issue: ' . $message . ' Please verify the gateway account configuration.',
+        };
 
         $alert = AdminPaymentAlert::query()->firstOrNew(['attempt_id' => $attemptId]);
         $isNew = !$alert->exists;
