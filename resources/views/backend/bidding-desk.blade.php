@@ -491,7 +491,6 @@
                 container.replaceChildren();
                 const grandTotal = (numbers || []).reduce((sum, item) => sum + Number(item.total_amount || 0), 0);
                 const invested = (numbers || []).map(item => Number(item.total_amount || 0)).filter(amount => amount > 0).sort((a, b) => a - b);
-                const median = invested.length ? invested[Math.floor((invested.length - 1) / 2)] : 0;
                 const highThreshold = invested.length ? invested[Math.floor((invested.length - 1) * 0.75)] : 0;
                 (numbers || []).forEach(item => {
                     const amount = Number(item.total_amount || 0);
