@@ -281,7 +281,6 @@
                 const response = await fetch(endpoint + '/pending', {credentials: 'same-origin', headers: {'Accept': 'application/json'}});
                 if (!response.ok) return;
                 const payload = await response.json();
-                window.dispatchEvent(new CustomEvent('admin:conversations-snapshot', {detail: payload}));
                 (payload.data || []).forEach(addAlert);
             } catch (error) {
                 console.warn('Unable to restore pending payment alerts.', error);
@@ -328,6 +327,7 @@
                 });
                 if (!response.ok) return;
                 const payload = await response.json();
+                window.dispatchEvent(new CustomEvent('admin:conversations-snapshot', {detail: payload}));
                 (payload.data || []).forEach(item => {
                     const messageId = Number(item.last_message_id || 0);
                     const previousId = lastSeenChatMessageIds.get(Number(item.id)) || 0;
