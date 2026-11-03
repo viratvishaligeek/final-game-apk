@@ -100,38 +100,29 @@
 
 @section('script')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const selectAll = document.getElementById('selectAll');
-            const permissionCheckboxes = document.querySelectorAll('.permission-checkbox');
-            const groupSelects = document.querySelectorAll('.group-select');
-            if (selectAll) {
-                selectAll.addEventListener('change', function() {
-                    const isChecked = this.checked;
-                    permissionCheckboxes.forEach(cb => cb.checked = isChecked);
-                    groupSelects.forEach(cb => cb.checked = isChecked);
-                });
-            }
-            groupSelects.forEach(groupCB => {
-                groupCB.addEventListener('change', function() {
-                    const groupSlug = this.getAttribute('data-group');
-                    const groupItems = document.querySelectorAll(`.group-item-${groupSlug}`);
-                    groupItems.forEach(cb => cb.checked = this.checked);
-                    updateSelectAllState();
-                });
-            });
-
-            permissionCheckboxes.forEach(cb => {
-                cb.addEventListener('change', updateSelectAllState);
-            });
+        $(function () {
+            const $selectAll = $('#selectAll');
+            const $permissionCheckboxes = $('.permission-checkbox');
+            const $groupSelects = $('.group-select');
 
             function updateSelectAllState() {
-                if (selectAll) {
-                    const allChecked = Array.from(permissionCheckboxes).every(cb => cb.checked);
-                    selectAll.checked = allChecked;
+                if ($selectAll.length) {
+                    $selectAll.prop('checked', $permissionCheckboxes.toArray().every(cb => cb.checked));
                 }
             }
 
-            // Initial check on page load
+            $selectAll.on('change', function () {
+                const checked = $(this).prop('checked');
+                $permissionCheckboxes.add($groupSelects).prop('checked', checked);
+            });
+
+            $groupSelects.on('change', function () {
+                const groupSlug = $(this).data('group');
+                $('.group-item-' + groupSlug).prop('checked', $(this).prop('checked'));
+                updateSelectAllState();
+            });
+
+            $permissionCheckboxes.on('change', updateSelectAllState);
             updateSelectAllState();
         });
     </script>
