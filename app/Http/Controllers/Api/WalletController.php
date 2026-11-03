@@ -394,6 +394,8 @@ class WalletController extends Controller
                 'remark' => 'Automated UPI gateway payment',
             ]);
             });
+        } catch (ValidationException $exception) {
+            throw $exception;
         } catch (Throwable $exception) {
             report($exception);
             $diagnosticReference = (string) Str::uuid();
