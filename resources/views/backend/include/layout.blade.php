@@ -377,6 +377,7 @@
             fallbackRefreshTimer = window.setInterval(() => {
                 void loadPending();
                 void refreshHeaderChatNotifications();
+                window.dispatchEvent(new Event('admin:recovery-tick'));
             }, 30000);
         };
         const stopRealtimeFallback = () => {
@@ -387,6 +388,7 @@
             if (!document.hidden) {
                 void loadPending();
                 void refreshHeaderChatNotifications();
+                window.dispatchEvent(new Event('admin:recovery-tick'));
             }
         });
         if (config.driver === 'pusher' && config.configured && config.key && window.Pusher) {
@@ -410,6 +412,7 @@
                             void refreshHeaderChatNotifications();
                         } else {
                             startRealtimeFallback();
+                            window.dispatchEvent(new Event('admin:recovery-tick'));
                         }
                     });
                 }
@@ -430,6 +433,9 @@
                     void loadPending();
                     void refreshHeaderChatNotifications();
                 }
+                window.dispatchEvent(new CustomEvent('admin:broadcast-state', {
+                    detail: {current: client.connection.state}
+                }));
             } catch (error) {
                 console.error('Admin Pusher realtime connection failed.', error);
                 startRealtimeFallback();
