@@ -22,6 +22,22 @@
     </header>
 @endsection
 @section('content')
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="live_status_filter">Live presence</label>
+                    <select class="form-select" id="live_status_filter" name="live_status">
+                        <option value="">All clients</option>
+                        <option value="active" @selected(($liveStatus ?? '') === 'active')>Active clients</option>
+                        <option value="inactive" @selected(($liveStatus ?? '') === 'inactive')>Inactive clients</option>
+                    </select>
+                </div>
+                <div class="col-auto"><button class="btn btn-primary" type="submit">Apply</button></div>
+                <div class="col-auto"><a class="btn btn-light border" href="{{ route('admin.users.index') }}">Reset</a></div>
+            </form>
+        </div>
+    </div>
     <div class="card">
         <div class="card-body">
             <table id="datatablesSimple">
@@ -33,6 +49,7 @@
                         <th>City</th>
                         <th>Balance</th>
                         <th>Status</th>
+                        <th>Live Presence</th>
                         <th>Created At</th>
                         <th>Actions</th>
                     </tr>
@@ -72,6 +89,15 @@
                                 @else
                                     <span class="badge bg-danger-soft text-danger">Blocked</span>
                                 @endif
+                            </td>
+                            <td data-live-status-cell="{{ $user->id }}">
+                                <span class="badge {{ $user->live_status === 'active' ? 'bg-success' : 'bg-secondary' }}"
+                                    data-live-status="{{ $user->live_status ?? 'inactive' }}">
+                                    {{ ucfirst($user->live_status ?? 'inactive') }}
+                                </span>
+                                <small class="d-block text-muted" data-live-last-seen="{{ $user->id }}">
+                                    {{ $user->live_last_seen_at?->timezone(config('app.timezone'))->format('d M, h:i A') ?? '—' }}
+                                </small>
                             </td>
                             <td>{{ $user->created_at ? $user->created_at->format('d M Y') : 'N/A' }}</td>
                             <td>
