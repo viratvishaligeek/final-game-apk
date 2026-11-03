@@ -437,6 +437,67 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame('private-admin.payment-alerts.' . $alert->site_key, $paymentChannels[0]->name);
     }
 
+    public function test_player_presence_channel_only_authorizes_the_matching_account(): void
+    {
+        config([
+            'broadcasting.default' => 'pusher',
+            'broadcasting.connections.pusher.app_id' => 'test-app',
+            'broadcasting.connections.pusher.key' => 'test-key',
+            'broadcasting.connections.pusher.secret' => 'test-secret',
+            'broadcasting.connections.pusher.options.cluster' => 'ap2',
+        ]);
+
+        $user = $this->makeUser('9876500091');
+        $otherUser = $this->makeUser('9876500092');
+        Auth::guard('sanctum')->setUser($user);
+
+        $request = Request::create('/api/broadcasting/auth', 'POST', [
+            'socket_id' => '123.456',
+            'channel_name' => 'presence-user-presence.' . $user->id,
+        ]);
+        $request->setUserResolver(fn ($guard = null) => Auth::guard($guard)->user());
+
+        $this->assertNotEmpty(Broadcast::auth($request));
+
+        $request->request->set('channel_name', 'presence-user-presence.' . $otherUser->id);
+        $this->expectException(AccessDeniedHttpException::class);
+        Broadcast::auth($request);
+    }
+
+    public function test_admin_presence_channel_is_restricted_to_users_in_the_selected_site(): void
+    {
+        config([
+            'broadcasting.default' => 'pusher',
+            'broadcasting.connections.pusher.app_id' => 'test-app',
+            'broadcasting.connections.pusher.key' => 'test-key',
+            'broadcasting.connections.pusher.secret' => 'test-secret',
+            'broadcasting.connections.pusher.options.cluster' => 'ap2',
+        ]);
+
+        $user = $this->makeUser('9876500093');
+        $admin = Admin::query()->create([
+            'name' => 'Presence Admin',
+            'email' => 'presence-admin@example.test',
+            'password' => 'test-password',
+            'status' => 'active',
+        ]);
+        Auth::guard('admin')->setUser($admin);
+        config(['sites.current_key' => $user->site_key]);
+
+        $request = Request::create('/broadcasting/auth', 'POST', [
+            'socket_id' => '123.456',
+            'channel_name' => 'presence-user-presence.' . $user->id,
+        ]);
+        $request->setUserResolver(fn ($guard = null) => Auth::guard($guard)->user());
+
+        $this->assertNotEmpty(Broadcast::auth($request));
+
+        config(['sites.current_key' => 'different-site']);
+        $request->request->set('channel_name', 'presence-user-presence.' . $user->id);
+        $this->expectException(AccessDeniedHttpException::class);
+        Broadcast::auth($request);
+    }
+
     public function test_admin_private_channel_authorization_rejects_a_different_site(): void
     {
         config([
