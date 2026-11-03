@@ -9,3 +9,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('admin.payment-alerts', function (\App\Models\Admin $admin) {
     return $admin->status === 'active';
 }, ['guards' => ['admin']]);
+
+Broadcast::channel('admin.user-presence', function (\App\Models\Admin $admin) {
+    return $admin->status === 'active';
+}, ['guards' => ['admin']]);
