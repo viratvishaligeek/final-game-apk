@@ -8,6 +8,8 @@ on:
       - feature/admin-bid-chat-realtime-ui-2026
       - feature/admin-bid-chat-realtime-followup-2026
       - feature/admin-game-activity-chat-refactor-2026
+      - continue/admin-realtime-architecture-2026
+  workflow_dispatch:
   pull_request:
     branches:
       - main
@@ -52,6 +54,8 @@ jobs:
       - name: Validate Composer manifest
         run: composer validate --no-check-publish
       - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Compile Admin Blade views
+        run: php artisan view:cache
       - run: php artisan migrate --force
       - name: Run payment monitoring tests
         if: github.head_ref != 'feature/admin-game-activity-chat-refactor-2026' && github.ref_name != 'feature/admin-game-activity-chat-refactor-2026'
