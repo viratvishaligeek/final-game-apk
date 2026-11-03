@@ -249,7 +249,7 @@
                     auth: {headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'}}
                 };
                 if (config.driver === 'reverb') {
-                    if (!config.host) throw new Error('Reverb is selected but REVERB_HOST is not configured.');
+                    throw new Error('Reverb is not installed in this Laravel dependency set. Use Pusher or install and validate laravel/reverb before selecting Reverb.');
                     // Reverb speaks the Pusher protocol. pusher-js requires a cluster
                     // option even when a custom Reverb host is supplied; this sentinel
                     // is not a Pusher account setting and is never read from PUSHER_*.
