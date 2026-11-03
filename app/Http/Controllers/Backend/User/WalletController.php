@@ -99,7 +99,7 @@ class WalletController extends Controller
             }
 
             return back()->withErrors($exception->errors())->withInput();
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             report($exception);
 
             if ($request->expectsJson()) {
