@@ -16,18 +16,39 @@ class PaymentAlertRecorder
             return null;
         }
 
-        return $this->persist(
-            (int) $request->user_id,
-            (float) $request->amount,
-            (string) ($context['attempt_id'] ?? $request->client_txn_id ?? ('WALLET-' . $request->id)),
-            (int) $request->id,
-            $context
-        );
+        $attemptId = (string) ($context['attempt_id'] ?? $request->client_txn_id ?? ('WALLET-' . $request->id));
+        try {
+            return $this->persist(
+                (int) $request->user_id,
+                (float) $request->amount,
+                $attemptId,
+                (int) $request->id,
+                $context
+            );
+        } catch (Throwable $exception) {
+            Log::critical('Automatic payment alert could not be persisted.', [
+                'attempt_id' => $attemptId,
+                'user_id' => $request->user_id,
+                'diagnostic_reference' => $context['diagnostic_reference'] ?? null,
+                'exception_class' => get_class($exception),
+            ]);
+            return null;
+        }
     }
 
     public function recordAttempt(User $user, float $amount, string $attemptId, array $context = []): ?AdminPaymentAlert
     {
-        return $this->persist((int) $user->id, $amount, $attemptId, null, $context);
+        try {
+            return $this->persist((int) $user->id, $amount, $attemptId, null, $context);
+        } catch (Throwable $exception) {
+            Log::critical('Pre-request automatic payment alert could not be persisted.', [
+                'attempt_id' => $attemptId,
+                'user_id' => $user->id,
+                'diagnostic_reference' => $context['diagnostic_reference'] ?? null,
+                'exception_class' => get_class($exception),
+            ]);
+            return null;
+        }
     }
 
     private function persist(int $userId, float $amount, string $attemptId, ?int $walletRequestId, array $context): AdminPaymentAlert
@@ -74,7 +95,15 @@ class PaymentAlertRecorder
         $alert->save();
 
         if ($isNew) {
-            AdminPaymentFailedPaymentAlert::dispatch($alert->id);
+            try {
+                AdminPaymentFailedPaymentAlert::dispatch($alert->id);
+            } catch (Throwable $exception) {
+                Log::error('Automatic payment alert was saved but realtime broadcast failed.', [
+                    'alert_id' => $alert->id,
+                    'attempt_id' => $attemptId,
+                    'exception_class' => get_class($exception),
+                ]);
+            }
         }
 
         return $alert;
