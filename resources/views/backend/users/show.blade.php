@@ -19,6 +19,7 @@
                                     User #{{ $user->id }}
                                     <span class="mx-1">•</span>
                                     {{ $user->phone }}
+                                    <span class="badge bg-secondary ms-2" id="userRealtimePresence">Checking live status…</span>
                                 </div>
                             </div>
                         </div>
@@ -773,4 +774,40 @@ $(function () {
     });
 });
 </script>
+
+    <script>
+        $(function () {
+            const client = window.adminPusher;
+            const $presence = $('#userRealtimePresence');
+            if (!client || !$presence.length) return;
+
+            const channelName = 'presence-user-presence.' + @json($user->id);
+            const channel = client.subscribe(channelName);
+
+            const refreshPresence = function () {
+                let playerIsPresent = false;
+                if (channel.members && typeof channel.members.each === 'function') {
+                    channel.members.each(function (member) {
+                        if (member && member.type === 'player') playerIsPresent = true;
+                    });
+                }
+                $presence
+                    .text(playerIsPresent ? 'Online now' : 'Offline')
+                    .toggleClass('bg-success', playerIsPresent)
+                    .toggleClass('bg-secondary', !playerIsPresent);
+            };
+
+            channel.bind('pusher:subscription_succeeded', refreshPresence);
+            channel.bind('pusher:member_added', refreshPresence);
+            channel.bind('pusher:member_removed', refreshPresence);
+
+            const cleanupPresence = function () {
+                channel.unbind('pusher:subscription_succeeded', refreshPresence);
+                channel.unbind('pusher:member_added', refreshPresence);
+                channel.unbind('pusher:member_removed', refreshPresence);
+                client.unsubscribe(channelName);
+            };
+            window.addEventListener('pagehide', cleanupPresence, { once: true });
+        });
+    </script>
 @endsection
