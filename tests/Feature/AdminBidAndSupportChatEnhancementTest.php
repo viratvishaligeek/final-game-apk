@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Controllers\Backend\Game\BiddingDeskController;
 use App\Http\Controllers\Backend\SupportChatController;
+use App\Http\Controllers\Backend\User\UserController;
 use App\Models\Admin;
 use App\Models\Bid;
 use App\Models\Game;

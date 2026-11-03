@@ -158,7 +158,7 @@ class UserController extends Controller
                 'id' => $bid->id,
                 'order_no' => $bid->order_no,
                 'game_name' => $bid->game?->name ?? 'Game Deleted',
-                'game_date' => $bid->game_date ? \\Illuminate\\Support\\Carbon::parse($bid->game_date)->format('d M Y') : '-',
+                'game_date' => $bid->game_date ? \Illuminate\Support\Carbon::parse($bid->game_date)->format('d M Y') : '-',
                 'type' => $bid->type,
                 'number' => $bid->number,
                 'amount' => round((float) $bid->amount, 2),
