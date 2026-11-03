@@ -137,6 +137,7 @@
     <script>
         window.ADMIN_PAYMENT_ALERT_BROADCAST = {
             driver: @json(config('broadcasting.default')),
+            configured: @json(filled(config('broadcasting.connections.pusher.app_id')) && filled(config('broadcasting.connections.pusher.key')) && filled(config('broadcasting.connections.pusher.secret')) && filled(config('broadcasting.connections.pusher.options.cluster'))),
             key: @json(config('broadcasting.connections.' . config('broadcasting.default') . '.key')),
             cluster: @json(config('broadcasting.connections.pusher.options.cluster') ?? null),
             host: @json(config('broadcasting.connections.pusher.options.host') ?? null),
@@ -387,7 +388,7 @@
                 void refreshHeaderChatNotifications();
             }
         });
-        if (config.driver === 'pusher' && config.key && window.Pusher) {
+        if (config.driver === 'pusher' && config.configured && config.key && window.Pusher) {
             try {
                 if (!config.cluster) throw new Error('Pusher is selected but PUSHER_APP_CLUSTER is missing.');
                 const options = {
