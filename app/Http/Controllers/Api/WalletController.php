@@ -647,9 +647,10 @@ class WalletController extends Controller
                 report($exception);
                 app(PaymentAlertRecorder::class)->record($walletRequest, [
                     'stage' => 'payment_verification_exception',
-                    'category' => $exception instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR',
+                    'category' => $exception instanceof PaymentGatewayVerificationException ? $exception->category : ($exception instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR'),
                     'message' => $exception->getMessage(),
-                    'error_code' => 'VERIFICATION_EXCEPTION',
+                    'error_code' => $exception instanceof PaymentGatewayVerificationException ? $exception->errorCode : 'VERIFICATION_EXCEPTION',
+                    'http_status' => $exception instanceof PaymentGatewayVerificationException ? $exception->httpStatus : null,
                 ]);
             }
         }
@@ -718,9 +719,10 @@ class WalletController extends Controller
             report($exception);
             app(PaymentAlertRecorder::class)->record($walletRequest, [
                 'stage' => 'gateway_return_verification_exception',
-                'category' => $exception instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR',
+                'category' => $exception instanceof PaymentGatewayVerificationException ? $exception->category : ($exception instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR'),
                 'message' => $exception->getMessage(),
-                'error_code' => 'VERIFICATION_EXCEPTION',
+                'error_code' => $exception instanceof PaymentGatewayVerificationException ? $exception->errorCode : 'VERIFICATION_EXCEPTION',
+                'http_status' => $exception instanceof PaymentGatewayVerificationException ? $exception->httpStatus : null,
             ]);
         }
 
@@ -808,9 +810,10 @@ class WalletController extends Controller
             report($e);
             app(PaymentAlertRecorder::class)->record($walletRequest, [
                 'stage' => 'gateway_callback_verification_exception',
-                'category' => $e instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR',
+                'category' => $e instanceof PaymentGatewayVerificationException ? $e->category : ($e instanceof ConnectionException ? 'PAYMENT_GATEWAY_API_ERROR' : 'BACKEND_SYSTEM_ERROR'),
                 'message' => $e->getMessage(),
-                'error_code' => 'CALLBACK_VERIFICATION_EXCEPTION',
+                'error_code' => $e instanceof PaymentGatewayVerificationException ? $e->errorCode : 'CALLBACK_VERIFICATION_EXCEPTION',
+                'http_status' => $e instanceof PaymentGatewayVerificationException ? $e->httpStatus : null,
             ]);
 
             return response()->json([
