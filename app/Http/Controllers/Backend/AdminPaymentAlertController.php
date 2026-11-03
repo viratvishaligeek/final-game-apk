@@ -16,6 +16,11 @@ class AdminPaymentAlertController extends Controller
 
         $alerts = AdminPaymentAlert::query()
             ->with('user:id,name,phone')
+            ->addSelect([
+                'related_occurrences' => AdminPaymentAlert::query()->selectRaw('COUNT(*)')->whereColumn('fingerprint', 'admin_payment_alerts.fingerprint'),
+                'related_first_occurred_at' => AdminPaymentAlert::query()->selectRaw('MIN(first_occurred_at)')->whereColumn('fingerprint', 'admin_payment_alerts.fingerprint'),
+                'related_latest_occurred_at' => AdminPaymentAlert::query()->selectRaw('MAX(latest_occurred_at)')->whereColumn('fingerprint', 'admin_payment_alerts.fingerprint'),
+            ])
             ->whereDoesntHave('reads', fn ($query) => $query->where('admin_id', $adminId))
             ->orderBy('failed_at')
             ->limit(100)
@@ -38,6 +43,9 @@ class AdminPaymentAlertController extends Controller
                 'diagnostic_reference' => $alert->diagnostic_reference,
                 'severity' => $alert->severity,
                 'occurrence_count' => $alert->occurrence_count,
+                'related_occurrences' => $alert->related_occurrences,
+                'related_first_occurred_at' => $alert->related_first_occurred_at,
+                'related_latest_occurred_at' => $alert->related_latest_occurred_at,
                 'first_occurred_at' => $alert->first_occurred_at?->toIso8601String(),
                 'latest_occurred_at' => $alert->latest_occurred_at?->toIso8601String(),
                 'failed_at' => $alert->failed_at?->toIso8601String(),
