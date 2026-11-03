@@ -676,7 +676,7 @@
 @section('script')
 <script>
 $(function () {
-    const modalElement = document.getElementById('gameBidsModal');
+    const modalElement = $('#gameBidsModal').get(0);
     if (!modalElement || !window.bootstrap) return;
     const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
     const endpoint = @json(route('admin.users.bids', $user->id));
