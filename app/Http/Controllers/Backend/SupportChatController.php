@@ -85,16 +85,32 @@ class SupportChatController extends Controller
         ]);
         $adminId = (int) auth('admin')->id();
 
-        $conversation = DB::transaction(function () use ($validated, $adminId) {
-            // Lock the user row so simultaneous admin starts serialize before
-            // the unique support_conversations.user_id constraint is checked.
-            $user = User::query()->lockForUpdate()->findOrFail($validated['user_id']);
+        try {
+            $conversation = DB::transaction(function () use ($validated, $adminId) {
+                // Lock the user row so simultaneous admin starts serialize before
+                // the unique support_conversations.user_id constraint is checked.
+                $user = User::query()->lockForUpdate()->findOrFail($validated['user_id']);
 
-            return SupportConversation::query()->firstOrCreate(
-                ['user_id' => $user->id],
-                ['assigned_admin_id' => $adminId]
-            );
-        });
+                return SupportConversation::query()->firstOrCreate(
+                    ['user_id' => $user->id],
+                    ['assigned_admin_id' => $adminId]
+                );
+            });
+        } catch (\Illuminate\Database\QueryException $exception) {
+            // A player request can create the same conversation concurrently.
+            // Recover only when the unique row now exists; rethrow every other DB error.
+            if ($exception->getCode() !== '23000') {
+                throw $exception;
+            }
+
+            $conversation = SupportConversation::query()
+                ->where('user_id', $validated['user_id'])
+                ->first();
+
+            if (!$conversation) {
+                throw $exception;
+            }
+        }
 
         $conversation->load('user:id,name,phone');
 
@@ -115,7 +131,23 @@ class SupportChatController extends Controller
         ]);
         $phone = trim((string) ($validated['phone'] ?? ''));
 
+        // Compute the per-admin unread total across every conversation. The
+        // list below remains bounded for the inbox UI, but the global badge
+        // must not silently omit older conversations beyond that page.
+        $readMarkers = SupportConversationAdminRead::query()
+            ->select(['conversation_id', 'last_read_message_id'])
+            ->where('admin_id', $adminId);
+
+        $totalUnread = SupportMessage::query()
+            ->leftJoinSub($readMarkers, 'admin_reads', function ($join) {
+                $join->on('admin_reads.conversation_id', '=', 'support_messages.conversation_id');
+            })
+            ->where('support_messages.sender_type', 'user')
+            ->whereRaw('support_messages.id > COALESCE(admin_reads.last_read_message_id, 0)')
+            ->count('support_messages.id');
+
         return response()->json([
+            'meta' => ['total_unread_count' => (int) $totalUnread],
             'data' => SupportConversation::query()
                 ->with(['user:id,name,phone', 'latestMessage:id,conversation_id,body,sender_type,created_at'])
                 ->when($phone !== '', fn ($query) => $query->whereHas('user', fn ($userQuery) => $userQuery->where('phone', 'like', '%' . $phone . '%')))
@@ -135,6 +167,8 @@ class SupportChatController extends Controller
                     'user' => $conversation->user?->only(['id', 'name', 'phone']),
                     'unread_count' => $conversation->unread_count,
                     'last_message_at' => $conversation->messages_max_created_at,
+                    'last_message_id' => $conversation->latestMessage?->id,
+                    'last_message_sender' => $conversation->latestMessage?->sender_type,
                     'last_message_preview' => $conversation->latestMessage?->body
                         ?: ($conversation->latestMessage ? 'Attachment' : ''),
                 ]),

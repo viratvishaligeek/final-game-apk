@@ -6,17 +6,15 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
-Broadcast::channel('admin.payment-alerts', function (\App\Models\Admin $admin) {
-    return $admin->status === 'active';
-}, ['guards' => ['admin']]);
+$authorizeAdminSiteChannel = static function (\App\Models\Admin $admin, string $siteKey): bool {
+    $currentSiteKey = (string) config('sites.current_key', config('sites.default', 'play-online-khaiwal'));
 
-Broadcast::channel('admin.user-presence', function (\App\Models\Admin $admin) {
-    return $admin->status === 'active';
-}, ['guards' => ['admin']]);
+    return $admin->status === 'active' && hash_equals($currentSiteKey, $siteKey);
+};
 
-Broadcast::channel('admin.support-chat', function (\App\Models\Admin $admin) {
-    return $admin->status === 'active';
-}, ['guards' => ['admin']]);
+Broadcast::channel('admin.payment-alerts.{siteKey}', $authorizeAdminSiteChannel, ['guards' => ['admin']]);
+Broadcast::channel('admin.user-presence.{siteKey}', $authorizeAdminSiteChannel, ['guards' => ['admin']]);
+Broadcast::channel('admin.support-chat.{siteKey}', $authorizeAdminSiteChannel, ['guards' => ['admin']]);
 
 Broadcast::channel('users.{id}', function (\App\Models\User $user, $id) {
     return (int) $user->id === (int) $id;
