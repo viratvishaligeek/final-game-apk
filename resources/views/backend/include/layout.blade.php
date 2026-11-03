@@ -78,7 +78,7 @@
     <script src="{{ URL::asset('backend') }}/js/scripts.js"></script>
     @include('backend.partials.toastr')
 
-    @if (in_array(config('broadcasting.default'), ['pusher', 'reverb'], true))
+    @if (config('broadcasting.default') === 'pusher')
         <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
     @endif
     <script>
@@ -86,8 +86,8 @@
             driver: @json(config('broadcasting.default')),
             key: @json(config('broadcasting.connections.' . config('broadcasting.default') . '.key')),
             cluster: @json(config('broadcasting.connections.pusher.options.cluster') ?? null),
-            host: @json(config('broadcasting.connections.reverb.options.host') ?? null),
-            port: @json(config('broadcasting.connections.reverb.options.port') ?? 443),
+            host: @json(config('broadcasting.connections.pusher.options.host') ?? null),
+            port: @json(config('broadcasting.connections.pusher.options.port') ?? 443),
             forceTLS: @json(config('broadcasting.connections.pusher.options.useTLS', true))
         };
     </script>
@@ -104,24 +104,59 @@
         const queued = new Map();
         let activeAlert = null;
         let modalClosing = false;
-        let sound = null;
+        let paymentAlertActive = false;
+        const paymentAudio = new Audio('/sound/wow.wav');
+        const chatAudio = new Audio('/sound/wow.wav');
+        paymentAudio.loop = true;
+        const playedChatMessages = new Set();
+        const chatSoundEnabled = @json((string) setting('notification_sound_chat', 'default') !== 'mute');
+        const setSoundStatus = value => {
+            const label = document.getElementById('admin-sound-status');
+            if (label) label.textContent = value;
+        };
 
         const setText = (id, value) => {
             const element = document.getElementById(id);
             if (element) element.textContent = value == null || value === '' ? '—' : String(value);
         };
         const stopSound = () => {
-            if (!sound) return;
-            sound.pause();
-            sound.currentTime = 0;
-            sound = null;
+            paymentAudio.pause();
+            paymentAudio.currentTime = 0;
+            paymentAlertActive = false;
         };
         const startSound = () => {
-            stopSound();
-            sound = new Audio('/sound/wow.wav');
-            sound.loop = true;
-            sound.play().catch(() => {});
+            paymentAlertActive = true;
+            paymentAudio.currentTime = 0;
+            paymentAudio.play().catch(() => setSoundStatus('Click to enable sounds'));
         };
+        const playChatNotification = payload => {
+            if (!chatSoundEnabled) return;
+            const sender = payload?.sender || payload?.sender_type;
+            const messageId = Number(payload?.message_id || payload?.id || 0);
+            if (sender !== 'user' || !messageId || playedChatMessages.has(messageId)) return;
+            playedChatMessages.add(messageId);
+            if (playedChatMessages.size > 500) playedChatMessages.delete(playedChatMessages.values().next().value);
+            if (paymentAlertActive) return;
+            chatAudio.currentTime = 0;
+            chatAudio.play().catch(() => setSoundStatus('Click to enable sounds'));
+        };
+        document.getElementById('admin-enable-alert-sounds')?.addEventListener('click', async () => {
+            try {
+                for (const audio of [paymentAudio, chatAudio]) {
+                    audio.volume = 0;
+                    await audio.play();
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audio.volume = 1;
+                }
+                setSoundStatus('Sounds enabled');
+            } catch (error) {
+                paymentAudio.volume = 1;
+                chatAudio.volume = 1;
+                setSoundStatus('Sound blocked');
+            }
+        });
+        window.addEventListener('admin:incoming-chat-message', event => playChatNotification(event.detail || {}));
         const formatDate = value => {
             if (!value) return '—';
             const date = new Date(value);
@@ -132,6 +167,7 @@
             const [id, alert] = queued.entries().next().value;
             queued.delete(id);
             activeAlert = alert;
+            paymentAlertActive = true;
             setText('payment-alert-user', alert.user_name);
             setText('payment-alert-user-meta', 'User ID: ' + alert.user_id + (alert.phone ? ' · ' + alert.phone : ''));
             setText('payment-alert-transaction', alert.transaction_id || 'Not generated');
@@ -261,37 +297,74 @@
         void refreshHeaderChatNotifications();
 
         const config = window.ADMIN_PAYMENT_ALERT_BROADCAST || {};
-        if (['pusher', 'reverb'].includes(config.driver) && config.key && window.Pusher) {
+        let fallbackRefreshTimer = null;
+        const startRealtimeFallback = () => {
+            if (fallbackRefreshTimer) return;
+            fallbackRefreshTimer = window.setInterval(() => {
+                void loadPending();
+                void refreshHeaderChatNotifications();
+            }, 30000);
+        };
+        const stopRealtimeFallback = () => {
+            if (fallbackRefreshTimer) window.clearInterval(fallbackRefreshTimer);
+            fallbackRefreshTimer = null;
+        };
+        window.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                void loadPending();
+                void refreshHeaderChatNotifications();
+            }
+        });
+        if (config.driver === 'pusher' && config.key && window.Pusher) {
             try {
+                if (!config.cluster) throw new Error('Pusher is selected but PUSHER_APP_CLUSTER is missing.');
                 const options = {
+                    cluster: config.cluster,
                     forceTLS: config.forceTLS !== false,
                     authEndpoint: '/broadcasting/auth',
                     auth: {headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'}}
                 };
-                if (config.driver === 'reverb') {
-                    throw new Error('Reverb is not installed in this Laravel dependency set. Use Pusher or install and validate laravel/reverb before selecting Reverb.');
+                const client = window.adminPusher || new Pusher(config.key, options);
+                window.adminPusher = client;
+                if (!window.adminPusherLifecycleBound) {
+                    window.adminPusherLifecycleBound = true;
+                    client.connection.bind('state_change', state => {
+                        window.dispatchEvent(new CustomEvent('admin:broadcast-state', {detail: state}));
+                        if (state.current === 'connected') {
+                            stopRealtimeFallback();
+                            void loadPending();
+                            void refreshHeaderChatNotifications();
+                        } else {
+                            startRealtimeFallback();
+                        }
+                    });
                 }
-                if (!config.cluster) throw new Error('Pusher is selected but PUSHER_APP_CLUSTER is missing.');
-                options.cluster = config.cluster;
-                const client = new Pusher(config.key, options);
-                client.connection.bind('state_change', state => {
-                    window.dispatchEvent(new CustomEvent('admin:broadcast-state', {detail: state}));
-                });
-                client.subscribe('private-admin.payment-alerts').bind('payment.failed', addAlert);
-                client.subscribe('private-admin.user-presence').bind('presence.changed', payload => {
-                    window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
-                });
-                client.subscribe('private-admin.support-chat').bind('support.message.created', payload => {
-                    window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
-                });
-                client.channel('private-admin.support-chat').bind('support.message.created', () => {
+                if (!window.adminPusherChannelsBound) {
+                    window.adminPusherChannelsBound = true;
+                    client.subscribe('private-admin.payment-alerts').bind('payment.failed', addAlert);
+                    client.subscribe('private-admin.user-presence').bind('presence.changed', payload => {
+                        window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
+                    });
+                    client.subscribe('private-admin.support-chat').bind('support.message.created', payload => {
+                        playChatNotification(payload);
+                        window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
+                        void refreshHeaderChatNotifications();
+                    });
+                }
+                if (client.connection.state !== 'connected') startRealtimeFallback();
+                else {
+                    void loadPending();
                     void refreshHeaderChatNotifications();
-                });
+                }
             } catch (error) {
-                console.error('Admin payment alert realtime connection failed.', error);
+                console.error('Admin Pusher realtime connection failed.', error);
+                startRealtimeFallback();
             }
-        } else if (config.driver !== 'null') {
-            console.warn('Admin realtime broadcasting is not configured. Pending alerts will still be restored by HTTP.');
+        } else {
+            if (config.driver !== 'null') {
+                console.warn('Admin realtime broadcasting is not configured for Pusher. Pending alerts use the HTTP recovery fallback.');
+            }
+            startRealtimeFallback();
         }
     })();
     </script>
