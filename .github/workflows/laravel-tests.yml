@@ -5,6 +5,7 @@ on:
     branches:
       - feature/admin-user-live-ops-2026
       - feature/payment-error-monitoring-and-admin-js-fixes
+      - feature/admin-bid-chat-realtime-ui-2026
   pull_request:
     branches:
       - main
@@ -47,8 +48,20 @@ jobs:
           php-version: '8.4.1'
           extensions: bcmath, ctype, curl, dom, fileinfo, gd, intl, mbstring, mysqli, pdo_mysql, xml, zip
           coverage: none
+      - name: Validate Composer manifest
+        run: composer validate --no-check-publish
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: php artisan migrate --force
       - name: Run payment monitoring tests
         run: php artisan test tests/Unit/PaymentAlertRecorderTest.php tests/Feature/PaymentAlertPersistenceTest.php
-      - run: php artisan test
+      - name: Validate bid and chat PHP syntax
+        run: |
+          php -l app/Http/Controllers/Backend/Game/BiddingDeskController.php
+          php -l app/Services/BidAnalyticsService.php
+          php -l app/Http/Controllers/Backend/SupportChatController.php
+          php -l app/Events/SupportMessageCreated.php
+          php -l tests/Feature/AdminBidAndSupportChatEnhancementTest.php
+      - name: Run bid and chat regression tests
+        run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php --display-warnings
+      - name: Run complete Laravel test suite
+        run: php artisan test

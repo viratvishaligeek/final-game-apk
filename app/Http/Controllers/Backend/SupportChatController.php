@@ -85,16 +85,32 @@ class SupportChatController extends Controller
         ]);
         $adminId = (int) auth('admin')->id();
 
-        $conversation = DB::transaction(function () use ($validated, $adminId) {
-            // Lock the user row so simultaneous admin starts serialize before
-            // the unique support_conversations.user_id constraint is checked.
-            $user = User::query()->lockForUpdate()->findOrFail($validated['user_id']);
+        try {
+            $conversation = DB::transaction(function () use ($validated, $adminId) {
+                // Lock the user row so simultaneous admin starts serialize before
+                // the unique support_conversations.user_id constraint is checked.
+                $user = User::query()->lockForUpdate()->findOrFail($validated['user_id']);
 
-            return SupportConversation::query()->firstOrCreate(
-                ['user_id' => $user->id],
-                ['assigned_admin_id' => $adminId]
-            );
-        });
+                return SupportConversation::query()->firstOrCreate(
+                    ['user_id' => $user->id],
+                    ['assigned_admin_id' => $adminId]
+                );
+            });
+        } catch (\Illuminate\Database\QueryException $exception) {
+            // A player request can create the same conversation concurrently.
+            // Recover only when the unique row now exists; rethrow every other DB error.
+            if ($exception->getCode() !== '23000') {
+                throw $exception;
+            }
+
+            $conversation = SupportConversation::query()
+                ->where('user_id', $validated['user_id'])
+                ->first();
+
+            if (!$conversation) {
+                throw $exception;
+            }
+        }
 
         $conversation->load('user:id,name,phone');
 
@@ -135,6 +151,8 @@ class SupportChatController extends Controller
                     'user' => $conversation->user?->only(['id', 'name', 'phone']),
                     'unread_count' => $conversation->unread_count,
                     'last_message_at' => $conversation->messages_max_created_at,
+                    'last_message_id' => $conversation->latestMessage?->id,
+                    'last_message_sender' => $conversation->latestMessage?->sender_type,
                     'last_message_preview' => $conversation->latestMessage?->body
                         ?: ($conversation->latestMessage ? 'Attachment' : ''),
                 ]),

@@ -147,7 +147,7 @@ class BidAnalyticsService
             : Transaction::query()
                 ->whereIn('bid_id', $bidIds)
                 ->get(['id', 'bid_id'])
-                ->keyBy('bid_id');
+                ->groupBy('bid_id');
 
         $userNumbers = $userIds->isEmpty()
             ? collect()
@@ -171,7 +171,8 @@ class BidAnalyticsService
         $formatBid = static function (Bid $bid) use ($transactionIds): array {
             return [
                 'id' => $bid->id,
-                'transaction_id' => $transactionIds->get($bid->id)?->id,
+                'transaction_id' => $transactionIds->get($bid->id, collect())->first()?->id,
+                'transaction_ids' => $transactionIds->get($bid->id, collect())->pluck('id')->values()->all(),
                 'order_no' => $bid->order_no,
                 'user_id' => $bid->user_id,
                 'user_name' => $bid->user?->name ?? 'Unknown',
