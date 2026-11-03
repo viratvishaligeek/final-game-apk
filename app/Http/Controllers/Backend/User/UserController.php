@@ -16,11 +16,20 @@ class UserController extends Controller
         protected WalletService $walletService
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
+        $validated = $request->validate([
+            'live_status' => ['nullable', 'in:active,inactive'],
+        ]);
+
         $pageName = 'Users List';
-        $users = User::latest()->get();
-        return view('backend.users.index', compact('pageName', 'users'));
+        $liveStatus = $validated['live_status'] ?? null;
+        $users = User::query()
+            ->when($liveStatus, fn ($query) => $query->where('live_status', $liveStatus))
+            ->latest()
+            ->get();
+
+        return view('backend.users.index', compact('pageName', 'users', 'liveStatus'));
     }
 
     public function create()
