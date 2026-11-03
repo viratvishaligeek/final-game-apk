@@ -313,32 +313,28 @@
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js"
         crossorigin="anonymous"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userTable =
-                document.getElementById('totalUserTable');
-            const initializeTable = (table) => {
-                if (!table || typeof simpleDatatables === 'undefined' || table.dataset.simpleDatatablesInitialized === 'true') {
-                    return;
-                }
-                const headerCount = table.querySelectorAll('thead tr:first-child th').length;
+        $(function () {
+            const initializeTable = function ($table) {
+                if (!$table.length || typeof simpleDatatables === 'undefined' || $table.data('simpleDatatablesInitialized')) return;
+                const headerCount = $table.find('thead tr:first-child th').length;
                 if (!headerCount) return;
-                const invalidRow = Array.from(table.querySelectorAll('tbody tr')).some((row) => {
-                    const cells = row.querySelectorAll(':scope > th, :scope > td');
-                    return cells.length !== headerCount || Array.from(cells).some((cell) => cell.hasAttribute('colspan') || cell.hasAttribute('rowspan'));
+                const invalidRow = $table.find('tbody tr').toArray().some(function (row) {
+                    const $cells = $(row).children('th, td');
+                    return $cells.length !== headerCount || $cells.is('[colspan], [rowspan]');
                 });
                 if (invalidRow) {
-                    console.error('Dashboard table has inconsistent columns:', table.id);
+                    console.error('Dashboard table has inconsistent columns:', $table.attr('id'));
                     return;
                 }
-                table.dataset.simpleDatatablesInitialized = 'true';
-                new simpleDatatables.DataTable(table, {
+                $table.data('simpleDatatablesInitialized', true);
+                new simpleDatatables.DataTable($table.get(0), {
                     searchable: true,
                     perPage: 10,
                     perPageSelect: [10, 25, 50]
                 });
             };
-            initializeTable(userTable);
-            initializeTable(document.getElementById('datatablesSimple'));
+            initializeTable($('#totalUserTable'));
+            initializeTable($('#datatablesSimple'));
         });
     </script>
 @endsection
