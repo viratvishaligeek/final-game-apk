@@ -788,7 +788,7 @@ $(function () {
                 let playerIsPresent = false;
                 if (channel.members && typeof channel.members.each === 'function') {
                     channel.members.each(function (member) {
-                        if (member && member.type === 'player') playerIsPresent = true;
+                        if (member && member.info && member.info.type === 'player') playerIsPresent = true;
                     });
                 }
                 $presence
