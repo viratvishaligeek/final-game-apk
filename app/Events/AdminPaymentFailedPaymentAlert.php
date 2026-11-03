@@ -17,7 +17,11 @@ class AdminPaymentFailedPaymentAlert implements ShouldBroadcastNow, ShouldDispat
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('admin.payment-alerts')];
+        $alert = AdminPaymentAlert::query()->find($this->alertId);
+
+        return $alert
+            ? [new PrivateChannel('admin.payment-alerts.' . $alert->site_key)]
+            : [];
     }
 
     public function broadcastAs(): string
