@@ -891,8 +891,21 @@ class WalletController extends Controller
                 ? ($gatewayError['code'] ?? $gatewayError['error_code'] ?? 'VERIFICATION_HTTP_ERROR')
                 : 'VERIFICATION_HTTP_ERROR';
             $normalizedMessage = preg_replace('/[^a-z0-9]+/', ' ', mb_strtolower(trim((string) $message)));
+            $configurationMessages = [
+                'active plan not found please buy plan',
+                'no active plan',
+                'plan expired',
+                'subscription expired',
+                'invalid api key',
+                'invalid api credentials',
+                'api authentication failed',
+                'unauthorized',
+                'merchant inactive',
+                'merchant account inactive',
+                'account inactive',
+            ];
             $category = in_array($response->status(), [401, 403], true)
-                || $normalizedMessage === 'active plan not found please buy plan'
+                || in_array($normalizedMessage, $configurationMessages, true)
                 ? 'PAYMENT_GATEWAY_CONFIGURATION_ERROR'
                 : ($response->status() >= 500 ? 'PAYMENT_GATEWAY_API_ERROR' : 'PAYMENT_VERIFICATION_ERROR');
 
@@ -914,8 +927,21 @@ class WalletController extends Controller
                 : 'VERIFICATION_REJECTED';
             $normalizedMessage = preg_replace('/[^a-z0-9]+/', ' ', mb_strtolower(trim((string) $message)));
 
+            $configurationMessages = [
+                'active plan not found please buy plan',
+                'no active plan',
+                'plan expired',
+                'subscription expired',
+                'invalid api key',
+                'invalid api credentials',
+                'api authentication failed',
+                'unauthorized',
+                'merchant inactive',
+                'merchant account inactive',
+                'account inactive',
+            ];
             throw new PaymentGatewayVerificationException(
-                $normalizedMessage === 'active plan not found please buy plan'
+                in_array($normalizedMessage, $configurationMessages, true)
                     ? 'PAYMENT_GATEWAY_CONFIGURATION_ERROR'
                     : 'PAYMENT_VERIFICATION_ERROR',
                 (string) $errorCode,
