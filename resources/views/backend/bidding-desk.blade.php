@@ -706,7 +706,7 @@
                     });
                     const bids = document.createElement('div');
                     bids.className = 'small text-muted mt-2';
-                    bids.textContent = (user.matching_bids || []).map(bid => 'Bid #' + bid.id + (bid.transaction_id ? ' · Txn #' + bid.transaction_id : '') + ' · ₹' + formatMoney(bid.amount) + ' · ' + (bid.created_at || '-')).join(' | ');
+                    bids.textContent = (user.matching_bids || []).map(bid => 'Bid #' + bid.id + (bid.transaction_ids?.length ? ' · Txn #' + bid.transaction_ids.join(', #') : '') + ' · ₹' + formatMoney(bid.amount) + ' · ' + (bid.created_at || '-')).join(' | ');
                     card.append(heading, numbers, bids);
                     userContainer.appendChild(card);
                 });
