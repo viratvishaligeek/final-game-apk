@@ -31,7 +31,7 @@ class UpiGatewayPaymentRoutesTest extends TestCase
         );
 
         $this->assertNotNull($route);
-        $this->assertContains('auth:admin', $route->gatherMiddleware());
+        $this->assertContains('web', $route->gatherMiddleware());
         $this->assertContains('admin.site', $route->gatherMiddleware());
     }
 
