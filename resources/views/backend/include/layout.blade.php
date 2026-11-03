@@ -118,7 +118,7 @@
         };
         const startSound = () => {
             stopSound();
-            sound = new Audio('/notification-tune.wav');
+            sound = new Audio('/sound/wow.wav');
             sound.loop = true;
             sound.play().catch(() => {});
         };

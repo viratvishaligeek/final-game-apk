@@ -104,7 +104,7 @@
  });
  function notifyAdmin(message) {
    if (playChatSound) {
-     const audio = new Audio('/notification-tune.wav');
+     const audio = new Audio('/sound/wow.wav');
      audio.play().catch(() => {});
    }
    if ('Notification' in window && Notification.permission === 'granted') {
