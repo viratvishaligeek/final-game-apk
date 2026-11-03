@@ -7,6 +7,8 @@ use App\Models\AdminPaymentAlert;
 use App\Models\User;
 use App\Models\WalletRequest;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PaymentAlertRecorder
 {
