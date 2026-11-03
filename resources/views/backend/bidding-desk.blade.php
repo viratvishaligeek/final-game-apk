@@ -45,9 +45,9 @@
             Please select a game.
         </div>
         <div id="betSummary" class="row g-2 mb-3 d-none">
-            <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Jodi · <span id="summary-jodi-count">0</span> bets</small><strong id="summary-jodi-amount">₹0</strong><span class="small text-muted"><span id="summary-jodi-empty">0</span> unplayed numbers</span></div></div>
-            <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Haruf · <span id="summary-haruf-count">0</span> bets</small><strong id="summary-haruf-amount">₹0</strong><span class="small text-muted"><span id="summary-haruf-empty">0</span> unplayed numbers</span></div></div>
-            <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Crossing · <span id="summary-crossing-count">0</span> bets</small><strong id="summary-crossing-amount">₹0</strong><span class="small text-muted"><span id="summary-crossing-empty">0</span> unplayed numbers</span></div></div>
+            <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Jodi · <span id="summary-jodi-count">0</span> bets</small><strong id="summary-jodi-amount">₹0</strong><span class="small text-muted">Empty: <span id="summary-jodi-empty">0</span> numbers · ₹<span id="summary-jodi-empty-amount">0</span></span></div></div>
+            <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Haruf · <span id="summary-haruf-count">0</span> bets</small><strong id="summary-haruf-amount">₹0</strong><span class="small text-muted">Empty: <span id="summary-haruf-empty">0</span> numbers · ₹<span id="summary-haruf-empty-amount">0</span></span></div></div>
+            <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Crossing · <span id="summary-crossing-count">0</span> bets</small><strong id="summary-crossing-amount">₹0</strong><span class="small text-muted">Empty: <span id="summary-crossing-empty">0</span> numbers · ₹<span id="summary-crossing-empty-amount">0</span></span></div></div>
         </div>
         <div class="d-flex flex-wrap gap-3 small text-muted mb-3" aria-label="Investment legend">
             <span><i class="d-inline-block rounded border me-1" style="width:10px;height:10px;background:#f8f9fa"></i>Unplayed</span>
@@ -519,6 +519,7 @@
                     document.getElementById('summary-' + type + '-count').textContent = Number(item.total_bets || 0).toLocaleString('en-IN');
                     document.getElementById('summary-' + type + '-amount').textContent = '₹' + formatMoney(item.total_amount);
                     document.getElementById('summary-' + type + '-empty').textContent = Number(item.unplayed_numbers || 0);
+                    document.getElementById('summary-' + type + '-empty-amount').textContent = formatMoney(item.unplayed_amount || 0);
                 });
             }
 
