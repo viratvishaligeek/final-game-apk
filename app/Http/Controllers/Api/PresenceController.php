@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\UserPresenceSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class PresenceController extends Controller
 {
@@ -37,11 +36,9 @@ class PresenceController extends Controller
         $session->app_state = $validated['app_state'] ?? 'foreground';
 
         // Five-second client heartbeats; persist timestamps at most every 15 seconds.
-        $persistHeartbeat = Cache::add(
-            'presence-heartbeat:' . $validated['session_id'],
-            true,
-            $now->copy()->addSeconds(15)
-        );
+        $persistHeartbeat = !$session->exists
+            || !$session->last_seen_at
+            || $session->last_seen_at->lt($now->copy()->subSeconds(15));
 
         if (!$session->exists || $persistHeartbeat || $session->ended_at !== null) {
             $session->last_seen_at = $now;
@@ -77,7 +74,6 @@ class PresenceController extends Controller
 
         if ($session) {
             $session->forceFill(['ended_at' => now()])->save();
-            Cache::forget('presence-heartbeat:' . $validated['session_id']);
         }
 
         $anotherSessionIsActive = UserPresenceSession::query()
