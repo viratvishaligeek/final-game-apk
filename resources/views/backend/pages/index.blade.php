@@ -93,50 +93,35 @@
 
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            document.addEventListener('click', function(event) {
-                const button = event.target.closest('.delete-page-btn');
-
-                if (!button) {
-                    return;
-                }
-
-                event.preventDefault();
-
-                const pageId = button.dataset.id;
-                const pageName = button.dataset.name;
-                const deleteForm = document.getElementById('delete-form-' + pageId);
-
-                if (!deleteForm) {
-                    console.error('Delete form not found for page:', pageId);
-                    return;
-                }
-
-                if (typeof Swal === 'undefined') {
-                    alert('SweetAlert2 failed to load. Please refresh the page.');
-                    return;
-                }
-
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'Do you really want to delete "' + pageName +
-                        '"? This action cannot be undone.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e74a3b',
-                    cancelButtonColor: '#858796',
-                    confirmButtonText: 'Yes, delete it!',
-                    cancelButtonText: 'Cancel',
-                    reverseButtons: true,
-                    focusCancel: true
-                }).then(function(result) {
-                    if (result.isConfirmed) {
-                        deleteForm.submit();
-                    }
-                });
-            });
-
+$(function () {
+    $(document).on('click.adminDelete', '.delete-page-btn', function (event) {
+        event.preventDefault();
+        const $button = $(this);
+        const id = $button.data('id');
+        const form = document.getElementById('delete-form-' + id);
+        if (!form) {
+            console.error('Delete form not found for page:', id);
+            return;
+        }
+        if (typeof Swal === 'undefined') {
+            window.alert('SweetAlert2 failed to load. Please refresh the page.');
+            return;
+        }
+        Swal.fire({
+            title: 'Delete Page?',
+            text: 'Do you really want to delete this page? This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e74a3b',
+            cancelButtonColor: '#858796',
+            confirmButtonText: 'Yes, Delete!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            focusCancel: true
+        }).then(function (result) {
+            if (result.isConfirmed) form.submit();
         });
-    </script>
+    });
+});
+</script>
 @endsection
