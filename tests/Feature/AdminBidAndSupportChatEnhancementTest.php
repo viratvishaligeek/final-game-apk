@@ -21,6 +21,7 @@ use App\Models\UserPresenceSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Broadcast;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Illuminate\Support\Facades\Route;
@@ -498,7 +499,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             'last_seen_at' => now()->subSeconds(90),
         ]);
 
-        app(ExpireStaleUserPresence::class)->handle();
+        Artisan::call('presence:expire');
 
         $this->assertSame('inactive', $user->fresh()->live_status);
     }
