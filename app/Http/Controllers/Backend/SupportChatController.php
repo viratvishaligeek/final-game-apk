@@ -20,11 +20,17 @@ class SupportChatController extends Controller
         return view('backend.support-chat.index', compact('chatSoundEnabled'));
     }
 
-    public function conversations()
+    public function conversations(Request $request)
     {
+        $validated = $request->validate([
+            'phone' => ['sometimes', 'nullable', 'string', 'max:30'],
+        ]);
+        $phone = trim((string) ($validated['phone'] ?? ''));
+
         return response()->json([
             'data' => SupportConversation::query()
-                ->with(['user:id,name,phone'])
+                ->with(['user:id,name,phone', 'latestMessage:id,conversation_id,body,sender_type,created_at'])
+                ->when($phone !== '', fn ($query) => $query->whereHas('user', fn ($userQuery) => $userQuery->where('phone', 'like', '%' . $phone . '%')))
                 ->withCount(['messages as unread_count' => fn ($q) => $q->where('sender_type', 'user')->whereNull('read_at')])
                 ->withMax('messages', 'created_at')
                 ->orderByDesc('updated_at')
@@ -35,6 +41,8 @@ class SupportChatController extends Controller
                     'user' => $conversation->user?->only(['id', 'name', 'phone']),
                     'unread_count' => $conversation->unread_count,
                     'last_message_at' => $conversation->messages_max_created_at,
+                    'last_message_preview' => $conversation->latestMessage?->body
+                        ?: ($conversation->latestMessage ? 'Attachment' : ''),
                 ]),
         ]);
     }
