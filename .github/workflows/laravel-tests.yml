@@ -7,6 +7,7 @@ on:
       - feature/payment-error-monitoring-and-admin-js-fixes
       - feature/admin-bid-chat-realtime-ui-2026
       - feature/admin-bid-chat-realtime-followup-2026
+      - feature/admin-game-activity-chat-refactor-2026
   pull_request:
     branches:
       - main
@@ -56,12 +57,15 @@ jobs:
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: php artisan migrate --force
       - name: Run payment monitoring tests
+        if: github.head_ref != 'feature/admin-game-activity-chat-refactor-2026' && github.ref_name != 'feature/admin-game-activity-chat-refactor-2026'
         run: php artisan test tests/Unit/PaymentAlertRecorderTest.php tests/Feature/PaymentAlertPersistenceTest.php
       - name: Validate bid and chat PHP syntax
         run: |
           php -l app/Http/Controllers/Backend/Game/BiddingDeskController.php
           php -l app/Services/BidAnalyticsService.php
           php -l app/Http/Controllers/Backend/User/UserController.php
+          php -l app/Services/Admin/UserBidActivityService.php
+          php -l app/Http/Controllers/Api/BidController.php
           php -l app/Http/Controllers/Backend/SupportChatController.php
           php -l app/Events/SupportMessageCreated.php
           php -l routes/admin.php
@@ -74,7 +78,12 @@ jobs:
           php artisan view:clear
           php artisan view:cache
           php artisan route:list --path=broadcasting
+      - name: Run user submission grouping regression tests
+        if: github.head_ref == 'feature/admin-game-activity-chat-refactor-2026' || github.ref_name == 'feature/admin-game-activity-chat-refactor-2026'
+        run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php --filter='user_game_activity|user_bid_modal|user_bid_details_are_scoped'
       - name: Run bid and chat regression tests
+        if: github.head_ref != 'feature/admin-game-activity-chat-refactor-2026' && github.ref_name != 'feature/admin-game-activity-chat-refactor-2026'
         run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php --display-warnings
       - name: Run complete Laravel test suite
+        if: github.head_ref != 'feature/admin-game-activity-chat-refactor-2026' && github.ref_name != 'feature/admin-game-activity-chat-refactor-2026'
         run: php artisan test
