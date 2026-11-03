@@ -57,6 +57,7 @@ class AdminPaymentFailedPaymentAlert implements ShouldBroadcastNow, ShouldDispat
             'processing_stage' => $alert->processing_stage,
             'diagnostic_reference' => $alert->diagnostic_reference,
             'severity' => $alert->severity,
+            'fingerprint' => $alert->fingerprint,
             'occurrence_count' => $alert->occurrence_count,
             'related_occurrences' => $alert->related_occurrences,
             'related_first_occurred_at' => $alert->related_first_occurred_at,
