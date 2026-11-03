@@ -51,7 +51,7 @@
  const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
  const playChatSound = @json(($chatSoundEnabled ?? true) === true);
  let active = null, lastId = 0, busy = false, recordedFile = null, recorder = null, stream = null, chunks = [];
- let pollTimer = null, pollDelay = 5000;
+ let pollTimer = null, pollDelay = 30000;
  const conversations = document.getElementById('conversations');
  const messages = document.getElementById('messages');
  const status = document.getElementById('connection-status');
@@ -232,7 +232,7 @@
      await loadConversations();
      if(active) await loadMessages();
      else {status.textContent='Connected';status.className='badge bg-success';}
-     if(status.classList.contains('bg-success')) pollDelay=5000;
+     if(status.classList.contains('bg-success')) pollDelay=30000;
    } catch(e) {
      pollDelay=Math.min(30000,pollDelay*2);
      status.textContent='Reconnecting…'; status.className='badge bg-secondary';
