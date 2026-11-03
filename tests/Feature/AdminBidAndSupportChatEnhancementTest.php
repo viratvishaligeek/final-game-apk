@@ -351,6 +351,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             'socket_id' => '123.456',
             'channel_name' => 'private-admin.support-chat.play-online-khaiwal',
         ]);
+        $request->setUserResolver(fn ($guard = null) => Auth::guard($guard)->user());
 
         $this->expectException(AccessDeniedHttpException::class);
         Broadcast::auth($request);
