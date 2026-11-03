@@ -198,6 +198,9 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" id="modalLoadMore" class="btn btn-outline-primary btn-sm d-none">Load more users</button>
+                    </div>
                     <div id="modalEmpty" class="text-center text-muted py-4 d-none">
                         No bidding found.
                     </div>
@@ -596,85 +599,66 @@
                 });
             }
 
+            let activeDetails = null;
             async function openDetails(number, type = 'jodi') {
-                const gameId =
-                    gameSelect.value;
-                const date =
-                    dateSelect.value;
-                if (!gameId) {
-                    return;
-                }
-                document.getElementById(
-                    'modalNumber'
-                ).textContent = number;
-                document.getElementById(
-                    'modalBidTable'
-                ).innerHTML = `
-                <tr>
-            <td
-                    colspan="9"
-                    class="text-center py-5"
-                >
-                    <div class="spinner-border text-warning"></div>
-                        <div class="mt-2 text-muted">
-                        Loading...
-                    </div>
-                    </td>
-                    </tr>
-                        `;
-                document.getElementById(
-                    'modalEmpty'
-                ).classList.add('d-none');
+                if (!gameSelect.value) return;
+                activeDetails = { number, type, page: 1, lastPage: 1 };
+                document.getElementById('modalNumber').textContent = number;
+                document.getElementById('modalBidTable').replaceChildren();
+                document.getElementById('modalUserBreakdown').replaceChildren();
+                document.getElementById('modalEmpty').classList.add('d-none');
+                document.getElementById('modalLoadMore').classList.add('d-none');
                 bidModal.show();
+                await loadDetailsPage(1, false);
+            }
+
+            async function loadDetailsPage(page, append) {
+                if (!activeDetails) return;
+                const button = document.getElementById('modalLoadMore');
+                button.disabled = true;
+                if (!append) {
+                    document.getElementById('modalBidTable').innerHTML = '<tr><td colspan="9" class="text-center py-5"><div class="spinner-border text-warning"></div><div class="mt-2 text-muted">Loading...</div></td></tr>';
+                }
                 try {
-                    const params =
-                        new URLSearchParams({
-                            game_id: gameId,
-                            date: date,
-                            number: number,
-                            type: type,
-                        });
-                    const response =
-                        await fetch(
-                            `{{ route('admin.bidding-desk.details') }}?${params.toString()}`, {
-                                headers: {
-                                    'Accept': 'application/json',
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                }
-                            }
-                        );
-                    const result =
-                        await response.json();
-                    if (!response.ok) {
-                        throw new Error(
-                            result.message ||
-                            'Unable to load details.'
-                        );
-                    }
-                    renderModalDetails(
-                        result.data
+                    const params = new URLSearchParams({
+                        game_id: gameSelect.value,
+                        date: dateSelect.value,
+                        number: activeDetails.number,
+                        type: activeDetails.type,
+                        page: page,
+                        per_page: 50,
+                    });
+                    const response = await fetch(\`{{ route('admin.bidding-desk.details') }}?\${params.toString()}\`,
+                        { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }
                     );
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.message || 'Unable to load details.');
+                    activeDetails.page = result.data.pagination.current_page;
+                    activeDetails.lastPage = result.data.pagination.last_page;
+                    renderModalDetails(result.data, append);
+                    button.classList.toggle('d-none', activeDetails.page >= activeDetails.lastPage);
                 } catch (error) {
-                    console.error(error);
-                    document.getElementById(
-                        'modalBidTable'
-                    ).innerHTML = `
-                    <tr>
-                    <td
-                        colspan="9"
-                        class="text-center text-danger py-4"
-                    >
-                        ${escapeHtml(
-                            error.message ||
-                            'Unable to load details.'
-                        )}
-                    </td>
-                    </tr>
-                    `;
+                    const tbody = document.getElementById('modalBidTable');
+                    if (!append) tbody.replaceChildren();
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.colSpan = 9;
+                    cell.className = 'text-center text-danger py-4';
+                    cell.textContent = error.message || 'Unable to load details.';
+                    row.appendChild(cell);
+                    tbody.appendChild(row);
+                } finally {
+                    button.disabled = false;
                 }
             }
 
-            function renderModalDetails(data) {
+            document.getElementById('modalLoadMore').addEventListener('click', () => {
+                if (activeDetails && activeDetails.page < activeDetails.lastPage) {
+                    void loadDetailsPage(activeDetails.page + 1, true);
+                }
+            });
+
+            function renderModalDetails(data, append = false) {
                 document.getElementById(
                         'modalTotalBids'
                     ).textContent =
@@ -691,7 +675,7 @@
                         data.summary.total_amount
                     );
                 const userContainer = document.getElementById('modalUserBreakdown');
-                userContainer.replaceChildren();
+                if (!append) userContainer.replaceChildren();
                 (data.users || []).forEach(user => {
                     const card = document.createElement('section');
                     card.className = 'border rounded-3 p-3';
@@ -726,8 +710,8 @@
                     document.getElementById(
                         'modalBidTable'
                     );
-                tbody.innerHTML = '';
-                if (!data.bids.length) {
+                if (!append) tbody.replaceChildren();
+                if (!data.summary.total_bids) {
                     document.getElementById(
                         'modalEmpty'
                     ).classList.remove('d-none');
@@ -745,7 +729,7 @@
                             `<span class="badge bg-primary type-badge">Haruf</span>`;
                         tr.innerHTML = `
     <td>
-                        ${index + 1}
+                        Bid #${bid.id}${bid.transaction_id ? ' · Txn #' + bid.transaction_id : ''}
                     </td>
                         <td>
                     <div class="fw-bold">
