@@ -297,14 +297,12 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    No winners found for today.
-                                </td>
-                            </tr>
                         @endforelse
                     </tbody>
                 </table>
+                @if ($todayWinners->isEmpty())
+                    <div class="text-center text-muted py-4" role="status">No winners found for today.</div>
+                @endif
             </div>
         </div>
     </div>
@@ -318,22 +316,29 @@
         document.addEventListener('DOMContentLoaded', function() {
             const userTable =
                 document.getElementById('totalUserTable');
-            if (userTable && typeof simpleDatatables !== 'undefined') {
-                new simpleDatatables.DataTable(userTable, {
-                    searchable: true,
-                    perPage: 10,
-                    perPageSelect: [10, 25, 50]
+            const initializeTable = (table) => {
+                if (!table || typeof simpleDatatables === 'undefined' || table.dataset.simpleDatatablesInitialized === 'true') {
+                    return;
+                }
+                const headerCount = table.querySelectorAll('thead tr:first-child th').length;
+                if (!headerCount) return;
+                const invalidRow = Array.from(table.querySelectorAll('tbody tr')).some((row) => {
+                    const cells = row.querySelectorAll(':scope > th, :scope > td');
+                    return cells.length !== headerCount || Array.from(cells).some((cell) => cell.hasAttribute('colspan') || cell.hasAttribute('rowspan'));
                 });
-            }
-            const table =
-                document.getElementById('datatablesSimple');
-            if (table && typeof simpleDatatables !== 'undefined') {
+                if (invalidRow) {
+                    console.error('Dashboard table has inconsistent columns:', table.id);
+                    return;
+                }
+                table.dataset.simpleDatatablesInitialized = 'true';
                 new simpleDatatables.DataTable(table, {
                     searchable: true,
                     perPage: 10,
                     perPageSelect: [10, 25, 50]
                 });
-            }
+            };
+            initializeTable(userTable);
+            initializeTable(document.getElementById('datatablesSimple'));
         });
     </script>
 @endsection
