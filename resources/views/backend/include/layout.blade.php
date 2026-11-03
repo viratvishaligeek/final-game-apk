@@ -282,7 +282,7 @@
                 });
                 chatSnapshotInitialized = true;
                 const unread = (payload.data || []).filter(item => Number(item.unread_count) > 0);
-                const total = unread.reduce((sum, item) => sum + Number(item.unread_count || 0), 0);
+                const total = Number(payload.meta?.total_unread_count ?? unread.reduce((sum, item) => sum + Number(item.unread_count || 0), 0));
                 badge.textContent = total > 99 ? '99+' : String(total);
                 badge.classList.toggle('d-none', total === 0);
                 container.replaceChildren();
@@ -344,7 +344,6 @@
                     auth: {headers: {'X-CSRF-TOKEN': csrf, 'Accept': 'application/json'}}
                 };
                 const client = window.adminPusher || new Pusher(config.key, options);
-                window.adminPusher = client;
                 window.adminPusher = client;
                 if (!window.adminPusherLifecycleBound) {
                     window.adminPusherLifecycleBound = true;
