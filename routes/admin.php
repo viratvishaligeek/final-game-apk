@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Backend\AdminPushSubscriptionController;
 use App\Http\Controllers\Backend\AdminPaymentAlertController;
+use App\Http\Controllers\Backend\AdminPushSubscriptionController;
 use App\Http\Controllers\Backend\Auth\AuthController;
 use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\CommunityModerationController;
@@ -24,7 +24,11 @@ use App\Http\Controllers\Backend\User\WalletController;
 use App\Http\Controllers\Backend\User\WalletRequestController;
 use Illuminate\Support\Facades\Route;
 
-// ------------------Admin Routes-------------------------------------
+/*
+|--------------------------------------------------------------------------
+| Admin authentication
+|--------------------------------------------------------------------------
+*/
 Route::controller(AuthController::class)->group(function () {
     Route::get('/login', 'login')->name('login');
     Route::post('/try-login', 'tryLogin')->name('try_login');
@@ -32,67 +36,60 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('/recoverPassword', 'velidateEmail')->name('recoverPassword');
 });
 
-// After Login
-Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admin', 'admin.site']], function () {
-    Route::get('payment-alerts/pending', [AdminPaymentAlertController::class, 'pending'])->name('payment-alerts.pending');
-    Route::post('payment-alerts/{alert}/acknowledge', [AdminPaymentAlertController::class, 'acknowledge'])->name('payment-alerts.acknowledge');
-    Route::get('guessing', [CommunityModerationController::class, 'index'])->name('guessing.index');
-    Route::patch('guessing/{post}/moderate', [CommunityModerationController::class, 'update'])->name('guessing.moderate');
-    Route::post('guessing/policy', [CommunityModerationController::class, 'updatePolicy'])->name('guessing.policy');
-    Route::get('push-notifications', [PushNotificationController::class, 'index'])->name('push-notifications.index');
-
-    Route::post('push-subscribe', [AdminPushSubscriptionController::class, 'subscribe'])->name('push-subscribe');
-    Route::delete('push-subscribe', [AdminPushSubscriptionController::class, 'unsubscribe'])->name('push-unsubscribe');
-    Route::get('support-chat', [SupportChatController::class, 'index'])->name('support-chat.index');
-    Route::get('support-chat/conversations', [SupportChatController::class, 'conversations'])->name('support-chat.conversations');
-    Route::get('support-chat/users', [SupportChatController::class, 'searchUsers'])->name('support-chat.users');
-    Route::post('support-chat/conversations', [SupportChatController::class, 'startConversation'])->name('support-chat.start');
-    Route::get('support-chat/media/{message}', [SupportChatController::class, 'media'])->name('support-chat.media');
-    Route::get('support-chat/{conversation}/messages', [SupportChatController::class, 'messages'])->name('support-chat.messages');
-    Route::post('support-chat/{conversation}/send', [SupportChatController::class, 'send'])->name('support-chat.send');
-    Route::post('push-notifications/broadcast', [PushNotificationController::class, 'broadcast'])->name('push-notifications.broadcast');
+/*
+|--------------------------------------------------------------------------
+| Authenticated Admin workspace
+|--------------------------------------------------------------------------
+| Keep the existing URI and route-name contracts stable. All admin workspace
+| endpoints remain protected by the admin guard and active-site middleware.
+*/
+Route::prefix('admin')->as('admin.')->middleware(['auth:admin', 'admin.site'])->group(function () {
+    // Dashboard and account settings.
     Route::controller(DashboardController::class)->group(function () {
         Route::get('dashboard', 'dashboard')->name('dashboard');
-        Route::get('/profile', 'profile')->name('profile');
-        Route::post('/update-profile', 'update')->name('update-profile');
-        Route::post('/update-password', 'updatePassword')->name('update-password');
-        Route::get('/logout', 'logout')->name('logout');
+        Route::get('profile', 'profile')->name('profile');
+        Route::post('update-profile', 'update')->name('update-profile');
+        Route::post('update-password', 'updatePassword')->name('update-password');
+        Route::get('logout', 'logout')->name('logout');
     });
 
+    // Site-scoped payment alerts.
+    Route::get('payment-alerts/pending', [AdminPaymentAlertController::class, 'pending'])->name('payment-alerts.pending');
+    Route::post('payment-alerts/{alert}/acknowledge', [AdminPaymentAlertController::class, 'acknowledge'])->name('payment-alerts.acknowledge');
+
+    // Support conversations, search, media, and message actions.
+    Route::prefix('support-chat')->as('support-chat.')->controller(SupportChatController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('conversations', 'conversations')->name('conversations');
+        Route::get('users', 'searchUsers')->name('users');
+        Route::post('conversations', 'startConversation')->name('start');
+        Route::get('media/{message}', 'media')->name('media');
+        Route::get('{conversation}/messages', 'messages')->name('messages');
+        Route::post('{conversation}/send', 'send')->name('send');
+    });
+
+    // Push subscriptions and Admin-issued notifications.
+    Route::post('push-subscribe', [AdminPushSubscriptionController::class, 'subscribe'])->name('push-subscribe');
+    Route::delete('push-subscribe', [AdminPushSubscriptionController::class, 'unsubscribe'])->name('push-unsubscribe');
+    Route::get('push-notifications', [PushNotificationController::class, 'index'])->name('push-notifications.index');
+    Route::post('push-notifications/broadcast', [PushNotificationController::class, 'broadcast'])->name('push-notifications.broadcast');
+
+    // Community moderation.
+    Route::prefix('guessing')->as('guessing.')->controller(CommunityModerationController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::patch('{post}/moderate', 'update')->name('moderate');
+        Route::post('policy', 'updatePolicy')->name('policy');
+    });
+
+    // Game catalogue and result operations.
     Route::resource('games', GameController::class);
-    Route::resource('pages', PagesController::class);
-    Route::resource('home-page', HomePageController::class);
-
-    Route::get('users/{user}/bids', [UserController::class, 'bids'])->name('users.bids');
-    Route::resource('users', UserController::class);
-    Route::patch('/users/toggle-status/{id}', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
-
-    Route::controller(WalletController::class)->prefix('wallet')->name('wallet.')->group(function () {
-        Route::post('/debit/{id}', 'debit')->name('debit');
-        Route::post('/credit/{id}', 'credit')->name('credit');
-
-        Route::controller(WalletRequestController::class)->group(function () {
-            Route::get('/request-add', 'addRequests')->name('request-add');
-            Route::get('/request-withdraw', 'withdrawRequests')->name('request-withdraw');
-            Route::get('/request/{walletRequest}', 'show')->name('request-show');
-            Route::post('/request/{walletRequest}/approve', 'approve')->name('request.approve');
-            Route::post('/request/{walletRequest}/reject', 'reject')->name('request.reject');
-        });
-    });
     Route::controller(ResultController::class)->prefix('results')->name('results.')->group(function () {
         Route::get('/results', 'index')->name('index');
         Route::post('/results/save', 'storeOrUpdate')->name('storeOrUpdate');
         Route::post('/results/revert', 'revert')->name('revert');
         Route::post('/notifications-toggle', 'updateNotifications')->name('notifications-toggle');
     });
-
-    Route::resource('member', MemberController::class);
-    Route::resource('roles', RoleController::class);
-    Route::resource('faqs', FaqController::class);
-    Route::resource('banner', BannerController::class);
-
     Route::resource('winner', WinnerController::class);
-
     Route::controller(BiddingDeskController::class)->prefix('bidding-desk')->name('bidding-desk.')->group(function () {
         Route::get('/index', 'index')->name('index');
         Route::get('/data', 'data')->name('data');
@@ -101,14 +98,42 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth:admi
         Route::get('/profit-loss/transactions', 'profitLossTransactions')->name('profit_loss_transactions');
     });
 
+    // User accounts, roles, and staff members.
+    Route::get('users/{user}/bids', [UserController::class, 'bids'])->name('users.bids');
+    Route::resource('users', UserController::class);
+    Route::patch('users/toggle-status/{id}', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+    Route::resource('member', MemberController::class);
+    Route::resource('roles', RoleController::class);
+
+    // Wallet requests and manual balance adjustments.
+    Route::prefix('wallet')->name('wallet.')->group(function () {
+        Route::controller(WalletController::class)->group(function () {
+            Route::post('debit/{id}', 'debit')->name('debit');
+            Route::post('credit/{id}', 'credit')->name('credit');
+        });
+        Route::controller(WalletRequestController::class)->group(function () {
+            Route::get('request-add', 'addRequests')->name('request-add');
+            Route::get('request-withdraw', 'withdrawRequests')->name('request-withdraw');
+            Route::get('request/{walletRequest}', 'show')->name('request-show');
+            Route::post('request/{walletRequest}/approve', 'approve')->name('request.approve');
+            Route::post('request/{walletRequest}/reject', 'reject')->name('request.reject');
+        });
+    });
+
+    // CMS and content administration.
+    Route::resource('pages', PagesController::class);
+    Route::resource('home-page', HomePageController::class);
+    Route::resource('faqs', FaqController::class);
+    Route::resource('banner', BannerController::class);
     Route::resource('setting', SettingController::class);
 
-    Route::controller(MobileAppController::class)->prefix('mobile-app')->name('mobile-app.')->group(function () {
-        Route::get('/marque', 'marque')->name('marque');
-        Route::post('/marque', 'updateMarque')->name('update_marque');
-        Route::get('/limits', 'limits')->name('limits');
-        Route::post('/limits', 'updateLimits')->name('update_limits');
-        Route::get('/notice', 'notice')->name('notice');
-        Route::post('/notice', 'updateNotice')->name('update_notice');
+    // Mobile application configuration.
+    Route::prefix('mobile-app')->name('mobile-app.')->controller(MobileAppController::class)->group(function () {
+        Route::get('marque', 'marque')->name('marque');
+        Route::post('marque', 'updateMarque')->name('update_marque');
+        Route::get('limits', 'limits')->name('limits');
+        Route::post('limits', 'updateLimits')->name('update_limits');
+        Route::get('notice', 'notice')->name('notice');
+        Route::post('notice', 'updateNotice')->name('update_notice');
     });
 });

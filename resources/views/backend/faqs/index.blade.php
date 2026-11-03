@@ -91,49 +91,5 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            document.addEventListener('click', function(event) {
-                const button = event.target.closest('.delete-faq-btn');
-
-                if (!button) {
-                    return;
-                }
-
-                event.preventDefault();
-
-                const faqId = button.dataset.id;
-                const deleteForm = document.getElementById('delete-form-' + faqId);
-
-                if (!deleteForm) {
-                    console.error('Delete form not found for FAQ:', faqId);
-                    return;
-                }
-
-                if (typeof Swal === 'undefined') {
-                    alert('SweetAlert2 failed to load. Please refresh the page.');
-                    return;
-                }
-
-                Swal.fire({
-                    title: 'Delete FAQ?',
-                    text: 'Are you sure you want to delete this FAQ?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e74a3b',
-                    cancelButtonColor: '#858796',
-                    confirmButtonText: 'Yes, Delete!',
-                    cancelButtonText: 'Cancel',
-                    reverseButtons: true,
-                    focusCancel: true
-                }).then(function(result) {
-                    if (result.isConfirmed) {
-                        deleteForm.submit();
-                    }
-                });
-            });
-
-        });
-    </script>
+    
 @endsection

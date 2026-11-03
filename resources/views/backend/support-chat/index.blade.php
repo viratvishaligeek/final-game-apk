@@ -1,7 +1,23 @@
 @extends('backend.include.layout')
 
 @section('content')
-<div class="container-fluid px-4 py-4">
+<style>
+    .admin-chat-shell{min-height:76vh;background:#fff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(15,23,42,.06)}
+    .admin-chat-sidebar{background:#fff;border-right:1px solid #e5e7eb;min-height:76vh}
+    .admin-chat-sidebar .card-header{padding:1rem;background:#fff}
+    .admin-chat-inbox{max-height:calc(76vh - 220px);min-height:260px;overflow-y:auto}
+    .admin-chat-main{min-height:76vh;background:#efeae2}
+    .admin-chat-title{background:#f8fafc;border-bottom:1px solid #e5e7eb;padding:1rem}
+    #messages{height:calc(76vh - 150px)!important;min-height:360px;background-color:#efeae2!important;background-image:radial-gradient(rgba(15,23,42,.035) .7px,transparent .7px);background-size:14px 14px}
+    .admin-chat-bubble{max-width:min(78%,560px);padding:.65rem .85rem;border-radius:14px;box-shadow:0 1px 1px rgba(15,23,42,.08);overflow-wrap:anywhere}
+    .admin-chat-bubble--incoming{align-self:flex-start;background:#fff;border-top-left-radius:4px}
+    .admin-chat-bubble--outgoing{align-self:flex-end;background:#d9fdd3;border-top-right-radius:4px}
+    .admin-chat-search-results .list-group-item{border-left:0;border-right:0}
+    .admin-chat-search-results .list-group-item:first-child{border-top:0}
+    .admin-chat-search-results .list-group-item:last-child{border-bottom:0}
+    @media(max-width:767.98px){.admin-chat-shell{min-height:auto;border-radius:12px}.admin-chat-sidebar,.admin-chat-main{min-height:0}.admin-chat-inbox{max-height:260px;min-height:120px}#messages{height:52vh!important;min-height:300px}.admin-chat-bubble{max-width:90%}}
+</style>
+<div class="container-fluid px-3 px-lg-4 py-3">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
         <div>
             <h2 class="fw-bold mb-1">Live Support Chat</h2>
@@ -13,30 +29,30 @@
             <button type="button" class="btn btn-sm btn-outline-secondary" id="disable-admin-push">Disable admin push</button>
         </div>
     </div>
-    <div class="row g-3" style="min-height:65vh">
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
+    <div class="row g-0 admin-chat-shell">
+        <div class="col-12 col-lg-4 admin-chat-sidebar">
+            <div class="card h-100 border-0 rounded-0">
                 <div class="card-header bg-white">
                     <label for="user-search" class="form-label fw-bold mb-2">Find any registered user</label>
                     <input id="user-search" type="search" class="form-control form-control-sm mb-2"
                         placeholder="Search name, phone or user ID…" autocomplete="off">
-                    <div id="user-search-results" class="list-group mb-3" aria-live="polite">
+                    <div id="user-search-results" class="list-group mb-3 admin-chat-search-results" aria-live="polite">
                         <div class="list-group-item small text-muted">Search users to start a new conversation.</div>
                     </div>
                     <label for="conversation-search" class="form-label fw-bold mb-2">Existing conversations</label>
                     <input id="conversation-search" type="search" class="form-control form-control-sm"
                         placeholder="Search registered phone number…" inputmode="tel" autocomplete="off">
                 </div>
-                <div id="conversations" class="list-group list-group-flush overflow-auto" style="max-height:65vh"></div>
+                <div id="conversations" class="list-group list-group-flush admin-chat-inbox"></div>
             </div>
         </div>
-        <div class="col-md-8">
+        <div class="col-12 col-lg-8 admin-chat-main">
             <div class="card h-100 d-flex flex-column border-0 shadow-sm">
-                <div id="chat-title" class="card-header fw-bold bg-white">Select a conversation</div>
-                <div id="messages" class="card-body overflow-auto d-flex flex-column gap-2 bg-light" style="height:50vh">
+                <div id="chat-title" class="card-header fw-bold admin-chat-title">Select a conversation</div>
+                <div id="messages" class="card-body overflow-auto d-flex flex-column gap-2">
                     <p class="text-muted text-center my-auto">Choose a conversation to view messages.</p>
                 </div>
-                <form id="send-form" class="card-footer bg-white d-flex flex-wrap gap-2 align-items-center">
+                <form id="send-form" class="card-footer bg-white border-top d-flex flex-wrap gap-2 align-items-center p-3">
                     <input id="attachment" type="file" class="form-control form-control-sm" accept="image/*,video/mp4,video/webm,audio/*" style="max-width:190px">
                     <button id="record-voice" type="button" class="btn btn-outline-secondary btn-sm" title="Start voice recording"><i class="fas fa-microphone"></i> Record</button>
                     <span id="recording-status" class="small text-danger d-none">Recording… press Stop to attach</span>
@@ -70,10 +86,24 @@
  let realtimeConnected = false;
  let conversationSearchRequest = 0;
  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- async function request(url, options={}) {
-   const response = await fetch(url, {credentials:'same-origin', ...options, headers:{'X-CSRF-TOKEN':token, 'Accept':'application/json', ...(options.headers||{})}});
-   if (!response.ok) throw new Error('Request failed ('+response.status+')');
-   return response.json();
+ function request(url, options = {}) {
+   const body = options.body;
+   const isFormData = body instanceof FormData;
+   const isJson = typeof body === 'string';
+   return $.ajax({
+     url: url,
+     method: options.method || 'GET',
+     data: isJson ? body : body,
+     dataType: 'json',
+     processData: !isFormData,
+     contentType: isFormData ? false : (isJson ? 'application/json; charset=UTF-8' : undefined),
+     headers: {'X-CSRF-TOKEN': token, 'Accept': 'application/json', ...(options.headers || {})}
+   }).then(data => data, xhr => {
+     const error = new Error(xhr.responseJSON?.message || 'Request failed (' + xhr.status + ')');
+     error.status = xhr.status;
+     error.response = xhr.responseJSON;
+     throw error;
+   });
  }
  async function loadConversations(snapshot = null) {
    const requestId = ++conversationSearchRequest;
@@ -81,13 +111,13 @@
    const query = phone ? '?phone='+encodeURIComponent(phone) : '';
    const result = snapshot && !phone ? snapshot : await request(root+'/conversations'+query);
    if (requestId !== conversationSearchRequest) return;
-   conversations.replaceChildren();
+   $(conversations).empty();
    const items = Array.isArray(result.data) ? result.data : [];
    if (!items.length) {
      const empty = document.createElement('div');
      empty.className = 'list-group-item text-muted small py-3';
      empty.textContent = phone ? 'No conversations found for this phone number.' : 'No conversations yet.';
-     conversations.appendChild(empty);
+     $(conversations).append(empty);
      return;
    }
    items.forEach(c => {
@@ -95,23 +125,23 @@
      button.type='button'; button.className='list-group-item list-group-item-action '+(active===c.id?'active':'');
      button.innerHTML='<div class="d-flex justify-content-between gap-2"><span class="fw-bold">'+esc(c.user?.name || ('User #'+c.id))+'</span>'+(c.unread_count ? '<span class="badge bg-danger">'+c.unread_count+'</span>' : '')+'</div><small>'+esc(c.user?.phone || '')+'</small><div class="small text-muted text-truncate">'+esc(c.last_message_preview || 'No messages yet')+'</div>';
      button.onclick=()=>selectConversation(c);
-     conversations.appendChild(button);
+     $(conversations).append(button);
    });
  async function searchUsers() {
    const requestId = ++userSearchRequest;
    const term = userSearch ? userSearch.value.trim() : '';
-   userSearchResults.replaceChildren();
+   $(userSearchResults).empty();
    if (!term) {
      const empty = document.createElement('div');
      empty.className = 'list-group-item small text-muted';
      empty.textContent = 'Search by name, phone number or user ID.';
-     userSearchResults.appendChild(empty);
+     $(userSearchResults).append(empty);
      return;
    }
    const loading = document.createElement('div');
    loading.className = 'list-group-item small text-muted';
    loading.textContent = 'Searching registered users…';
-   userSearchResults.appendChild(loading);
+   $(userSearchResults).append(loading);
    try {
      const result = await request(root + '/users?q=' + encodeURIComponent(term));
      if (requestId !== userSearchRequest) return;
@@ -140,7 +170,7 @@
        meta.className = 'text-muted d-block';
        meta.textContent = (user.phone || 'No phone') + ' · User #' + user.id + ' · ' + (user.status || 'unknown');
        button.append(title, meta);
-       button.addEventListener('click', async () => {
+       $(button).on('click.adminChat', async () => {
          button.disabled = true;
          try {
            const started = await request(root + '/conversations', {
@@ -161,7 +191,7 @@
            button.disabled = false;
          }
        });
-       userSearchResults.appendChild(button);
+       $(userSearchResults).append(button);
      });
    } catch (error) {
      if (requestId !== userSearchRequest) return;
@@ -169,11 +199,11 @@
      const failure = document.createElement('div');
      failure.className = 'list-group-item small text-danger';
      failure.textContent = error.message || 'User search failed. Please retry.';
-     userSearchResults.appendChild(failure);
+     $(userSearchResults).append(failure);
    }
  }
  if (userSearch) {
-   userSearch.addEventListener('input', () => {
+   $(userSearch).on('input.adminChat', () => {
      if (userSearchTimer) clearTimeout(userSearchTimer);
      userSearchTimer = window.setTimeout(() => { void searchUsers(); }, 300);
    });
@@ -188,15 +218,15 @@
      }
    }
  }
- window.addEventListener('admin:support-message', event => {
-   const payload = event.detail || {};
+ $(window).on('admin:support-message.adminChat', (event, payloadArg) => {
+   const payload = event.originalEvent?.detail || event.detail || payloadArg || {};
    if (active && Number(payload.conversation_id) === Number(active)) {
      void loadMessages(false);
    }
  });
- window.addEventListener('admin:conversations-snapshot', event => {
+ $(window).on('admin:conversations-snapshot.adminChat', (event, snapshotArg) => {
    if (conversationSearch?.value.trim()) return;
-   void loadConversations(event.detail || null).catch(error => console.warn('Realtime inbox snapshot failed', error));
+   void loadConversations(event.originalEvent?.detail || event.detail || snapshotArg || null).catch(error => console.warn('Realtime inbox snapshot failed', error));
  });
  function notifyAdmin(message) {
    window.dispatchEvent(new CustomEvent('admin:incoming-chat-message', { detail: { ...message, sender: 'user' } }));
@@ -241,10 +271,10 @@
        }
        return '<div class="p-3 rounded-3 border '+(m.sender==='admin'?'align-self-end bg-warning-subtle':'align-self-start bg-white')+'" style="max-width:90%;overflow-wrap:anywhere">'+(m.body?'<div style="white-space:pre-wrap">'+esc(m.body)+'</div>':'')+media+'<small class="d-block text-muted mt-2">'+esc(m.created_at||'')+(m.read_at?' · Seen':'')+'</small></div>';
      }).join('');
-     if (reset || messages.querySelector('p.text-muted.text-center')) {
-       messages.innerHTML=rendered || '<p class="text-muted text-center my-auto">No messages yet. Send the first reply.</p>';
+     if (reset || $(messages).find('p.text-muted.text-center').length > 0) {
+       $(messages).html(rendered || '<p class="text-muted text-center my-auto">No messages yet. Send the first reply.</p>');
      } else if (rendered) {
-       messages.insertAdjacentHTML('beforeend', rendered);
+       $(messages).append(rendered);
      }
      if (all.length) lastId=Math.max(lastId,...all.map(m=>Number(m.id)||0));
      if (!reset && all.length >= 200) pendingMessageRefresh = true;
@@ -263,7 +293,7 @@
    }
  }
  if (conversationSearch) {
-   conversationSearch.addEventListener('input', () => {
+   $(conversationSearch).on('input.adminChat', () => {
      if (conversationSearchTimer) clearTimeout(conversationSearchTimer);
      conversationSearchTimer = window.setTimeout(() => {
        loadConversations().catch(error => {
@@ -274,7 +304,7 @@
      }, 250);
    });
  }
-  document.getElementById('enable-desktop-alerts').addEventListener('click', async () => {
+  $('#enable-desktop-alerts').on('click.adminChat', async () => {
    if (!('Notification' in window)) return alert('Notifications are not supported by this browser.');
    const permission = await Notification.requestPermission();
    if (permission !== 'granted') return alert('Notifications were not enabled. Please allow notifications in browser settings.');
@@ -300,7 +330,7 @@
      alert('Desktop alerts are enabled, but background push registration failed: ' + (error?.message || 'Unknown error'));
    }
  });
- document.getElementById('disable-admin-push').addEventListener('click', async () => {
+ $('#disable-admin-push').on('click.adminChat', async () => {
    if (!window.firebase || !window.FIREBASE_CONFIG || !window.FIREBASE_VAPID_KEY) return alert('Firebase web push configuration is not available.');
    try {
      const registration = await navigator.serviceWorker.getRegistration('/');
@@ -321,7 +351,7 @@
  });
  const recordButton = document.getElementById('record-voice');
  const recordingStatus = document.getElementById('recording-status');
- recordButton.addEventListener('click', async () => {
+ $(recordButton).on('click.adminChat', async () => {
    if (recorder && recorder.state === 'recording') {
      recorder.stop();
      recordButton.textContent='Record';
@@ -346,8 +376,8 @@
      recordingStatus.textContent='Recording… press Stop to attach'; recordingStatus.classList.remove('d-none');
    } catch(e) { alert('Microphone permission was denied or unavailable.'); }
  });
- document.getElementById('attachment').addEventListener('change',()=>{recordedFile=null;recordingStatus.classList.add('d-none');});
- document.getElementById('send-form').addEventListener('submit', async event=>{
+ $('#attachment').on('change.adminChat',()=>{recordedFile=null;recordingStatus.classList.add('d-none');});
+ $('#send-form').on('submit.adminChat', async event=>{
    event.preventDefault(); if(!active) return alert('Select a conversation first.');
    const body=document.getElementById('body'), file=document.getElementById('attachment');
    if(!body.value.trim()&&!file.files.length&&!recordedFile) return;
@@ -357,8 +387,9 @@
    try { await request(root+'/'+active+'/send',{method:'POST',body:data}); body.value=''; file.value=''; recordedFile=null; recordingStatus.classList.add('d-none'); await loadMessages(true); await loadConversations(); }
    catch(error){ alert(error.message); }
  });
- window.addEventListener('admin:broadcast-state', event => {
-   const connected = event.detail?.current === 'connected';
+ $(window).on('admin:broadcast-state.adminChat', (event, stateArg) => {
+   const state = event.originalEvent?.detail || event.detail || stateArg || {};
+   const connected = state.current === 'connected';
    realtimeConnected = connected;
    if (connected) {
      if (active) void loadMessages();
@@ -369,7 +400,7 @@
      status.className = 'badge bg-secondary';
    }
  });
- window.addEventListener('admin:recovery-tick', () => {
+ $(window).on('admin:recovery-tick.adminChat', () => {
    if (!realtimeConnected && active) void loadMessages(false);
  });
  loadConversations().then(()=>{
@@ -377,7 +408,7 @@
    status.textContent = realtimeConnected ? 'Live · Pusher' : 'Connected · recovery sync';
    status.className = 'badge bg-success';
  }).catch(()=>{status.textContent='Reconnecting…';status.className='badge bg-secondary';});
- window.addEventListener('beforeunload',()=>{ stream?.getTracks().forEach(t=>t.stop()); });
+ $(window).one('beforeunload.adminChat',()=>{ stream?.getTracks().forEach(t=>t.stop()); });
 })();
 </script>
 @endsection

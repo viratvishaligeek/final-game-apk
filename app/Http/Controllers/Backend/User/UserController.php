@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Backend\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bid;
 use App\Models\User;
+use App\Services\Admin\UserBidActivityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -97,12 +99,7 @@ class UserController extends Controller
     {
         $transactions = $user->transactions()->latest('id')->paginate(15, ['*'], 'transactions_page');
 
-        $gameBidStats = $user->bids()
-            ->with('game:id,name')
-            ->selectRaw('game_id, COUNT(*) as total_bids, COALESCE(SUM(amount), 0) as total_amount, MAX(id) as latest_bid_id')
-            ->groupBy('game_id')
-            ->orderByDesc('latest_bid_id')
-            ->get();
+        $gameBidStats = app(UserBidActivityService::class)->forUser($user);
 
         $walletStats = $user->completedTransactions()
             ->selectRaw("
@@ -141,16 +138,18 @@ class UserController extends Controller
     public function bids(Request $request, User $user)
     {
         $validated = $request->validate([
-            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'order_no' => ['required', 'string', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
 
+        // Scope by the route-bound user first; an order number from another
+        // account must never disclose its bids.
         $bids = $user->bids()
             ->with('game:id,name')
-            ->where('game_id', $validated['game_id'])
-            ->latest('id')
-            ->paginate($validated['per_page'] ?? 50)
+            ->where('order_no', $validated['order_no'])
+            ->orderBy('id')
+            ->paginate($validated['per_page'] ?? 100)
             ->withQueryString();
 
         return response()->json([
@@ -170,6 +169,7 @@ class UserController extends Controller
                 'current_page' => $bids->currentPage(),
                 'last_page' => $bids->lastPage(),
                 'total' => $bids->total(),
+                'total_amount' => round((float) $user->bids()->where('order_no', $validated['order_no'])->sum('amount'), 2),
             ],
         ]);
     }

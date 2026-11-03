@@ -168,7 +168,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         ]);
 
         $response = app(UserController::class)->bids(
-            Request::create('/admin/users/' . $user->id . '/bids', 'GET', ['game_id' => $game->id]),
+            Request::create('/admin/users/' . $user->id . '/bids', 'GET', ['order_no' => 'USER-SHOW-ORDER']),
             $user
         );
         $payload = $response->getData(true);
@@ -177,6 +177,98 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame('42', $payload['data'][0]['number']);
         $this->assertSame('03 Nov 2026', $payload['data'][0]['game_date']);
         $this->assertEquals(125, $payload['data'][0]['amount']);
+    }
+
+    public function test_user_game_activity_keeps_each_submission_separate_even_for_same_game_and_type(): void
+    {
+        $game = $this->makeGame();
+        $user = $this->makeUser('9876543215');
+
+        foreach ([
+            ['SUBMISSION-A', 'jodi', '25', 100],
+            ['SUBMISSION-A', 'jodi', '26', 50],
+            ['SUBMISSION-B', 'jodi', '25', 200],
+            ['SUBMISSION-C', 'haruf', 'ander-2', 75],
+        ] as [$orderNo, $type, $number, $amount]) {
+            Bid::query()->create([
+                'order_no' => $orderNo,
+                'user_id' => $user->id,
+                'game_id' => $game->id,
+                'game_date' => '2026-11-03',
+                'type' => $type,
+                'number' => $number,
+                'amount' => $amount,
+                'status' => 'pending',
+                'winning_amount' => 0,
+            ]);
+        }
+
+        $view = app(UserController::class)->show($user);
+        $groups = $view->getData()['gameBidStats'];
+
+        $this->assertCount(3, $groups);
+        $this->assertSame(
+            ['SUBMISSION-C', 'SUBMISSION-B', 'SUBMISSION-A'],
+            $groups->pluck('order_no')->all()
+        );
+        $this->assertSame([1, 1, 2], $groups->pluck('total_bids')->all());
+        $this->assertEquals([75, 200, 150], $groups->pluck('total_amount')->all());
+    }
+
+    public function test_historical_bids_without_order_numbers_remain_separate_activities(): void
+    {
+        $game = $this->makeGame();
+        $user = $this->makeUser('9876543218');
+
+        foreach ([['25', 40], ['26', 60]] as [$number, $amount]) {
+            Bid::query()->create([
+                'order_no' => '',
+                'user_id' => $user->id,
+                'game_id' => $game->id,
+                'game_date' => '2026-11-03',
+                'type' => 'jodi',
+                'number' => $number,
+                'amount' => $amount,
+                'status' => 'pending',
+                'winning_amount' => 0,
+            ]);
+        }
+
+        $view = app(UserController::class)->show($user);
+        $groups = $view->getData()['gameBidStats'];
+
+        $this->assertCount(2, $groups);
+        $this->assertSame([1, 1], $groups->pluck('total_bids')->all());
+        $this->assertEquals([60, 40], $groups->pluck('total_amount')->all());
+        $this->assertTrue($groups->every(fn ($group) => $group->order_no === ''));
+    }
+
+    public function test_user_bid_details_are_scoped_to_the_requested_submission(): void
+    {
+        $game = $this->makeGame();
+        $user = $this->makeUser('9876543216');
+        $otherUser = $this->makeUser('9876543217');
+
+        foreach ([[$user, 'OWN-SUBMISSION'], [$otherUser, 'OTHER-SUBMISSION']] as [$owner, $orderNo]) {
+            Bid::query()->create([
+                'order_no' => $orderNo,
+                'user_id' => $owner->id,
+                'game_id' => $game->id,
+                'game_date' => '2026-11-03',
+                'type' => 'jodi',
+                'number' => '25',
+                'amount' => 100,
+                'status' => 'pending',
+                'winning_amount' => 0,
+            ]);
+        }
+
+        $response = app(UserController::class)->bids(
+            Request::create('/admin/users/' . $user->id . '/bids', 'GET', ['order_no' => 'OTHER-SUBMISSION']),
+            $user
+        );
+
+        $this->assertCount(0, $response->getData(true)['data']);
     }
 
     public function test_admin_can_search_registered_users_without_existing_conversations(): void
@@ -205,6 +297,23 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
 
         $this->assertNotNull($route);
         $this->assertContains('auth:admin', $route->gatherMiddleware());
+    }
+
+    public function test_admin_route_reorganization_preserves_names_and_security_middleware(): void
+    {
+        foreach ([
+            'admin.support-chat.index',
+            'admin.users.bids',
+            'admin.wallet.request-add',
+            'admin.results.index',
+            'admin.bidding-desk.data',
+        ] as $routeName) {
+            $route = Route::getRoutes()->getByName($routeName);
+
+            $this->assertNotNull($route, "Missing Admin route name: {$routeName}");
+            $this->assertContains('auth:admin', $route->gatherMiddleware());
+            $this->assertContains('admin.site', $route->gatherMiddleware());
+        }
     }
 
     public function test_player_private_broadcast_auth_route_requires_sanctum(): void

@@ -126,6 +126,7 @@
         </div>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous">
     </script>
     <script src="{{ URL::asset('backend') }}/js/scripts.js"></script>
@@ -448,6 +449,58 @@
         }
     })();
     </script>
+
+        <script>
+            $(function () {
+                const deleteActions = {
+                    '.delete-game-btn': { title: 'Delete Game?', noun: 'game' },
+                    '.delete-banner-btn': { title: 'Delete Banner?', noun: 'banner' },
+                    '.delete-faq-btn': { title: 'Delete FAQ?', noun: 'FAQ' },
+                    '.delete-home-page': { title: 'Delete Section?', noun: 'section' },
+                    '.delete-page-btn': { title: 'Delete Page?', noun: 'page' },
+                    '.delete-user-btn': { title: 'Delete User?', noun: 'user' },
+                    '.delete-role-btn': { title: 'Delete Role?', noun: 'role' }
+                };
+
+                Object.entries(deleteActions).forEach(([selector, config]) => {
+                    $(document).on('click', selector, function (event) {
+                        event.preventDefault();
+                        const $button = $(this);
+                        const id = $button.data('id');
+                        const $form = $('#delete-form-' + id);
+                        if (!$form.length) {
+                            console.error('Delete form not found:', config.noun, id);
+                            return;
+                        }
+
+                        const name = $button.data('name') || $button.data('title') || '';
+                        const message = name
+                            ? 'Do you really want to delete "' + name + '"? This action cannot be undone.'
+                            : 'Are you sure you want to delete this ' + config.noun + '?';
+                        const submit = () => $form.get(0).submit();
+
+                        if (window.Swal && typeof window.Swal.fire === 'function') {
+                            window.Swal.fire({
+                                title: config.title,
+                                text: message,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#e74a3b',
+                                cancelButtonColor: '#858796',
+                                confirmButtonText: 'Yes, delete it!',
+                                cancelButtonText: 'Cancel',
+                                reverseButtons: true,
+                                focusCancel: true
+                            }).then(result => {
+                                if (result.isConfirmed) submit();
+                            });
+                        } else if (window.confirm(message)) {
+                            submit();
+                        }
+                    });
+                });
+            });
+        </script>
 
         @yield('script')
 </body>

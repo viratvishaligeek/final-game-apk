@@ -95,50 +95,5 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            document.addEventListener('click', function(event) {
-                const button = event.target.closest('.delete-role-btn');
-
-                if (!button) {
-                    return;
-                }
-
-                event.preventDefault();
-
-                const roleId = button.dataset.id;
-                const roleName = button.dataset.name;
-                const deleteForm = document.getElementById('delete-form-' + roleId);
-
-                if (!deleteForm) {
-                    console.error('Delete form not found for role:', roleId);
-                    return;
-                }
-
-                if (typeof Swal === 'undefined') {
-                    alert('SweetAlert2 failed to load. Please refresh the page.');
-                    return;
-                }
-
-                Swal.fire({
-                    title: 'Delete Role?',
-                    text: 'Are you sure you want to delete role "' + roleName + '"?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e74a3b',
-                    cancelButtonColor: '#858796',
-                    confirmButtonText: 'Yes, Delete!',
-                    cancelButtonText: 'Cancel',
-                    reverseButtons: true,
-                    focusCancel: true
-                }).then(function(result) {
-                    if (result.isConfirmed) {
-                        deleteForm.submit();
-                    }
-                });
-            });
-
-        });
-    </script>
+    
 @endsection

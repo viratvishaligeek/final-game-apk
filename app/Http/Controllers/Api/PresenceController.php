@@ -35,7 +35,7 @@ class PresenceController extends Controller
         $session->platform = $validated['platform'] ?? $session->platform;
         $session->app_state = $validated['app_state'] ?? 'foreground';
 
-        // Five-second client heartbeats; persist timestamps at most every 15 seconds.
+        // The client sends a heartbeat every 15 seconds; persist at most once per interval.
         $persistHeartbeat = !$session->exists
             || !$session->last_seen_at
             || $session->last_seen_at->lt($now->copy()->subSeconds(15));
