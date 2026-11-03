@@ -49,6 +49,11 @@
             <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Haruf · <span id="summary-haruf-count">0</span> bets</small><strong id="summary-haruf-amount">₹0</strong><span class="small text-muted"><span id="summary-haruf-empty">0</span> unplayed numbers</span></div></div>
             <div class="col-12 col-md-4"><div class="summary-card h-100"><small>Crossing · <span id="summary-crossing-count">0</span> bets</small><strong id="summary-crossing-amount">₹0</strong><span class="small text-muted"><span id="summary-crossing-empty">0</span> unplayed numbers</span></div></div>
         </div>
+        <div class="d-flex flex-wrap gap-3 small text-muted mb-3" aria-label="Investment legend">
+            <span><i class="d-inline-block rounded border me-1" style="width:10px;height:10px;background:#f8f9fa"></i>Unplayed</span>
+            <span><i class="d-inline-block rounded border me-1" style="width:10px;height:10px;background:#f8fbff;border-color:#b6d4fe!important"></i>Lower investment</span>
+            <span><i class="d-inline-block rounded border me-1" style="width:10px;height:10px;background:#fff5f5;border-color:#dc3545!important"></i>Higher investment</span>
+        </div>
         <div id="jodiSection" class="card border-0 shadow-sm rounded-4 mb-4 d-none">
             <div class="card-header bg-info text-white border-0 rounded-top-4 p-3">
                 <div class="d-flex justify-content-between align-items-center">
