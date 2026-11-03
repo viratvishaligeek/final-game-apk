@@ -95,6 +95,13 @@ class PaymentAlertRecorder
             'failed_at' => now(),
         ]);
         $alert->save();
+        Log::warning('Automatic payment error alert recorded.', [
+            'alert_id' => $alert->id,
+            'attempt_id' => $attemptId,
+            'diagnostic_reference' => $diagnosticReference,
+            'error_category' => $category,
+            'processing_stage' => $stage,
+        ]);
 
         if ($isNew) {
             try {
