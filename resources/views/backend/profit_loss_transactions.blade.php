@@ -14,6 +14,7 @@
             <div class="card-body">
                 <form method="GET" class="row g-3 align-items-end">
                     <input type="hidden" name="type" value="{{ $type }}">
+                    <input type="hidden" name="source" value="{{ $source }}">
                     <div class="col-12 col-md-4">
                         <label class="form-label" for="from">From date</label>
                         <input class="form-control" type="date" id="from" name="from" value="{{ $from }}">
