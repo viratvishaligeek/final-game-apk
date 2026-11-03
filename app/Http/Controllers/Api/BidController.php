@@ -216,9 +216,9 @@ class BidController extends Controller
                     ],
                 ]);
             }
-            $orderNo =
-                'BID-'
-                . now()->format('YmdHis');
+            // Use a collision-resistant submission identifier. A seconds-only
+            // timestamp could merge two independent requests made in one second.
+            $orderNo = 'BID-' . (string) Str::ulid();
 
             $transaction = $this->walletService->debit(
                 $lockedUser,
