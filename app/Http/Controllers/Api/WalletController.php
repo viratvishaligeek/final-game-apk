@@ -359,12 +359,39 @@ class WalletController extends Controller
             strtoupper(Str::random(8));
         $amount = (float) $validated['amount'];
 
-        $this->settings->validateRange(
-            $amount,
-            'min_deposit',
-            'max_deposit',
-            'amount'
-        );
+        try {
+            $this->settings->validateRange(
+                $amount,
+                'min_deposit',
+                'max_deposit',
+                'amount'
+            );
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            report($exception);
+            $diagnosticReference = (string) Str::uuid();
+            try {
+                app(PaymentAlertRecorder::class)->recordAttempt($user, $amount, $clientTxnId, [
+                    'stage' => 'payment_preflight_database',
+                    'category' => 'BACKEND_SYSTEM_ERROR',
+                    'message' => 'A backend settings/database error prevented payment validation.',
+                    'error_code' => 'PAYMENT_PREFLIGHT_FAILED',
+                    'diagnostic_reference' => $diagnosticReference,
+                ]);
+            } catch (Throwable $alertException) {
+                Log::critical('Unable to persist preflight payment alert.', [
+                    'diagnostic_reference' => $diagnosticReference,
+                    'attempt_id' => $clientTxnId,
+                    'user_id' => $user->id,
+                    'exception_class' => get_class($alertException),
+                ]);
+            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to start payment at this time. Please try again later.',
+            ], 500);
+        }
 
         try {
             $walletRequest = DB::transaction(function () use ($user, $clientTxnId, $validated) {
