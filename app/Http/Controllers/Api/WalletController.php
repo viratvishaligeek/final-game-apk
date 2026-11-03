@@ -852,7 +852,12 @@ class WalletController extends Controller
                 // Only a provider-verified automatic gateway credit failure
                 // creates an admin alert. The unique wallet_request_id makes
                 // repeated callbacks idempotent.
-                if ($requestRow->payment_method === 'gateway' && $requestRow->request_type === 'credit') {
+                $providerStatus = strtolower(trim((string) ($data['status'] ?? '')));
+                if (
+                    $requestRow->payment_method === 'gateway'
+                    && $requestRow->request_type === 'credit'
+                    && $providerStatus === 'failure'
+                ) {
                     $alert = AdminPaymentAlert::query()->firstOrCreate(
                         ['wallet_request_id' => $requestRow->id],
                         [
