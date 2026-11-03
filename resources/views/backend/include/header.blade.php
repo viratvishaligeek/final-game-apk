@@ -7,7 +7,12 @@
      <a class="navbar-brand pe-3 ps-4 ps-lg-2" href="{{ route('admin.dashboard') }}">{{ setting('title', 'Play Online Khaiwal') }} Admin</a>
 
      <ul class="navbar-nav align-items-center ms-auto">
-         <li class="nav-item dropdown no-caret d-none d-sm-block me-3 dropdown-notifications">
+         <li class="nav-item me-2">
+             <button type="button" class="btn btn-sm btn-outline-dark text-nowrap" id="admin-enable-alert-sounds" title="Enable notification sounds">
+                 <i data-feather="volume-2"></i><span class="d-none d-lg-inline ms-1" id="admin-sound-status">Enable sounds</span>
+             </button>
+         </li>
+         <li class="nav-item dropdown no-caret me-2 dropdown-notifications">
              <a class="btn btn-icon btn-transparent-dark dropdown-toggle position-relative" id="navbarDropdownMessages"
                  href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
                  aria-expanded="false" aria-label="Unread support messages">
