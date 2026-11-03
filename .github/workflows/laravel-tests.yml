@@ -64,6 +64,8 @@ jobs:
           php -l app/Services/Admin/GameResultSettlementService.php
           php -l app/Services/Presence/UserPresenceChannelAuthorizer.php
           php -l app/Services/Admin/AdminWalletCreditService.php
+          php -l app/Services/Admin/BiddingDeskProfitLossReportService.php
+          php -l app/Http/Controllers/Backend/Game/BiddingDeskController.php
           php -l app/Http/Controllers/Backend/User/WalletController.php
           php -l tests/Feature/AdminWalletCreditIdempotencyTest.php
           php -l app/Http/Controllers/Backend/Game/ResultController.php
