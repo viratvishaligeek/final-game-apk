@@ -45,6 +45,8 @@ jobs:
       - name: Validate Composer manifest
         run: composer validate --no-check-publish
       - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Compile Admin Blade views
+        run: php artisan view:cache
       - name: Check changed backend PHP files
         run: |
           php -l app/Http/Controllers/Api/PresenceController.php
