@@ -138,16 +138,23 @@ class UserController extends Controller
     public function bids(Request $request, User $user)
     {
         $validated = $request->validate([
-            'order_no' => ['required', 'string', 'max:100'],
+            'order_no' => ['nullable', 'required_without:game_id', 'string', 'max:100'],
+            'game_id' => ['nullable', 'required_without:order_no', 'integer', 'exists:games,id'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
 
         // Scope by the route-bound user first; an order number from another
-        // account must never disclose its bids.
-        $bids = $user->bids()
-            ->with('game:id,name')
-            ->where('order_no', $validated['order_no'])
+        // account must never disclose its bids. Keep the previous game_id
+        // filter available for any existing Admin integrations.
+        $bidQuery = $user->bids()->with('game:id,name');
+        if (!empty($validated['order_no'])) {
+            $bidQuery->where('order_no', $validated['order_no']);
+        } else {
+            $bidQuery->where('game_id', $validated['game_id']);
+        }
+
+        $bids = $bidQuery
             ->orderBy('id')
             ->paginate($validated['per_page'] ?? 100)
             ->withQueryString();
@@ -169,7 +176,10 @@ class UserController extends Controller
                 'current_page' => $bids->currentPage(),
                 'last_page' => $bids->lastPage(),
                 'total' => $bids->total(),
-                'total_amount' => round((float) $user->bids()->where('order_no', $validated['order_no'])->sum('amount'), 2),
+                'total_amount' => round((float) $user->bids()
+                    ->when(!empty($validated['order_no']), fn ($query) => $query->where('order_no', $validated['order_no']))
+                    ->when(empty($validated['order_no']), fn ($query) => $query->where('game_id', $validated['game_id']))
+                    ->sum('amount'), 2),
             ],
         ]);
     }
