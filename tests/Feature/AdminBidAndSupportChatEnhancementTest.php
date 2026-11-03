@@ -7,6 +7,7 @@ use App\Http\Controllers\Backend\SupportChatController;
 use App\Http\Controllers\Api\PresenceController;
 use App\Services\Presence\UserPresenceChannelAuthorizer;
 use App\Services\Admin\BiddingDeskProfitLossReportService;
+use App\Services\Admin\AdminDashboardService;
 use App\Http\Controllers\Backend\User\UserController;
 use App\Events\AdminPaymentFailedPaymentAlert;
 use App\Events\SupportMessageCreated;
@@ -440,6 +441,21 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         ]);
         $paymentChannels = (new AdminPaymentFailedPaymentAlert($alert->id))->broadcastOn();
         $this->assertSame('private-admin.payment-alerts.' . $alert->site_key, $paymentChannels[0]->name);
+    }
+
+    public function test_admin_dashboard_service_returns_site_scoped_summary_and_user_report(): void
+    {
+        $this->makeUser('9876500099');
+        $this->makeGame();
+
+        $report = app(AdminDashboardService::class)->build('not-a-valid-period');
+
+        $this->assertSame('7days', $report['period']);
+        $this->assertSame(1, $report['totalUsers']);
+        $this->assertSame(1, $report['totalGames']);
+        $this->assertSame(0, (int) $report['todayTotalBids']);
+        $this->assertCount(1, $report['totalUserTable']);
+        $this->assertSame('Not Played', $report['totalUserTable'][0]['playing_period']);
     }
 
     public function test_bidding_desk_profit_loss_report_service_preserves_game_totals(): void
