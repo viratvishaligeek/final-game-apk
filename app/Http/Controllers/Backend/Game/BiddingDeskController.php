@@ -7,6 +7,7 @@ use App\Models\Bid;
 use App\Models\Game;
 use App\Models\WalletRequest;
 use App\Models\Winner;
+use App\Services\Admin\BiddingDeskProfitLossReportService;
 use App\Models\Transaction;
 use App\Services\BidAnalyticsService;
 use Illuminate\Http\Request;
@@ -69,125 +70,15 @@ class BiddingDeskController extends Controller
     }
 
     // profitLoss
-    public function profitLoss(Request $request)
+    public function profitLoss(Request $request, BiddingDeskProfitLossReportService $reportService)
     {
-        $from = $request->get('from', Carbon::today()->toDateString());
-        $to = $request->get('to', Carbon::today()->toDateString());
-        $startDate = Carbon::parse($from)->toDateString();
-        $endDate = Carbon::parse($to)->toDateString();
-        $startDateTime = $startDate . ' 00:00:00';
-        $endDateTime   = $endDate . ' 23:59:59';
-        $totalUser = WalletRequest::where('request_type', 'credit')
-            ->where('status', 'approved')
-            ->whereBetween('created_at', [
-                $startDateTime,
-                $endDateTime
-            ])
-            ->sum('amount');
-        $totalMatch = WalletRequest::where('request_type', 'debit')
-            ->whereBetween('created_at', [
-                $startDateTime,
-                $endDateTime
-            ])
-            ->sum('amount');
+        $today = Carbon::today()->toDateString();
+        $from = $request->get('from', $today);
+        $to = $request->get('to', $today);
 
-        $totalTrans = WalletRequest::where('request_type', 'debit')
-            ->where('status', 'approved')
-            ->whereBetween('created_at', [
-                $startDateTime,
-                $endDateTime
-            ])
-            ->sum('amount');
-
-        // Direct admin wallet adjustments are kept separate from approved
-        // Add Money / withdrawal requests to prevent duplicate accounting.
-        $successfulStatuses = ['completed', 'success', 'successful'];
-        $adminCreditTotal = Transaction::query()
-            ->whereNotNull('admin_id')
-            ->where('type', 'credit')
-            ->whereIn('status', $successfulStatuses)
-            ->whereBetween('created_at', [$startDateTime, $endDateTime])
-            ->sum('amount');
-        $adminDebitTotal = Transaction::query()
-            ->whereNotNull('admin_id')
-            ->where('type', 'debit')
-            ->whereIn('status', $successfulStatuses)
-            ->whereBetween('created_at', [$startDateTime, $endDateTime])
-            ->sum('amount');
-
-        // Non-admin wallet ledger movements are shown separately from request
-        // summaries and game profit so they are not added twice to net P&L.
-        $userCreditTotal = Transaction::query()
-            ->whereNull('admin_id')
-            ->where('type', 'credit')
-            ->whereIn('status', $successfulStatuses)
-            ->whereBetween('created_at', [$startDateTime, $endDateTime])
-            ->sum('amount');
-        $userDebitTotal = Transaction::query()
-            ->whereNull('admin_id')
-            ->where('type', 'debit')
-            ->whereIn('status', $successfulStatuses)
-            ->whereBetween('created_at', [$startDateTime, $endDateTime])
-            ->sum('amount');
-
-        $games = Game::where('status', 'active')
-            ->orderBy('serial', 'asc')
-            ->get();
-
-        $bidTotals = Bid::query()
-            ->select(
-                'game_id',
-                DB::raw('SUM(amount) as total_bid')
-            )
-            ->whereBetween('game_date', [$startDate, $endDate])
-            ->groupBy('game_id')
-            ->pluck('total_bid', 'game_id');
-        $winTotals = Winner::query()
-            ->select(
-                'game_id',
-                DB::raw('SUM(winning_amount) as total_win')
-            )
-            ->whereBetween('game_date', [$startDate, $endDate])
-            ->groupBy('game_id')
-            ->pluck('total_win', 'game_id');
-        $gameStats = $games->map(function ($game) use ($bidTotals, $winTotals) {
-            $totalBid = (float) ($bidTotals->get($game->id) ?? 0);
-            $totalWin = (float) ($winTotals->get($game->id) ?? 0);
-            $profitLoss = $totalBid - $totalWin;
-            return [
-                'id'          => $game->id,
-                'name'        => $game->name,
-                'total_bid'   => $totalBid,
-                'total_win'   => $totalWin,
-                'profit_loss' => $profitLoss,
-            ];
-        });
-
-        $grandTotalBid = $gameStats->sum('total_bid');
-        $grandTotalWin = $gameStats->sum('total_win');
-        $grandProfitLoss = $grandTotalBid - $grandTotalWin;
-        return view('backend.profit_loss_history', compact(
-            'gameStats',
-            'totalUser',
-            'totalMatch',
-            'totalTrans',
-            'adminCreditTotal',
-            'adminDebitTotal',
-            'userCreditTotal',
-            'userDebitTotal',
-            'grandTotalBid',
-            'grandTotalWin',
-            'grandProfitLoss',
-            'from',
-            'to',
-            'startDate',
-            'endDate'
-        ));
+        return view('backend.profit_loss_history', $reportService->build($from, $to));
     }
 
-    /**
-     * Inspect completed direct admin wallet adjustments included in the P&L summary.
-     */
     public function profitLossTransactions(Request $request)
     {
         $validated = $request->validate([
