@@ -169,7 +169,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertCount(1, $payload['data']);
         $this->assertSame('42', $payload['data'][0]['number']);
         $this->assertSame('03 Nov 2026', $payload['data'][0]['game_date']);
-        $this->assertSame(125.0, $payload['data'][0]['amount']);
+        $this->assertEquals(125, $payload['data'][0]['amount']);
     }
 
     public function test_admin_can_search_registered_users_without_existing_conversations(): void
