@@ -23,6 +23,18 @@ class UpiGatewayPaymentRoutesTest extends TestCase
         $this->assertContains('throttle:30,1', $route->gatherMiddleware());
     }
 
+
+    public function test_broadcast_auth_route_is_registered_for_authenticated_admin_sessions(): void
+    {
+        $route = collect(Route::getRoutes()->getRoutes())->first(
+            fn ($candidate) => $candidate->uri() === 'broadcasting/auth'
+        );
+
+        $this->assertNotNull($route);
+        $this->assertContains('auth:admin', $route->gatherMiddleware());
+        $this->assertContains('admin.site', $route->gatherMiddleware());
+    }
+
     public function test_gateway_status_endpoint_does_not_allow_anonymous_access(): void
     {
         $this->getJson('/api/v1/wallet/gateway/1/status')
