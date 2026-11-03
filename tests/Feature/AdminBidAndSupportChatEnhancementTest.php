@@ -5,6 +5,10 @@ namespace Tests\Feature;
 use App\Http\Controllers\Backend\Game\BiddingDeskController;
 use App\Http\Controllers\Backend\SupportChatController;
 use App\Http\Controllers\Backend\User\UserController;
+use App\Events\AdminPaymentFailedPaymentAlert;
+use App\Events\SupportMessageCreated;
+use App\Events\UserPresenceChanged;
+use App\Models\AdminPaymentAlert;
 use App\Models\Admin;
 use App\Models\Bid;
 use App\Models\Game;
@@ -292,6 +296,34 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             ->conversations(Request::create('/admin/support-chat/conversations', 'GET'))
             ->getData(true);
         $this->assertSame(2, $secondPayload['meta']['total_unread_count']);
+    }
+
+    public function test_admin_realtime_events_are_scoped_to_their_site(): void
+    {
+        $user = $this->makeUser('9876500031');
+        $conversation = SupportConversation::query()->create(['user_id' => $user->id]);
+        $message = $conversation->messages()->create([
+            'sender_type' => 'user',
+            'sender_id' => $user->id,
+            'body' => 'Site-scoped support message',
+        ]);
+
+        $supportChannels = (new SupportMessageCreated($message->id))->broadcastOn();
+        $this->assertSame('private-admin.support-chat.' . $message->site_key, $supportChannels[0]->name);
+
+        $presenceChannels = (new UserPresenceChanged($user->id, 'active'))->broadcastOn();
+        $this->assertSame('private-admin.user-presence.' . $user->site_key, $presenceChannels[0]->name);
+
+        $alert = AdminPaymentAlert::query()->create([
+            'wallet_request_id' => null,
+            'user_id' => $user->id,
+            'amount' => 100,
+            'gateway' => 'test',
+            'failure_reason' => 'Test failure',
+            'failed_at' => now(),
+        ]);
+        $paymentChannels = (new AdminPaymentFailedPaymentAlert($alert->id))->broadcastOn();
+        $this->assertSame('private-admin.payment-alerts.' . $alert->site_key, $paymentChannels[0]->name);
     }
 
 }
