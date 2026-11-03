@@ -141,8 +141,8 @@
             setText('payment-alert-code', (alert.error_code || '—') + (alert.http_status ? ' · HTTP ' + alert.http_status : ''));
             setText('payment-alert-stage', alert.processing_stage);
             setText('payment-alert-diagnostic', alert.diagnostic_reference);
-            setText('payment-alert-occurrences', alert.occurrence_count || 1);
-            setText('payment-alert-occurrence-range', formatDate(alert.first_occurred_at) + ' – ' + formatDate(alert.latest_occurred_at));
+            setText('payment-alert-occurrences', (alert.related_occurrences || 1) + ' correlated attempts · ' + (alert.occurrence_count || 1) + ' events for this attempt');
+            setText('payment-alert-occurrence-range', formatDate(alert.related_first_occurred_at || alert.first_occurred_at) + ' – ' + formatDate(alert.related_latest_occurred_at || alert.latest_occurred_at));
             setText('payment-alert-amount', '₹' + Number(alert.amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
             setText('payment-alert-gateway', alert.gateway);
             setText('payment-alert-time', formatDate(alert.failed_at));
