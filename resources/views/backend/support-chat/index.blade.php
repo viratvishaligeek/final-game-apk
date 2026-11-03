@@ -16,7 +16,11 @@
     <div class="row g-3" style="min-height:65vh">
         <div class="col-md-4">
             <div class="card h-100 border-0 shadow-sm">
-                <div class="card-header fw-bold bg-white">Conversations</div>
+                <div class="card-header bg-white">
+                    <label for="conversation-search" class="form-label fw-bold mb-2">Conversations</label>
+                    <input id="conversation-search" type="search" class="form-control form-control-sm"
+                        placeholder="Search registered phone number…" inputmode="tel" autocomplete="off">
+                </div>
                 <div id="conversations" class="list-group list-group-flush overflow-auto" style="max-height:65vh"></div>
             </div>
         </div>
@@ -58,12 +62,14 @@
    return response.json();
  }
  async function loadConversations() {
-   const result = await request(root+'/conversations');
+   const phone = conversationSearch?.value.trim() || '';
+   const query = phone ? '?phone='+encodeURIComponent(phone) : '';
+   const result = await request(root+'/conversations'+query);
    conversations.innerHTML = '';
    (result.data || []).forEach(c => {
      const button = document.createElement('button');
      button.type='button'; button.className='list-group-item list-group-item-action '+(active===c.id?'active':'');
-     button.innerHTML='<div class="fw-bold">'+esc(c.user?.name || ('User #'+c.id))+'</div><small>'+esc(c.user?.phone || '')+'</small>'+(c.unread_count ? ' <span class="badge bg-danger">'+c.unread_count+'</span>' : '');
+     button.innerHTML='<div class="d-flex justify-content-between gap-2"><span class="fw-bold">'+esc(c.user?.name || ('User #'+c.id))+'</span>'+(c.unread_count ? '<span class="badge bg-danger">'+c.unread_count+'</span>' : '')+'</div><small>'+esc(c.user?.phone || '')+'</small><div class="small text-muted text-truncate">'+esc(c.last_message_preview || 'No messages yet')+'</div>';
      button.onclick=()=>selectConversation(c);
      conversations.appendChild(button);
    });
@@ -118,7 +124,11 @@
      console.warn('Support chat sync failed',e);
    } finally { busy=false; }
  }
- document.getElementById('enable-desktop-alerts').addEventListener('click', async () => {
+ conversationSearch?.addEventListener('input', () => {
+   if (conversationSearchTimer) clearTimeout(conversationSearchTimer);
+   conversationSearchTimer = setTimeout(() => loadConversations().catch(error => console.warn('Conversation search failed', error)), 250);
+ });
+  document.getElementById('enable-desktop-alerts').addEventListener('click', async () => {
    if (!('Notification' in window)) return alert('Notifications are not supported by this browser.');
    const permission = await Notification.requestPermission();
    if (permission !== 'granted') return alert('Notifications were not enabled. Please allow notifications in browser settings.');
