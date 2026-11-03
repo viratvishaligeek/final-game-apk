@@ -74,6 +74,13 @@
      conversations.appendChild(button);
    });
  }
+ window.addEventListener('admin:support-message', event => {
+   const payload = event.detail || {};
+   void loadConversations().catch(error => console.warn('Realtime inbox refresh failed', error));
+   if (active && Number(payload.conversation_id) === Number(active)) {
+     void loadMessages(false);
+   }
+ });
  function notifyAdmin(message) {
    if (playChatSound) {
      const audio = new Audio('/notification-tune.wav');
