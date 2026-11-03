@@ -20,7 +20,7 @@ Audit date: 2026-11-04. All 22 controllers under `app/Http/Controllers/Backend/`
 | `AuthController` | Admin login and password recovery | Review session rotation, throttling and recovery token lifecycle separately. |
 | `BannerController` | Banner CRUD | Conventional CRUD; no oversized workflow identified. |
 | `CommunityModerationController` | Post/reply moderation and policy | Review moderation policy and transaction boundaries; further extraction pending. |
-| `DashboardController` | Dashboard aggregates and user reports | Oversized aggregate/report queries remain candidates for query services. |
+| `DashboardController` | Dashboard aggregates and user reports | Dashboard summary and per-user report queries extracted to `AdminDashboardService`; profile/account actions remain in controller. |
 | `FaqController` | FAQ CRUD | Conventional CRUD; no oversized workflow identified. |
 | `Game\BiddingDeskController` | Bidding summaries, details and profit/loss | Profit/loss and detail aggregation remain candidates for query services; not fully extracted. |
 | `Game\GameController` | Game CRUD | Conventional CRUD; no oversized workflow identified. |
@@ -42,7 +42,7 @@ Audit date: 2026-11-04. All 22 controllers under `app/Http/Controllers/Backend/`
 
 1. Extract wallet request approve/reject workflows with transaction, ledger, and notification regression tests.
 2. Extract remaining BiddingDesk detail aggregation; profit/loss report aggregation is now in a service.
-3. Extract Dashboard report aggregation; preserve date boundaries, site scoping, and summary values.
+3. Review Dashboard service query performance and verify all report date boundaries against production data.
 4. Extract SettingController file/config persistence with rollback-safe storage handling.
 5. Extract SupportChat conversation query/send orchestration while preserving per-admin unread counts and site scoping.
 6. Review MobileAppController and WinnerController workflows after their existing validation and side-effect contracts are captured in tests.
