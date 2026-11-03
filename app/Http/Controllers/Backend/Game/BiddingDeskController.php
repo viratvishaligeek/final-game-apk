@@ -7,6 +7,7 @@ use App\Models\Bid;
 use App\Models\Game;
 use App\Models\WalletRequest;
 use App\Models\Winner;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -253,6 +254,23 @@ class BiddingDeskController extends Controller
                 $endDateTime
             ])
             ->sum('amount');
+
+        // Direct admin wallet adjustments are kept separate from approved
+        // Add Money / withdrawal requests to prevent duplicate accounting.
+        $successfulStatuses = ['completed', 'success', 'successful'];
+        $adminCreditTotal = Transaction::query()
+            ->whereNotNull('admin_id')
+            ->where('type', 'credit')
+            ->whereIn('status', $successfulStatuses)
+            ->whereBetween('created_at', [$startDateTime, $endDateTime])
+            ->sum('amount');
+        $adminDebitTotal = Transaction::query()
+            ->whereNotNull('admin_id')
+            ->where('type', 'debit')
+            ->whereIn('status', $successfulStatuses)
+            ->whereBetween('created_at', [$startDateTime, $endDateTime])
+            ->sum('amount');
+
         $games = Game::where('status', 'active')
             ->orderBy('serial', 'asc')
             ->get();
@@ -294,6 +312,8 @@ class BiddingDeskController extends Controller
             'totalUser',
             'totalMatch',
             'totalTrans',
+            'adminCreditTotal',
+            'adminDebitTotal',
             'grandTotalBid',
             'grandTotalWin',
             'grandProfitLoss',
