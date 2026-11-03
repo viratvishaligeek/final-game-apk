@@ -108,36 +108,5 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
-    <script>
-$(function () {
-    $(document).on('click.adminDelete', '.delete-user-btn', function (event) {
-        event.preventDefault();
-        const $button = $(this);
-        const id = $button.data('id');
-        const form = document.getElementById('delete-form-' + id);
-        if (!form) {
-            console.error('Delete form not found for user:', id);
-            return;
-        }
-        if (typeof Swal === 'undefined') {
-            window.alert('SweetAlert2 failed to load. Please refresh the page.');
-            return;
-        }
-        Swal.fire({
-            title: 'Delete User?',
-            text: 'Do you really want to delete this user?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e74a3b',
-            cancelButtonColor: '#858796',
-            confirmButtonText: 'Yes, Delete!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true,
-            focusCancel: true
-        }).then(function (result) {
-            if (result.isConfirmed) form.submit();
-        });
-    });
-});
-</script>
+    
 @endsection

@@ -62,7 +62,8 @@
                         <label class="small mb-1" for="image">Change Banner Image <small class="text-muted">(Leave empty
                                 to keep existing image)</small></label>
                         <input type="file" name="image" id="image"
-                            class="form-control @error('image') is-invalid @enderror" accept="image/*">
+                            class="form-control @error('image') is-invalid @enderror" accept="image/*"
+                            >
                         @error('image')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -83,14 +84,16 @@
 
 @section('script')
     <script>
-$(function () {
-    $('#image').on('change.adminBannerPreview', function () {
-        const file = this.files && this.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = event => $('#imagePreview').attr('src', event.target.result);
-        reader.readAsDataURL(file);
-    });
-});
-</script>
+        $(function () {
+            $('#image').on('change', function () {
+                const file = this.files && this.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    $('#imagePreview').attr('src', event.target.result);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    </script>
 @endsection

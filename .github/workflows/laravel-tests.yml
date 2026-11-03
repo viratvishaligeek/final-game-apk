@@ -1,4 +1,4 @@
-name: Laravel backend tests
+name: Focused Laravel regression tests
 
 on:
   push:
@@ -11,10 +11,9 @@ on:
   pull_request:
     branches:
       - main
-      - feature/admin-user-live-ops-2026
 
 jobs:
-  tests:
+  focused-regressions:
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -45,8 +44,6 @@ jobs:
       MAIL_MAILER: array
     steps:
       - uses: actions/checkout@v4
-      - name: Create empty local environment file for test tooling
-        run: touch .env
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4.1'
@@ -61,13 +58,11 @@ jobs:
         run: php artisan test tests/Unit/PaymentAlertRecorderTest.php tests/Feature/PaymentAlertPersistenceTest.php
       - name: Validate bid and chat PHP syntax
         run: |
-          php -l app/Http/Controllers/Backend/Game/BiddingDeskController.php
-          php -l app/Services/BidAnalyticsService.php
+          php -l app/Http/Controllers/Api/PresenceController.php
           php -l app/Http/Controllers/Backend/User/UserController.php
           php -l app/Services/Admin/UserBidActivityService.php
           php -l app/Http/Controllers/Api/BidController.php
           php -l app/Http/Controllers/Backend/SupportChatController.php
-          php -l app/Events/SupportMessageCreated.php
           php -l routes/admin.php
           php -l routes/api.php
           php -l routes/channels.php

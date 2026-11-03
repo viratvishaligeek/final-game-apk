@@ -215,6 +215,34 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertEquals([75, 200, 150], $groups->pluck('total_amount')->all());
     }
 
+    public function test_historical_bids_without_order_numbers_remain_separate_activities(): void
+    {
+        $game = $this->makeGame();
+        $user = $this->makeUser('9876543218');
+
+        foreach ([['25', 40], ['26', 60]] as [$number, $amount]) {
+            Bid::query()->create([
+                'order_no' => '',
+                'user_id' => $user->id,
+                'game_id' => $game->id,
+                'game_date' => '2026-11-03',
+                'type' => 'jodi',
+                'number' => $number,
+                'amount' => $amount,
+                'status' => 'pending',
+                'winning_amount' => 0,
+            ]);
+        }
+
+        $view = app(UserController::class)->show($user);
+        $groups = $view->getData()['gameBidStats'];
+
+        $this->assertCount(2, $groups);
+        $this->assertSame([1, 1], $groups->pluck('total_bids')->all());
+        $this->assertEquals([60, 40], $groups->pluck('total_amount')->all());
+        $this->assertTrue($groups->every(fn ($group) => $group->order_no === ''));
+    }
+
     public function test_user_bid_details_are_scoped_to_the_requested_submission(): void
     {
         $game = $this->makeGame();
@@ -269,6 +297,23 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
 
         $this->assertNotNull($route);
         $this->assertContains('auth:admin', $route->gatherMiddleware());
+    }
+
+    public function test_admin_route_reorganization_preserves_names_and_security_middleware(): void
+    {
+        foreach ([
+            'admin.support-chat.index',
+            'admin.users.bids',
+            'admin.wallet.request-add',
+            'admin.results.index',
+            'admin.bidding-desk.data',
+        ] as $routeName) {
+            $route = Route::getRoutes()->getByName($routeName);
+
+            $this->assertNotNull($route, "Missing Admin route name: {$routeName}");
+            $this->assertContains('auth:admin', $route->gatherMiddleware());
+            $this->assertContains('admin.site', $route->gatherMiddleware());
+        }
     }
 
     public function test_player_private_broadcast_auth_route_requires_sanctum(): void

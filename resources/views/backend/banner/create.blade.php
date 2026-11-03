@@ -60,7 +60,8 @@
                     <div class="mb-3">
                         <label class="small mb-1" for="image">Banner Image <span class="text-danger">*</span></label>
                         <input type="file" name="image" id="image"
-                            class="form-control @error('image') is-invalid @enderror" accept="image/*" required>
+                            class="form-control @error('image') is-invalid @enderror" accept="image/*" required
+                            >
                         @error('image')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -81,17 +82,17 @@
 
 @section('script')
     <script>
-$(function () {
-    $('#image').on('change.adminBannerPreview', function () {
-        const file = this.files && this.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = event => {
-            $('#imagePreview').attr('src', event.target.result);
-            $('#imagePreviewContainer').removeClass('d-none');
-        };
-        reader.readAsDataURL(file);
-    });
-});
-</script>
+        $(function () {
+            $('#image').on('change', function () {
+                const file = this.files && this.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    $('#imagePreview').attr('src', event.target.result);
+                    $('#imagePreviewContainer').removeClass('d-none');
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    </script>
 @endsection

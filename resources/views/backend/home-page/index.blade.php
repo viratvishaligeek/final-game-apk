@@ -137,36 +137,5 @@
     <script src="{{ URL::asset('backend') }}/js/datatables/datatables-simple-demo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-$(function () {
-    $(document).on('click.adminDelete', '.delete-home-page', function (event) {
-        event.preventDefault();
-        const $button = $(this);
-        const id = $button.data('id');
-        const form = document.getElementById('delete-form-' + id);
-        if (!form) {
-            console.error('Delete form not found for section:', id);
-            return;
-        }
-        if (typeof Swal === 'undefined') {
-            window.alert('SweetAlert2 failed to load. Please refresh the page.');
-            return;
-        }
-        Swal.fire({
-            title: 'Delete Section?',
-            text: 'Are you sure you want to delete this section?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e74a3b',
-            cancelButtonColor: '#858796',
-            confirmButtonText: 'Yes, Delete!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true,
-            focusCancel: true
-        }).then(function (result) {
-            if (result.isConfirmed) form.submit();
-        });
-    });
-});
-</script>
+    
 @endsection

@@ -100,31 +100,30 @@
 
 @section('script')
     <script>
-$(function () {
-    const $selectAll = $('#selectAll');
-    const $permissionCheckboxes = $('.permission-checkbox');
-    const $groupSelects = $('.group-select');
+        $(function () {
+            const $selectAll = $('#selectAll');
+            const $permissionCheckboxes = $('.permission-checkbox');
+            const $groupSelects = $('.group-select');
 
-    function updateSelectAllState() {
-        if ($selectAll.length) {
-            $selectAll.prop('checked', $permissionCheckboxes.length > 0 &&
-                $permissionCheckboxes.filter(':checked').length === $permissionCheckboxes.length);
-        }
-    }
+            function updateSelectAllState() {
+                if ($selectAll.length) {
+                    $selectAll.prop('checked', $permissionCheckboxes.toArray().every(cb => cb.checked));
+                }
+            }
 
-    $selectAll.on('change.adminRoles', function () {
-        const checked = $(this).is(':checked');
-        $permissionCheckboxes.add($groupSelects).prop('checked', checked);
-    });
+            $selectAll.on('change', function () {
+                const checked = $(this).prop('checked');
+                $permissionCheckboxes.add($groupSelects).prop('checked', checked);
+            });
 
-    $groupSelects.on('change.adminRoles', function () {
-        const groupSlug = String($(this).data('group') || '');
-        $('.group-item-' + groupSlug).prop('checked', $(this).is(':checked'));
-        updateSelectAllState();
-    });
+            $groupSelects.on('change', function () {
+                const groupSlug = $(this).data('group');
+                $('.group-item-' + groupSlug).prop('checked', $(this).prop('checked'));
+                updateSelectAllState();
+            });
 
-    $permissionCheckboxes.on('change.adminRoles', updateSelectAllState);
-    updateSelectAllState();
-});
-</script>
+            $permissionCheckboxes.on('change', updateSelectAllState);
+            updateSelectAllState();
+        });
+    </script>
 @endsection

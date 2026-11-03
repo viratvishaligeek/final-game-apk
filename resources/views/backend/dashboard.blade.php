@@ -313,15 +313,28 @@
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js"
         crossorigin="anonymous"></script>
     <script>
-$(function () {
-    function initializeTable(table) {
-        const $table = $(table);
-        if (!$table.length || typeof simpleDatatables === 'undefined' || $table.data('simpleDatatablesInitialized') === true) return;
-        const headerCount = $table.find('thead tr:first-child th').length;
-        if (!headerCount) return;
-        const invalidRow = $table.find('tbody tr').toArray().some(row => {
-            const $cells = $(row).children('th, td');
-            return $cells.length !== headerCount || $cells.is('[colspan], [rowspan]');
+        $(function () {
+            const initializeTable = function ($table) {
+                if (!$table.length || typeof simpleDatatables === 'undefined' || $table.data('simpleDatatablesInitialized')) return;
+                const headerCount = $table.find('thead tr:first-child th').length;
+                if (!headerCount) return;
+                const invalidRow = $table.find('tbody tr').toArray().some(function (row) {
+                    const $cells = $(row).children('th, td');
+                    return $cells.length !== headerCount || $cells.is('[colspan], [rowspan]');
+                });
+                if (invalidRow) {
+                    console.error('Dashboard table has inconsistent columns:', $table.attr('id'));
+                    return;
+                }
+                $table.data('simpleDatatablesInitialized', true);
+                new simpleDatatables.DataTable($table.get(0), {
+                    searchable: true,
+                    perPage: 10,
+                    perPageSelect: [10, 25, 50]
+                });
+            };
+            initializeTable($('#totalUserTable'));
+            initializeTable($('#datatablesSimple'));
         });
         if (invalidRow) {
             console.error('Dashboard table has inconsistent columns:', $table.attr('id'));

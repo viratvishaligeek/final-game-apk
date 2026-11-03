@@ -9,27 +9,31 @@ use Illuminate\Support\Collection;
 class UserBidActivityService
 {
     /**
-     * Return one summary for every individual bid submission.
-     *
-     * order_no is generated once per API submission and shared only by the
-     * individual Bid rows created from that request. Game, type and timestamp
-     * are deliberately not grouping dimensions.
+     * Return one activity per betting submission. Legacy empty or NULL order
+     * identifiers are keyed by bid id so unrelated historical rows stay apart.
      */
-    public function submissionsFor(User $user): Collection
+    public function forUser(User $user): Collection
     {
-        $submissions = $user->bids()
-            ->selectRaw('order_no, COUNT(*) as total_bids, COALESCE(SUM(amount), 0) as total_amount, MIN(id) as representative_bid_id, MAX(id) as latest_bid_id, MIN(created_at) as submitted_at')
+        $submissionGroup = "CASE WHEN order_no IS NULL OR order_no = '' THEN CONCAT('legacy-', id) ELSE order_no END";
+
+        $submissionStats = $user->bids()
+            ->selectRaw("order_no, {$submissionGroup} as submission_group_key, COUNT(*) as total_bids, COALESCE(SUM(amount), 0) as total_amount, MIN(id) as representative_bid_id, MAX(id) as latest_bid_id, MIN(created_at) as submitted_at")
+            ->groupByRaw($submissionGroup)
             ->groupBy('order_no')
             ->orderByDesc('latest_bid_id')
             ->get();
 
+        if ($submissionStats->isEmpty()) {
+            return collect();
+        }
+
         $representativeBids = Bid::query()
             ->with('game:id,name')
-            ->whereIn('id', $submissions->pluck('representative_bid_id'))
+            ->whereIn('id', $submissionStats->pluck('representative_bid_id'))
             ->get()
             ->keyBy('id');
 
-        return $submissions->map(function ($submission) use ($representativeBids): object {
+        return $submissionStats->map(function ($submission) use ($representativeBids) {
             $representative = $representativeBids->get($submission->representative_bid_id);
 
             return (object) [

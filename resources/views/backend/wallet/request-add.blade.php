@@ -277,15 +277,36 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-$(function () {
-    if (window.feather) feather.replace();
+        $(function () {
+            if (window.feather) feather.replace();
 
-    const escapeHtml = value => $('<div>').text(String(value ?? '')).html();
+            $('.view-proof-btn').on('click', function () {
+                const $image = $('#proofImage');
+                $image.off('error').on('error', function () {
+                    $(this).attr('src', 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#64748b" font-family="Arial" font-size="22">Image unavailable</text></svg>'));
+                }).attr('src', $(this).data('image'));
+            });
 
-    $(document).on('click.adminWalletRequests', '.view-proof-btn', function () {
-        const $image = $('#proofImage');
-        $image.one('error.adminWalletRequests', function () {
-            $(this).attr('src', 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#64748b" font-family="Arial" font-size="22">Image unavailable</text></svg>'));
+            $('.approve-btn').on('click', function () {
+                const form = $(this).closest('form').get(0);
+                const name = $(this).data('name');
+                const amount = $(this).data('amount');
+                Swal.fire({
+                    title: 'Approve Wallet Top-up?',
+                    html: '<div class="text-center"><p class="mb-1">User: <strong>' + $('<div>').text(name).html() + '</strong></p><p>Amount: <strong class="text-success">₹' + $('<div>').text(amount).html() + '</strong></p><small class="text-muted">This amount will be credited to the user\'s wallet.</small></div>',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#1cc88a',
+                    cancelButtonColor: '#858796',
+                    confirmButtonText: 'Yes, Approve',
+                    cancelButtonText: 'Cancel'
+                }).then(result => { if (result.isConfirmed) form.submit(); });
+            });
+
+            $('.reject-btn').on('click', function () {
+                $('#rejectUserName').text($(this).data('name'));
+                $('#rejectForm').attr('action', $(this).data('action'));
+            });
         });
         $image.attr('src', $(this).data('image'));
     });

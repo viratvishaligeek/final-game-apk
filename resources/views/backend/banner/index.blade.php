@@ -96,38 +96,5 @@
         crossorigin="anonymous"></script>
     <script src="{{ URL::asset('backend') }}/js/datatables/datatables-simple-demo.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <script>
-$(function () {
-    $(document).on('click.adminBanners', '.delete-banner-btn', function (event) {
-        event.preventDefault();
-        const $button = $(this);
-        const bannerId = $button.data('id');
-        const bannerName = String($button.data('name') || '');
-        const deleteForm = document.getElementById('delete-form-' + bannerId);
-        if (!deleteForm) {
-            console.error('Delete form not found for banner:', bannerId);
-            return;
-        }
-        if (typeof Swal === 'undefined') {
-            window.alert('SweetAlert2 failed to load. Please refresh the page.');
-            return;
-        }
-        Swal.fire({
-            title: 'Are you sure?',
-            text: 'Do you really want to delete "' + bannerName + '"?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e74a3b',
-            cancelButtonColor: '#858796',
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel',
-            reverseButtons: true,
-            focusCancel: true
-        }).then(function (result) {
-            if (result.isConfirmed) deleteForm.submit();
-        });
-    });
-});
-</script>
+    
 @endsection
