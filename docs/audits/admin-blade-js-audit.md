@@ -41,5 +41,5 @@ Audit scope: all 48 Blade templates under `resources/views/backend/` on the foll
 
 - Static inventory covers all 48 templates.
 - The focused backend workflow includes `php artisan view:cache`, so Blade compilation is checked.
-- No native inline `fetch`, `addEventListener`, `document.createElement`, `onclick`, or `innerHTML` use remains in the audited Admin page scripts. Browser media APIs and Pusher's event/channel API are intentionally native.
+- No native inline `fetch`, `addEventListener`, `document.createElement`, `onclick`, `innerHTML`, `document.getElementById`, or `document.querySelector` use remains in the audited Admin page scripts. Browser media APIs and Pusher's event/channel API are intentionally native.
 - A full browser interaction pass across every Admin form/table has not been run. Do not treat source conversion alone as browser QA.
