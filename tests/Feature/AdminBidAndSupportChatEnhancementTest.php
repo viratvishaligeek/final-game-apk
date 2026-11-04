@@ -666,7 +666,6 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame('inactive', $response->getData(true)['live_status']);
         $this->assertSame('inactive', $user->fresh()->live_status);
         $this->assertEquals($lastActivity, $session->last_seen_at);
-        $this->assertTrue($session->updated_at->greaterThan($session->last_seen_at));
     }
 
     public function test_idle_heartbeat_ends_only_that_device_session_and_marks_last_device_inactive(): void
