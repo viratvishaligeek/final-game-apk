@@ -12,8 +12,9 @@ use Illuminate\Support\Facades\DB;
 
 class PresenceController extends Controller
 {
-    public function heartbeat(Request $request, UserPresenceManager $presence): JsonResponse
+    public function heartbeat(Request $request): JsonResponse
     {
+        $presence = app(UserPresenceManager::class);
         $validated = $request->validate([
             'session_id' => ['required', 'string', 'max:64'],
             'platform' => ['nullable', 'string', 'in:web,android,ios'],
@@ -83,8 +84,9 @@ class PresenceController extends Controller
         ]);
     }
 
-    public function disconnect(Request $request, UserPresenceManager $presence): JsonResponse
+    public function disconnect(Request $request): JsonResponse
     {
+        $presence = app(UserPresenceManager::class);
         $validated = $request->validate([
             'session_id' => ['required', 'string', 'max:64'],
         ]);
