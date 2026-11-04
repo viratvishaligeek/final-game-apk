@@ -65,6 +65,7 @@
     .wa-empty i{font-size:3rem;color:#aebac1;margin-bottom:15px}
     .wa-empty h5{font-size:1.15rem;color:#41525a}
     .wa-connection{font-size:.72rem;color:#667781}
+    .wa-recording-status{padding:6px 14px;background:#f0f2f5;color:#dc3545;font-size:.75rem;font-weight:600}
     .wa-composer-preview{display:flex;align-items:center;gap:12px;margin:0;padding:10px 14px;background:#f0f2f5;border-top:1px solid #e5e9eb}
     .wa-composer-preview.wa-hidden{display:none!important}
     .wa-preview-thumb{width:54px;height:54px;flex:0 0 54px;object-fit:cover;border-radius:8px;background:#e3e8eb}
@@ -140,6 +141,7 @@
             <div id="messages" class="wa-messages">
                 <div class="wa-empty"><i class="fas fa-comments"></i><h5>Welcome to Live Support</h5><p class="mb-0">Choose a recent conversation or search for any registered user to start chatting.</p></div>
             </div>
+            <div id="recording-status" class="wa-recording-status wa-hidden">● Recording… press Stop to finish</div>
             <div id="composer-preview" class="wa-composer-preview wa-hidden" aria-live="polite"></div>
             <form id="send-form" class="wa-composer">
                 <label class="wa-attach-label mb-0" title="Attach a file"><i class="fas fa-paperclip"></i><input id="attachment" type="file" accept="image/*,video/mp4,video/webm,audio/*"></label>
@@ -166,7 +168,7 @@
         var pendingRefresh = false, pendingReset = false, realtimeConnected = false;
         var searchTimer = null, searchRequestId = 0, conversationRequestId = 0;
         var recordedFile = null, recorder = null, mediaStream = null, chunks = [];
-        var previewObjectUrl = null;
+        var previewObjectUrl = null, previewAudio = null;
         var $shell = $('#wa-shell'), $contacts = $('#conversations'), $messages = $('#messages');
         var $search = $('#user-search'), $searchResults = $('#user-search-results');
         var $sendButton = $('#send-form button[type="submit"]');
@@ -236,6 +238,7 @@
         }
 
         function clearComposerAttachment() {
+            if (previewAudio) { previewAudio.pause(); previewAudio.src = ''; previewAudio = null; }
             if (previewObjectUrl) {
                 URL.revokeObjectURL(previewObjectUrl);
                 previewObjectUrl = null;
@@ -249,6 +252,7 @@
         function renderComposerPreview(file, isVoiceRecording) {
             var $preview = $('#composer-preview').empty();
             if (!file) { $preview.addClass('wa-hidden'); updateSendButton(); return; }
+            if (previewAudio) { previewAudio.pause(); previewAudio.src = ''; previewAudio = null; }
             if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
             previewObjectUrl = URL.createObjectURL(file);
             var mime = String(file.type || ''), name = file.name || (isVoiceRecording ? 'Voice message' : 'Attachment');
@@ -258,7 +262,9 @@
             $remove.on('click.adminChat', clearComposerAttachment);
 
             if (isVoiceRecording) {
-                var audio = new Audio(previewObjectUrl);
+                var audio = new Audio();
+                audio.preload = 'metadata';
+                previewAudio = audio;
                 var $play = $('<button>',{type:'button',class:'wa-preview-play','aria-label':'Play voice recording'})
                     .append($('<i>',{class:'fas fa-play'}));
                 var $duration = $('<span>',{class:'wa-preview-meta'}).text('Loading duration…');
@@ -273,6 +279,8 @@
                     $duration.text(formatDuration(audio.currentTime) + ' / ' + formatDuration(total));
                 }).on('play.adminChat',function(){ $play.html('<i class="fas fa-pause"></i>').attr('aria-label','Pause voice recording'); })
                   .on('pause.adminChat ended.adminChat',function(){ $play.html('<i class="fas fa-play"></i>').attr('aria-label','Play voice recording'); });
+                audio.src = previewObjectUrl;
+                audio.load();
                 $preview.append($play,$copy,$remove).removeClass('wa-hidden');
             } else {
                 var $visual;
@@ -282,7 +290,7 @@
                     $visual=$('<video>',{src:previewObjectUrl,controls:true,preload:'metadata',class:'wa-preview-thumb'}).attr('controlsList','nodownload');
                 } else if (mime.indexOf('audio/') === 0) {
                     $visual=$('<div>',{class:'wa-preview-file-icon'}).append($('<i>',{class:'fas fa-file-audio'}));
-                    $copy.append($('<audio>',{src:previewObjectUrl,controls:true,preload:'metadata',class:'w-100 mt-1'}).attr('controlsList','nodownload'));
+                    $copy.append($('<audio>',{src:previewObjectUrl,controls:true,preload:'metadata',class:'w-100 mt-1'}).attr('controlsList','nodownload').on('contextmenu.adminChat',function(event){event.preventDefault();}));
                 } else {
                     $visual=$('<div>',{class:'wa-preview-file-icon'}).append($('<i>',{class:'fas fa-file'}));
                 }
@@ -402,7 +410,7 @@
                 var mime = String(message.media_mime || ''), url = String(message.media_url);
                 if (mime.indexOf('image/')===0) $bubble.append($('<a>',{href:url,target:'_blank',rel:'noopener noreferrer'}).append($('<img>',{src:url,alt:message.media_name||'Image attachment',class:'wa-attachment'})));
                 else if (mime.indexOf('video/')===0) $bubble.append($('<video>',{src:url,controls:true,playsinline:true,class:'wa-attachment'}));
-                else if (mime.indexOf('audio/')===0) $bubble.append($('<audio>',{src:url,controls:true,preload:'metadata',class:'w-100'}).attr('controlsList','nodownload'));
+                else if (mime.indexOf('audio/')===0) $bubble.append($('<audio>',{src:url,controls:true,preload:'metadata',class:'w-100'}).attr('controlsList','nodownload').on('contextmenu.adminChat',function(event){event.preventDefault();}));
                 else $bubble.append($('<a>',{href:url,target:'_blank',rel:'noopener noreferrer',class:'wa-file-link'}).text(message.media_name || 'Open attachment'));
             }
             var $meta = $('<div>',{class:'wa-message-meta'});
@@ -508,6 +516,7 @@
                     if(mediaStream){mediaStream.getTracks().forEach(function(track){track.stop();});mediaStream=null;}
                 };
                 recorder.start(); $('#record-voice').addClass('text-danger').html('<i class="fas fa-stop"></i>');
+                $('#recording-status').removeClass('wa-hidden');
             }).catch(function(){window.alert('Microphone permission was denied or unavailable.');});
         });
 
@@ -564,6 +573,8 @@
             clearTimeout(searchTimer);
             if(recorder && recorder.state==='recording')recorder.stop();
             if(mediaStream)mediaStream.getTracks().forEach(function(track){track.stop();});
+            if(previewAudio){previewAudio.pause();previewAudio.src='';previewAudio=null;}
+            if(previewObjectUrl){URL.revokeObjectURL(previewObjectUrl);previewObjectUrl=null;}
         });
     });
 })(jQuery,window,document);
