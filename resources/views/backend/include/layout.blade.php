@@ -279,7 +279,6 @@
                     dataType: 'json',
                     headers: {'Accept': 'application/json'}
                 });
-                window.dispatchEvent(new CustomEvent('admin:conversations-snapshot', {detail: payload}));
                 (payload.data || []).forEach(addAlert);
             } catch (error) {
                 console.warn('Unable to restore pending payment alerts.', error);
