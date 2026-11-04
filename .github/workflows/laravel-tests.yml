@@ -63,6 +63,9 @@ jobs:
       - name: Validate bid and chat PHP syntax
         run: |
           php -l app/Http/Controllers/Api/PresenceController.php
+          php -l app/Console/Commands/ExpireStaleUserPresence.php
+          php -l app/Services/Presence/UserPresenceManager.php
+          php -l config/presence.php
           php -l app/Http/Controllers/Backend/User/UserController.php
           php -l app/Services/Admin/UserBidActivityService.php
           php -l app/Services/Admin/GameResultSettlementService.php

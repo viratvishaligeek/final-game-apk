@@ -30,6 +30,10 @@
     .wa-contact-name{font-size:.93rem;font-weight:600;color:#111b21;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .wa-contact-time{font-size:.7rem;color:#667781;white-space:nowrap}
     .wa-contact-preview{font-size:.78rem;color:#667781;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+    .wa-contact-presence{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:.68rem;color:#667781;line-height:1.2}
+    .wa-presence-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#98a5ad}
+    .wa-contact-presence.is-online{color:#128c55}
+    .wa-contact-presence.is-online .wa-presence-dot{background:#25a66a;box-shadow:0 0 0 2px rgba(37,166,106,.12)}
     .wa-unread{min-width:19px;height:19px;padding:0 5px;border-radius:20px;background:#25d366;color:#fff;font-size:.68rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
     .wa-main{min-width:0;flex:1;display:flex;flex-direction:column;background:#efeae2}
     .wa-chat-head{height:68px;flex:0 0 68px;display:flex;align-items:center;gap:12px;padding:10px 18px;background:#f0f2f5;border-bottom:1px solid #e9edef}
@@ -65,6 +69,7 @@
     .wa-empty i{font-size:3rem;color:#aebac1;margin-bottom:15px}
     .wa-empty h5{font-size:1.15rem;color:#41525a}
     .wa-connection{font-size:.72rem;color:#667781}
+    .wa-recording-status{padding:6px 14px;background:#f0f2f5;color:#dc3545;font-size:.75rem;font-weight:600}
     .wa-composer-preview{display:flex;align-items:center;gap:12px;margin:0;padding:10px 14px;background:#f0f2f5;border-top:1px solid #e5e9eb}
     .wa-composer-preview.wa-hidden{display:none!important}
     .wa-preview-thumb{width:54px;height:54px;flex:0 0 54px;object-fit:cover;border-radius:8px;background:#e3e8eb}
@@ -140,6 +145,7 @@
             <div id="messages" class="wa-messages">
                 <div class="wa-empty"><i class="fas fa-comments"></i><h5>Welcome to Live Support</h5><p class="mb-0">Choose a recent conversation or search for any registered user to start chatting.</p></div>
             </div>
+            <div id="recording-status" class="wa-recording-status wa-hidden">● Recording… press Stop to finish</div>
             <div id="composer-preview" class="wa-composer-preview wa-hidden" aria-live="polite"></div>
             <form id="send-form" class="wa-composer">
                 <label class="wa-attach-label mb-0" title="Attach a file"><i class="fas fa-paperclip"></i><input id="attachment" type="file" accept="image/*,video/mp4,video/webm,audio/*"></label>
@@ -166,10 +172,11 @@
         var pendingRefresh = false, pendingReset = false, realtimeConnected = false;
         var searchTimer = null, searchRequestId = 0, conversationRequestId = 0;
         var recordedFile = null, recorder = null, mediaStream = null, chunks = [];
-        var previewObjectUrl = null, recordingStartedAt = 0;
+        var previewObjectUrl = null, previewAudio = null;
         var $shell = $('#wa-shell'), $contacts = $('#conversations'), $messages = $('#messages');
         var $search = $('#user-search'), $searchResults = $('#user-search-results');
         var $sendButton = $('#send-form button[type="submit"]');
+        var conversationItems = [], searchItems = [];
         var initialConversationOpened = false;
 
         function api(url, options) {
@@ -198,6 +205,17 @@
             var date = new Date(value);
             if (isNaN(date.getTime())) return '';
             return date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        }
+        function presenceText(user) {
+            if (String(user && user.live_status || '').toLowerCase() === 'active') return 'Active';
+            if (user && user.live_last_seen_at) return 'Last seen ' + formatTime(user.live_last_seen_at);
+            return 'Inactive';
+        }
+        function presenceElement(user) {
+            var online = String(user && user.live_status || '').toLowerCase() === 'active';
+            return $('<div>',{class:'wa-contact-presence'+(online?' is-online':'')})
+                .append($('<span>',{class:'wa-presence-dot'}))
+                .append($('<span>').text(presenceText(user)));
         }
         function dateKey(value) {
             var date = new Date(value);
@@ -236,6 +254,7 @@
         }
 
         function clearComposerAttachment() {
+            if (previewAudio) { previewAudio.pause(); previewAudio.src = ''; previewAudio = null; }
             if (previewObjectUrl) {
                 URL.revokeObjectURL(previewObjectUrl);
                 previewObjectUrl = null;
@@ -249,6 +268,7 @@
         function renderComposerPreview(file, isVoiceRecording) {
             var $preview = $('#composer-preview').empty();
             if (!file) { $preview.addClass('wa-hidden'); updateSendButton(); return; }
+            if (previewAudio) { previewAudio.pause(); previewAudio.src = ''; previewAudio = null; }
             if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
             previewObjectUrl = URL.createObjectURL(file);
             var mime = String(file.type || ''), name = file.name || (isVoiceRecording ? 'Voice message' : 'Attachment');
@@ -258,7 +278,9 @@
             $remove.on('click.adminChat', clearComposerAttachment);
 
             if (isVoiceRecording) {
-                var audio = new Audio(previewObjectUrl);
+                var audio = new Audio();
+                audio.preload = 'metadata';
+                previewAudio = audio;
                 var $play = $('<button>',{type:'button',class:'wa-preview-play','aria-label':'Play voice recording'})
                     .append($('<i>',{class:'fas fa-play'}));
                 var $duration = $('<span>',{class:'wa-preview-meta'}).text('Loading duration…');
@@ -273,6 +295,8 @@
                     $duration.text(formatDuration(audio.currentTime) + ' / ' + formatDuration(total));
                 }).on('play.adminChat',function(){ $play.html('<i class="fas fa-pause"></i>').attr('aria-label','Pause voice recording'); })
                   .on('pause.adminChat ended.adminChat',function(){ $play.html('<i class="fas fa-play"></i>').attr('aria-label','Play voice recording'); });
+                audio.src = previewObjectUrl;
+                audio.load();
                 $preview.append($play,$copy,$remove).removeClass('wa-hidden');
             } else {
                 var $visual;
@@ -282,7 +306,7 @@
                     $visual=$('<video>',{src:previewObjectUrl,controls:true,preload:'metadata',class:'wa-preview-thumb'}).attr('controlsList','nodownload');
                 } else if (mime.indexOf('audio/') === 0) {
                     $visual=$('<div>',{class:'wa-preview-file-icon'}).append($('<i>',{class:'fas fa-file-audio'}));
-                    $copy.append($('<audio>',{src:previewObjectUrl,controls:true,preload:'metadata',class:'w-100 mt-1'}).attr('controlsList','nodownload'));
+                    $copy.append($('<audio>',{src:previewObjectUrl,controls:true,preload:'metadata',class:'w-100 mt-1'}).attr('controlsList','nodownload').on('contextmenu.adminChat',function(event){event.preventDefault();}));
                 } else {
                     $visual=$('<div>',{class:'wa-preview-file-icon'}).append($('<i>',{class:'fas fa-file'}));
                 }
@@ -294,6 +318,7 @@
         }
 
         function renderContacts(items) {
+            conversationItems = $.isArray(items) ? items : [];
             $contacts.empty();
             $('#conversation-count').text(items.length ? items.length + ' chats' : '');
             if (!items.length) {
@@ -311,7 +336,7 @@
                 var $bottom = $('<div>',{class:'wa-contact-bottom'});
                 $bottom.append($('<div>',{class:'wa-contact-preview'}).text(item.last_message_preview || 'Start a conversation'));
                 if (Number(item.unread_count)>0) $bottom.append($('<span>',{class:'wa-unread'}).text(item.unread_count>99?'99+':item.unread_count));
-                $copy.append($top,$bottom); $button.append($copy);
+                $copy.append($top,presenceElement(user),$bottom); $button.append($copy);
                 $button.on('click.adminChat',function(){ selectConversation(item); });
                 $contacts.append($button);
             });
@@ -337,16 +362,17 @@
         }
 
         function renderSearchResults(users) {
+            searchItems = $.isArray(users) ? users : [];
             $searchResults.empty().addClass('is-visible');
-            if (!users.length) {
+            if (!searchItems.length) {
                 $searchResults.append($('<div>',{class:'p-3 small text-muted'}).text('No registered users found.'));
                 return;
             }
-            $.each(users,function(_,user) {
+            $.each(searchItems,function(_,user) {
                 var name = user.name || 'User #'+user.id;
                 var $button = $('<button>',{type:'button',class:'wa-search-result'});
                 $button.append($('<strong>').text(name));
-                $button.append($('<small>').text((user.phone || 'No phone')+' · User #'+user.id+(user.has_conversation?' · Existing chat':' · Start chat')));
+                $button.append($('<small>').text((user.phone || 'No phone')+' · User #'+user.id+(user.has_conversation?' · Existing chat':' · Start chat')+' · '+presenceText(user)));
                 $button.on('click.adminChat',function(){
                     $button.prop('disabled',true);
                     api(root+'/conversations',{method:'POST',data:JSON.stringify({user_id:user.id})})
@@ -386,7 +412,7 @@
             updateSendButton();
             $shell.addClass('has-active-chat');
             var user = conversation.user || {}, name = user.name || 'User';
-            $('#chat-name').text(name); $('#chat-meta').text(user.phone || 'Support conversation');
+            $('#chat-name').text(name); $('#chat-meta').text([user.phone || 'Support conversation', presenceText(user)].join(' · '));
             $('#chat-avatar').text(initials(name));
             $messages.empty().append($('<div>',{class:'wa-empty'}).text('Loading messages…'));
             loadMessages(true); loadConversations();
@@ -402,7 +428,7 @@
                 var mime = String(message.media_mime || ''), url = String(message.media_url);
                 if (mime.indexOf('image/')===0) $bubble.append($('<a>',{href:url,target:'_blank',rel:'noopener noreferrer'}).append($('<img>',{src:url,alt:message.media_name||'Image attachment',class:'wa-attachment'})));
                 else if (mime.indexOf('video/')===0) $bubble.append($('<video>',{src:url,controls:true,playsinline:true,class:'wa-attachment'}));
-                else if (mime.indexOf('audio/')===0) $bubble.append($('<audio>',{src:url,controls:true,preload:'metadata',class:'w-100'}).attr('controlsList','nodownload'));
+                else if (mime.indexOf('audio/')===0) $bubble.append($('<audio>',{src:url,controls:true,preload:'metadata',class:'w-100'}).attr('controlsList','nodownload').on('contextmenu.adminChat',function(event){event.preventDefault();}));
                 else $bubble.append($('<a>',{href:url,target:'_blank',rel:'noopener noreferrer',class:'wa-file-link'}).text(message.media_name || 'Open attachment'));
             }
             var $meta = $('<div>',{class:'wa-message-meta'});
@@ -496,7 +522,8 @@
             }
             clearComposerAttachment();
             navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
-                mediaStream=stream; chunks=[]; recordingStartedAt=Date.now();
+                clearComposerAttachment();
+                mediaStream=stream; chunks=[];
                 var types=['audio/webm;codecs=opus','audio/webm','audio/mp4'], mime='';
                 $.each(types,function(_,type){if(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)){mime=type;return false;}});
                 recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
@@ -544,6 +571,27 @@
             .catch(function(error){window.alert('Unable to disable admin push: '+(error.message||'Unknown error'));});
         });
 
+        $(window).on('admin:user-presence.adminChat',function(event,payload){
+            payload=payload || (event.originalEvent && event.originalEvent.detail) || {};
+            var userId=Number(payload.user_id);
+            if(!userId)return;
+            var apply=function(user){
+                if(Number(user.id)!==userId)return;
+                user.live_status=payload.live_status || 'inactive';
+                user.live_last_seen_at=payload.last_seen_at || user.live_last_seen_at || null;
+            };
+            $.each(conversationItems,function(_,item){apply(item.user || {});});
+            $.each(searchItems, function(_,item){apply(item);});
+            renderContacts(conversationItems);
+            if(searchItems.length && $.trim($search.val()))renderSearchResults(searchItems);
+            if(active){
+                var selected=conversationItems.find(function(item){return Number(item.id)===Number(active);});
+                if(selected && selected.user){
+                    $('#chat-meta').text([selected.user.phone || 'Support conversation',presenceText(selected.user)].join(' · '));
+                }
+            }
+        });
+
         $(window).on('admin:support-message.adminChat',function(event,payload){
             payload=payload || (event.originalEvent && event.originalEvent.detail) || {};
             if(active && Number(payload.conversation_id)===Number(active)) loadMessages(false);
@@ -564,6 +612,8 @@
             clearTimeout(searchTimer);
             if(recorder && recorder.state==='recording')recorder.stop();
             if(mediaStream)mediaStream.getTracks().forEach(function(track){track.stop();});
+            if(previewAudio){previewAudio.pause();previewAudio.src='';previewAudio=null;}
+            if(previewObjectUrl){URL.revokeObjectURL(previewObjectUrl);previewObjectUrl=null;}
         });
     });
 })(jQuery,window,document);
