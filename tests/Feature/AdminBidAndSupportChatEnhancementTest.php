@@ -632,6 +632,41 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             ->where('session_id', 'foreground-device-session')->value('ended_at'));
     }
 
+    public function test_foreground_heartbeats_without_interaction_do_not_extend_the_idle_window(): void
+    {
+        $user = $this->makeUser('9876500107');
+        $initial = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'idle-lease-device',
+            'platform' => 'android',
+            'app_state' => 'foreground',
+            'activity' => true,
+            'activity_at' => now()->toIso8601String(),
+        ]);
+        $initial->setUserResolver(fn () => $user);
+        app(PresenceController::class)->heartbeat($initial);
+
+        $lastActivity = UserPresenceSession::query()
+            ->where('session_id', 'idle-lease-device')->value('last_seen_at');
+
+        $this->travel(6)->minutes();
+        $heartbeatOnly = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'idle-lease-device',
+            'platform' => 'android',
+            'app_state' => 'foreground',
+            'activity' => false,
+        ]);
+        $heartbeatOnly->setUserResolver(fn () => $user);
+        $response = app(PresenceController::class)->heartbeat($heartbeatOnly);
+
+        $session = UserPresenceSession::query()
+            ->where('session_id', 'idle-lease-device')->first();
+
+        $this->assertSame('inactive', $response->getData(true)['live_status']);
+        $this->assertSame('inactive', $user->fresh()->live_status);
+        $this->assertSame($lastActivity, $session->last_seen_at->toDateTimeString());
+        $this->assertTrue($session->updated_at->greaterThan($session->last_seen_at));
+    }
+
     public function test_idle_heartbeat_ends_only_that_device_session_and_marks_last_device_inactive(): void
     {
         $user = $this->makeUser('9876500102');
