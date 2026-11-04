@@ -521,7 +521,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             'type' => 'jodi',
             'number' => '25',
             'amount' => 100,
-            'status' => 'won',
+            'status' => 'win',
             'winning_amount' => 40,
         ]);
         Winner::query()->create([
