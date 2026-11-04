@@ -126,7 +126,7 @@
                     <h4 class="wa-chat-name" id="chat-name">Select a conversation</h4>
                     <div class="wa-chat-meta" id="chat-meta">Your private support inbox</div>
                 </div>
-                <div class="wa-chat-actions"><span class="small text-muted d-none d-md-inline">End-to-end private support</span></div>
+                <div class="wa-chat-actions"><span class="small text-muted d-none d-md-inline">Private support conversation</span></div>
             </header>
             <div id="messages" class="wa-messages">
                 <div class="wa-empty"><i class="fas fa-comments"></i><h5>Welcome to Live Support</h5><p class="mb-0">Choose a recent conversation or search for any registered user to start chatting.</p></div>
