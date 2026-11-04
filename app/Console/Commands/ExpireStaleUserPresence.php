@@ -17,8 +17,11 @@ class ExpireStaleUserPresence extends Command
         $originalSiteKey = config('sites.current_key');
         $siteKeys = DB::table('users')->select('site_key')->distinct()->pluck('site_key')->filter();
         $now = now();
-        $foregroundCutoff = $now->copy()->subSeconds(
+        $foregroundLeaseCutoff = $now->copy()->subSeconds(
             max(1, (int) config('presence.heartbeat_timeout_seconds', 45))
+        );
+        $idleCutoff = $now->copy()->subSeconds(
+            max(1, (int) config('presence.idle_timeout_seconds', 300))
         );
         $backgroundCutoff = $now->copy()->subSeconds(
             max(1, (int) config('presence.background_grace_seconds', 90))
@@ -30,15 +33,16 @@ class ExpireStaleUserPresence extends Command
 
             User::query()
                 ->where('live_status', 'active')
-                ->whereDoesntHave('presenceSessions', function ($query) use ($foregroundCutoff, $backgroundCutoff) {
+                ->whereDoesntHave('presenceSessions', function ($query) use ($foregroundLeaseCutoff, $idleCutoff, $backgroundCutoff) {
                     $query->whereNull('ended_at')
-                        ->where(function ($active) use ($foregroundCutoff, $backgroundCutoff) {
-                            $active->where(function ($foreground) use ($foregroundCutoff) {
+                        ->where(function ($active) use ($foregroundLeaseCutoff, $idleCutoff, $backgroundCutoff) {
+                            $active->where(function ($foreground) use ($foregroundLeaseCutoff, $idleCutoff) {
                                 $foreground->where('app_state', 'foreground')
-                                    ->where('last_seen_at', '>=', $foregroundCutoff);
+                                    ->where('updated_at', '>=', $foregroundLeaseCutoff)
+                                    ->where('last_seen_at', '>=', $idleCutoff);
                             })->orWhere(function ($background) use ($backgroundCutoff) {
                                 $background->where('app_state', 'background')
-                                    ->where('last_seen_at', '>=', $backgroundCutoff);
+                                    ->where('updated_at', '>=', $backgroundCutoff);
                             });
                         });
                 })
