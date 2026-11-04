@@ -601,6 +601,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             'platform' => 'web',
             'app_state' => 'foreground',
             'last_seen_at' => now()->subSeconds(90),
+            'updated_at' => now()->subSeconds(90),
         ]);
 
         Artisan::call('presence:expire');
@@ -743,7 +744,10 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame('active', $user->fresh()->live_status);
 
         UserPresenceSession::query()->where('session_id', 'background-grace-session')
-            ->update(['last_seen_at' => now()->subSeconds(120)]);
+            ->update([
+                'last_seen_at' => now()->subSeconds(120),
+                'updated_at' => now()->subSeconds(120),
+            ]);
 
         Artisan::call('presence:expire');
         $this->assertSame('inactive', $user->fresh()->live_status);
