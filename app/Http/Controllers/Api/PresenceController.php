@@ -42,16 +42,28 @@ class PresenceController extends Controller
             ]);
 
             $appState = $validated['app_state'] ?? 'foreground';
+            $repeatedBackgroundHeartbeat = $session->exists
+                && $session->app_state === 'background'
+                && $appState === 'background'
+                && $session->ended_at === null;
+
             $session->user_id = $userId;
             $session->platform = $validated['platform'] ?? $session->platform;
             $session->app_state = $appState;
-            $session->last_seen_at = $now;
+            // A background heartbeat is a transition/lease, not a keep-alive.
+            // Ignore repeated background renewals so older app builds that
+            // still heartbeat in the background cannot stay online forever.
+            if (!$repeatedBackgroundHeartbeat) {
+                $session->last_seen_at = $now;
+            }
             // An idle client relinquishes its lease. Its next interaction
             // reactivates the same session with a foreground heartbeat.
             $session->ended_at = $appState === 'idle' ? $now : null;
             $session->save();
 
-            $user->forceFill(['live_last_seen_at' => $now])->save();
+            if (!$repeatedBackgroundHeartbeat) {
+                $user->forceFill(['live_last_seen_at' => $now])->save();
+            }
             $status = $presence->sync($user, $now);
 
             return $status;
