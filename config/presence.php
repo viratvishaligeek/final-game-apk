@@ -1,9 +1,7 @@
 <?php
 
 return [
-    // Foreground clients heartbeat every 15 seconds. A missing lease is
-    // reconciled by the scheduled presence:expire command.
-    'heartbeat_interval_seconds' => (int) env('PRESENCE_HEARTBEAT_INTERVAL', 15),
+    // A missing foreground lease is reconciled by presence:expire.
     'heartbeat_timeout_seconds' => (int) env('PRESENCE_HEARTBEAT_TIMEOUT', 45),
 
     // Keep a user online briefly while switching apps, then expire the
