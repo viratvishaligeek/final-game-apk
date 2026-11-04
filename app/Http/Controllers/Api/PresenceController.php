@@ -19,6 +19,8 @@ class PresenceController extends Controller
             'session_id' => ['required', 'string', 'max:64'],
             'platform' => ['nullable', 'string', 'in:web,android,ios'],
             'app_state' => ['nullable', 'string', 'in:foreground,background,idle'],
+            'activity' => ['sometimes', 'boolean'],
+            'activity_at' => ['nullable', 'date'],
         ]);
 
         $userId = (int) $request->user()->id;
@@ -43,6 +45,17 @@ class PresenceController extends Controller
             ]);
 
             $appState = $validated['app_state'] ?? 'foreground';
+            $isNewSession = !$session->exists;
+            $activity = (bool) ($validated['activity'] ?? $isNewSession);
+            $activityAt = $activity
+                ? (isset($validated['activity_at'])
+                    ? \Illuminate\Support\Carbon::parse($validated['activity_at'])
+                    : $now)
+                : null;
+            if ($activityAt && $activityAt->greaterThan($now)) {
+                $activityAt = $now;
+            }
+
             $repeatedBackgroundHeartbeat = $session->exists
                 && $session->app_state === 'background'
                 && $appState === 'background'
@@ -51,19 +64,21 @@ class PresenceController extends Controller
             $session->user_id = $userId;
             $session->platform = $validated['platform'] ?? $session->platform;
             $session->app_state = $appState;
-            // A background heartbeat is a transition/lease, not a keep-alive.
-            // Ignore repeated background renewals so older app builds that
-            // still heartbeat in the background cannot stay online forever.
+            // last_seen_at records user interaction, while updated_at is the
+            // heartbeat lease. Heartbeats without interaction keep the lease
+            // alive but cannot keep an idle user online indefinitely.
             if (!$repeatedBackgroundHeartbeat) {
-                $session->last_seen_at = $now;
+                if ($activityAt || !$session->last_seen_at) {
+                    $session->last_seen_at = $activityAt ?? $now;
+                }
+                // An idle client relinquishes its lease. Its next interaction
+                // reactivates the same session with a foreground heartbeat.
+                $session->ended_at = $appState === 'idle' ? $now : null;
+                $session->save();
             }
-            // An idle client relinquishes its lease. Its next interaction
-            // reactivates the same session with a foreground heartbeat.
-            $session->ended_at = $appState === 'idle' ? $now : null;
-            $session->save();
 
-            if (!$repeatedBackgroundHeartbeat) {
-                $user->forceFill(['live_last_seen_at' => $now])->save();
+            if ($activityAt && !$repeatedBackgroundHeartbeat) {
+                $user->forceFill(['live_last_seen_at' => $activityAt])->save();
             }
             $status = $presence->sync($user, $now);
 
