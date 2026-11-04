@@ -446,7 +446,7 @@
                     }).then(function(token){
                         if(!token)throw new Error('Firebase did not return a push token.');
                         return api(root.replace(/\/support-chat\/?$/,'/push-subscribe'),{method:'POST',data:JSON.stringify({token:token,platform:'web'})});
-                    }).done(function(){window.alert('Background push alerts enabled for this admin account.');})
+                    }).then(function(){window.alert('Background push alerts enabled for this admin account.');})
                     .catch(function(error){window.alert('Push registration failed: '+(error.message||'Unknown error'));});
             });
         });
@@ -461,7 +461,7 @@
             }).then(function(token){
                 if(!token)throw new Error('No active push token found.');
                 return api(root.replace(/\/support-chat\/?$/,'/push-subscribe'),{method:'DELETE',data:JSON.stringify({token:token})});
-            }).done(function(){window.alert('Admin background push disabled. Browser permission remains unchanged.');})
+            }).then(function(){window.alert('Admin background push disabled. Browser permission remains unchanged.');})
             .catch(function(error){window.alert('Unable to disable admin push: '+(error.message||'Unknown error'));});
         });
 
