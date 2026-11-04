@@ -114,14 +114,14 @@ return [
         'id'    => 'collapseWithdrawal',
         'items' => [
             [
-                'text'  => 'Add Money Request',
+                'text'  => 'Add Money',
                 'icon'  => 'arrow-up-right',
                 'route' => 'admin.wallet.request-add',
                 'route_name' => 'admin.wallet.*',
                 'permission' => '',
             ],
             [
-                'text'  => 'Withdrawal Request',
+                'text'  => 'Withdrawal',
                 'icon'  => 'arrow-up-right',
                 'route' => 'admin.wallet.request-withdraw',
                 'route_name' => 'admin.wallet.*',

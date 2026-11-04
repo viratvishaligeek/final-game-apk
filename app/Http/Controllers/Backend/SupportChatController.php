@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Events\SupportMessageCreated;
 use App\Http\Controllers\Controller;
 use App\Models\SupportConversation;
-use App\Models\SupportMessage;
 use App\Models\SupportConversationAdminRead;
+use App\Models\SupportMessage;
 use App\Models\User;
-use App\Events\SupportMessageCreated;
-use Illuminate\Support\Facades\DB;
 use App\Services\NotificationService;
 use App\Services\ProjectStorage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Validation\ValidationException;
 
 class SupportChatController extends Controller

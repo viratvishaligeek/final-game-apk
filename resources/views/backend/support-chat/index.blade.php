@@ -168,826 +168,906 @@
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-messaging-compat.js"></script>
 
     <script>
-    (function ($, window, document) {
-        'use strict';
+        (function($, window, document) {
+            'use strict';
 
-        $(function () {
+            $(function() {
 
-            var root = @json(url('/admin/support-chat'));
-            var csrfToken = $('meta[name="csrf-token"]').attr('content') || '';
+                var root = @json(url('/admin/support-chat'));
+                var csrfToken = $('meta[name="csrf-token"]').attr('content') || '';
 
-            var active = null;
-            var lastId = 0;
-            var busy = false;
+                var active = null;
+                var lastId = 0;
+                var busy = false;
 
-            var recordedFile = null;
-            var recorder = null;
-            var mediaStream = null;
-            var chunks = [];
+                var recordedFile = null;
+                var recorder = null;
+                var mediaStream = null;
+                var chunks = [];
 
-            var conversationVersion = 0;
-            var pendingMessageRefresh = false;
-            var pendingMessageReset = false;
+                var conversationVersion = 0;
+                var pendingMessageRefresh = false;
+                var pendingMessageReset = false;
 
-            var conversationSearchTimer = null;
-            var userSearchTimer = null;
+                var conversationSearchTimer = null;
+                var userSearchTimer = null;
 
-            var userSearchRequest = 0;
-            var conversationSearchRequest = 0;
+                var userSearchRequest = 0;
+                var conversationSearchRequest = 0;
 
-            var realtimeConnected = false;
+                var realtimeConnected = false;
 
-            var $conversations = $('#conversations');
-            var $messages = $('#messages');
-            var $status = $('#connection-status');
+                var $conversations = $('#conversations');
+                var $messages = $('#messages');
+                var $status = $('#connection-status');
 
-            var $conversationSearch = $('#conversation-search');
-            var $userSearch = $('#user-search');
-            var $userSearchResults = $('#user-search-results');
+                var $conversationSearch = $('#conversation-search');
+                var $userSearch = $('#user-search');
+                var $userSearchResults = $('#user-search-results');
 
-            var $recordButton = $('#record-voice');
-            var $recordingStatus = $('#recording-status');
+                var $recordButton = $('#record-voice');
+                var $recordingStatus = $('#recording-status');
 
-            var initialConversationOpened = false;
+                var initialConversationOpened = false;
 
-            // -------------------------------------------------
-            // API REQUEST
-            // -------------------------------------------------
+                // -------------------------------------------------
+                // API REQUEST
+                // -------------------------------------------------
 
-            function request(url, options) {
+                function request(url, options) {
 
-                options = options || {};
+                    options = options || {};
 
-                var body = options.body;
-                var isFormData = body instanceof FormData;
-                var isJson = typeof body === 'string';
+                    var body = options.body;
+                    var isFormData = body instanceof FormData;
+                    var isJson = typeof body === 'string';
 
-                var ajaxOptions = {
-                    url: url,
-                    type: options.method || 'GET',
-                    dataType: 'json',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    }
-                };
+                    var ajaxOptions = {
+                        url: url,
+                        type: options.method || 'GET',
+                        dataType: 'json',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        }
+                    };
 
-                if (body !== undefined) {
-                    ajaxOptions.data = body;
-                }
-
-                if (isFormData) {
-                    ajaxOptions.processData = false;
-                    ajaxOptions.contentType = false;
-                } else if (isJson) {
-                    ajaxOptions.processData = false;
-                    ajaxOptions.contentType = 'application/json; charset=UTF-8';
-                }
-
-                if (options.headers) {
-                    $.extend(ajaxOptions.headers, options.headers);
-                }
-
-                return $.ajax(ajaxOptions);
-            }
-
-            function showError(xhr, fallback) {
-
-                var message = fallback || 'Request failed.';
-
-                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
-                    message = xhr.responseJSON.message;
-                } else if (xhr && xhr.status) {
-                    message += ' (HTTP ' + xhr.status + ')';
-                }
-
-                return message;
-            }
-
-            function setStatus(message, connected) {
-
-                $status
-                    .text(message)
-                    .removeClass('bg-success bg-secondary bg-danger')
-                    .addClass(connected ? 'bg-success' : 'bg-secondary');
-            }
-
-            // -------------------------------------------------
-            // CONVERSATIONS
-            // -------------------------------------------------
-
-            function loadConversations(snapshot) {
-
-                var requestId = ++conversationSearchRequest;
-
-                var phone = $.trim($conversationSearch.val() || '');
-
-                var url = root + '/conversations';
-
-                if (phone) {
-                    url += '?phone=' + encodeURIComponent(phone);
-                }
-
-                var ajaxRequest;
-
-                if (snapshot && !phone) {
-                    ajaxRequest = $.Deferred().resolve(snapshot).promise();
-                } else {
-                    ajaxRequest = request(url);
-                }
-
-                ajaxRequest.done(function (result) {
-
-                    if (requestId !== conversationSearchRequest) {
-                        return;
+                    if (body !== undefined) {
+                        ajaxOptions.data = body;
                     }
 
-                    $conversations.empty();
-
-                    var items = $.isArray(result.data) ? result.data : [];
-
-                    if (!items.length) {
-
-                        $('<div>')
-                            .addClass('list-group-item text-muted small py-3')
-                            .text(
-                                phone
-                                    ? 'No conversations found for this phone number.'
-                                    : 'No conversations yet.'
-                            )
-                            .appendTo($conversations);
-
-                        return;
+                    if (isFormData) {
+                        ajaxOptions.processData = false;
+                        ajaxOptions.contentType = false;
+                    } else if (isJson) {
+                        ajaxOptions.processData = false;
+                        ajaxOptions.contentType = 'application/json; charset=UTF-8';
                     }
 
-                    $.each(items, function (index, conversation) {
+                    if (options.headers) {
+                        $.extend(ajaxOptions.headers, options.headers);
+                    }
 
-                        var isActive = Number(active) === Number(conversation.id);
+                    return $.ajax(ajaxOptions);
+                }
 
-                        var $button = $('<button>', {
-                            type: 'button',
-                            class: 'list-group-item list-group-item-action' +
-                                (isActive ? ' active' : '')
-                        });
+                function showError(xhr, fallback) {
 
-                        var $heading = $('<div>').addClass(
-                            'd-flex justify-content-between gap-2'
-                        );
+                    var message = fallback || 'Request failed.';
 
-                        $('<span>')
-                            .addClass('fw-bold')
-                            .text(
-                                conversation.user && conversation.user.name
-                                    ? conversation.user.name
-                                    : 'User #' + conversation.id
-                            )
-                            .appendTo($heading);
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    } else if (xhr && xhr.status) {
+                        message += ' (HTTP ' + xhr.status + ')';
+                    }
 
-                        if (conversation.unread_count) {
+                    return message;
+                }
+
+                function setStatus(message, connected) {
+
+                    $status
+                        .text(message)
+                        .removeClass('bg-success bg-secondary bg-danger')
+                        .addClass(connected ? 'bg-success' : 'bg-secondary');
+                }
+
+                // -------------------------------------------------
+                // CONVERSATIONS
+                // -------------------------------------------------
+
+                function loadConversations(snapshot) {
+
+                    var requestId = ++conversationSearchRequest;
+
+                    var phone = $.trim($conversationSearch.val() || '');
+
+                    var url = root + '/conversations';
+
+                    if (phone) {
+                        url += '?phone=' + encodeURIComponent(phone);
+                    }
+
+                    var ajaxRequest;
+
+                    if (snapshot && !phone) {
+                        ajaxRequest = $.Deferred().resolve(snapshot).promise();
+                    } else {
+                        ajaxRequest = request(url);
+                    }
+
+                    ajaxRequest.done(function(result) {
+
+                        if (requestId !== conversationSearchRequest) {
+                            return;
+                        }
+
+                        $conversations.empty();
+
+                        var items = $.isArray(result.data) ? result.data : [];
+
+                        if (!items.length) {
+
+                            $('<div>')
+                                .addClass('list-group-item text-muted small py-3')
+                                .text(
+                                    phone ?
+                                    'No conversations found for this phone number.' :
+                                    'No conversations yet.'
+                                )
+                                .appendTo($conversations);
+
+                            return;
+                        }
+
+                        $.each(items, function(index, conversation) {
+
+                            var isActive = Number(active) === Number(conversation.id);
+
+                            var $button = $('<button>', {
+                                type: 'button',
+                                class: 'list-group-item list-group-item-action' +
+                                    (isActive ? ' active' : '')
+                            });
+
+                            var $heading = $('<div>').addClass(
+                                'd-flex justify-content-between gap-2'
+                            );
 
                             $('<span>')
-                                .addClass('badge bg-danger')
-                                .text(conversation.unread_count)
+                                .addClass('fw-bold')
+                                .text(
+                                    conversation.user && conversation.user.name ?
+                                    conversation.user.name :
+                                    'User #' + conversation.id
+                                )
                                 .appendTo($heading);
-                        }
 
-                        $button.append($heading);
+                            if (conversation.unread_count) {
 
-                        $('<small>')
-                            .text(
-                                conversation.user && conversation.user.phone
-                                    ? conversation.user.phone
-                                    : ''
-                            )
-                            .appendTo($button);
+                                $('<span>')
+                                    .addClass('badge bg-danger')
+                                    .text(conversation.unread_count)
+                                    .appendTo($heading);
+                            }
 
-                        $('<div>')
-                            .addClass('small text-muted text-truncate')
-                            .text(conversation.last_message_preview || 'No messages yet')
-                            .appendTo($button);
+                            $button.append($heading);
 
-                        $button.on('click.adminChat', function () {
-                            selectConversation(conversation);
+                            $('<small>')
+                                .text(
+                                    conversation.user && conversation.user.phone ?
+                                    conversation.user.phone :
+                                    ''
+                                )
+                                .appendTo($button);
+
+                            $('<div>')
+                                .addClass('small text-muted text-truncate')
+                                .text(conversation.last_message_preview || 'No messages yet')
+                                .appendTo($button);
+
+                            $button.on('click.adminChat', function() {
+                                selectConversation(conversation);
+                            });
+
+                            $conversations.append($button);
+
                         });
 
-                        $conversations.append($button);
+                        // Open conversation from URL only once.
+
+                        if (!initialConversationOpened) {
+
+                            var params = new URLSearchParams(window.location.search);
+                            var requestedId = params.get('conversation_id');
+
+                            if (requestedId) {
+
+                                $.each(items, function(index, item) {
+
+                                    if (Number(item.id) === Number(requestedId)) {
+
+                                        initialConversationOpened = true;
+                                        selectConversation(item);
+
+                                        return false;
+                                    }
+
+                                });
+                            }
+                        }
+
+                    }).fail(function(xhr) {
+
+                        if (requestId !== conversationSearchRequest) {
+                            return;
+                        }
+
+                        setStatus(
+                            showError(xhr, 'Unable to load conversations.'),
+                            false
+                        );
 
                     });
-
-                    // Open conversation from URL only once.
-
-                    if (!initialConversationOpened) {
-
-                        var params = new URLSearchParams(window.location.search);
-                        var requestedId = params.get('conversation_id');
-
-                        if (requestedId) {
-
-                            $.each(items, function (index, item) {
-
-                                if (Number(item.id) === Number(requestedId)) {
-
-                                    initialConversationOpened = true;
-                                    selectConversation(item);
-
-                                    return false;
-                                }
-
-                            });
-                        }
-                    }
-
-                }).fail(function (xhr) {
-
-                    if (requestId !== conversationSearchRequest) {
-                        return;
-                    }
-
-                    setStatus(
-                        showError(xhr, 'Unable to load conversations.'),
-                        false
-                    );
-
-                });
-            }
-
-            // -------------------------------------------------
-            // USER SEARCH
-            // -------------------------------------------------
-
-            function searchUsers() {
-
-                var requestId = ++userSearchRequest;
-
-                var term = $.trim($userSearch.val() || '');
-
-                $userSearchResults.empty();
-
-                if (!term) {
-
-                    $('<div>')
-                        .addClass('list-group-item small text-muted')
-                        .text('Search by name, phone number or user ID.')
-                        .appendTo($userSearchResults);
-
-                    return;
                 }
 
-                $('<div>')
-                    .addClass('list-group-item small text-muted')
-                    .text('Searching registered users...')
-                    .appendTo($userSearchResults);
+                // -------------------------------------------------
+                // USER SEARCH
+                // -------------------------------------------------
 
-                request(
-                    root + '/users?q=' + encodeURIComponent(term)
-                ).done(function (result) {
+                function searchUsers() {
 
-                    if (requestId !== userSearchRequest) {
-                        return;
-                    }
+                    var requestId = ++userSearchRequest;
+
+                    var term = $.trim($userSearch.val() || '');
 
                     $userSearchResults.empty();
 
-                    var users = $.isArray(result.data) ? result.data : [];
-
-                    if (!users.length) {
+                    if (!term) {
 
                         $('<div>')
                             .addClass('list-group-item small text-muted')
-                            .text('No registered users found.')
+                            .text('Search by name, phone number or user ID.')
                             .appendTo($userSearchResults);
 
                         return;
                     }
 
-                    $.each(users, function (index, user) {
+                    $('<div>')
+                        .addClass('list-group-item small text-muted')
+                        .text('Searching registered users...')
+                        .appendTo($userSearchResults);
 
-                        var unread = Number(user.unread_count) || 0;
+                    request(
+                        root + '/users?q=' + encodeURIComponent(term)
+                    ).done(function(result) {
 
-                        var stateClass = unread > 0
-                            ? 'bg-danger'
-                            : (user.has_conversation ? 'bg-success' : 'bg-primary');
+                        if (requestId !== userSearchRequest) {
+                            return;
+                        }
 
-                        var stateText = unread > 0
-                            ? unread + ' unread'
-                            : (user.has_conversation ? 'Existing chat' : 'Start chat');
+                        $userSearchResults.empty();
 
-                        var $button = $('<button>', {
-                            type: 'button',
-                            class: 'list-group-item list-group-item-action py-2'
-                        });
+                        var users = $.isArray(result.data) ? result.data : [];
 
-                        var $title = $('<div>').addClass(
-                            'd-flex justify-content-between gap-2'
-                        );
+                        if (!users.length) {
 
-                        $('<strong>')
-                            .text(user.name || 'User #' + user.id)
-                            .appendTo($title);
+                            $('<div>')
+                                .addClass('list-group-item small text-muted')
+                                .text('No registered users found.')
+                                .appendTo($userSearchResults);
 
-                        $('<span>')
-                            .addClass('badge ' + stateClass)
-                            .text(stateText)
-                            .appendTo($title);
+                            return;
+                        }
 
-                        $button.append($title);
+                        $.each(users, function(index, user) {
 
-                        $('<small>')
-                            .addClass('text-muted d-block')
-                            .text(
-                                (user.phone || 'No phone') +
-                                ' · User #' + user.id +
-                                ' · ' + (user.status || 'unknown')
-                            )
-                            .appendTo($button);
+                            var unread = Number(user.unread_count) || 0;
 
-                        $button.on('click.adminChat', function () {
+                            var stateClass = unread > 0 ?
+                                'bg-danger' :
+                                (user.has_conversation ? 'bg-success' : 'bg-primary');
 
-                            var $clicked = $(this);
+                            var stateText = unread > 0 ?
+                                unread + ' unread' :
+                                (user.has_conversation ? 'Existing chat' : 'Start chat');
 
-                            $clicked.prop('disabled', true);
+                            var $button = $('<button>', {
+                                type: 'button',
+                                class: 'list-group-item list-group-item-action py-2'
+                            });
 
-                            request(root + '/conversations', {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    user_id: user.id
-                                })
-                            }).done(function (started) {
+                            var $title = $('<div>').addClass(
+                                'd-flex justify-content-between gap-2'
+                            );
 
-                                var conversation = {
-                                    id: started.data.id,
-                                    user: started.data.user || {
-                                        id: user.id,
-                                        name: user.name,
-                                        phone: user.phone
-                                    }
-                                };
+                            $('<strong>')
+                                .text(user.name || 'User #' + user.id)
+                                .appendTo($title);
 
-                                loadConversations();
+                            $('<span>')
+                                .addClass('badge ' + stateClass)
+                                .text(stateText)
+                                .appendTo($title);
 
-                                selectConversation(conversation);
+                            $button.append($title);
 
-                                $userSearchResults.empty();
-                                $userSearch.val('');
+                            $('<small>')
+                                .addClass('text-muted d-block')
+                                .text(
+                                    (user.phone || 'No phone') +
+                                    ' · User #' + user.id +
+                                    ' · ' + (user.status || 'unknown')
+                                )
+                                .appendTo($button);
 
-                            }).fail(function (xhr) {
+                            $button.on('click.adminChat', function() {
 
-                                window.alert(
-                                    showError(xhr, 'Unable to open conversation.')
-                                );
+                                var $clicked = $(this);
 
-                            }).always(function () {
+                                $clicked.prop('disabled', true);
 
-                                $clicked.prop('disabled', false);
+                                request(root + '/conversations', {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        user_id: user.id
+                                    })
+                                }).done(function(started) {
+
+                                    var conversation = {
+                                        id: started.data.id,
+                                        user: started.data.user || {
+                                            id: user.id,
+                                            name: user.name,
+                                            phone: user.phone
+                                        }
+                                    };
+
+                                    loadConversations();
+
+                                    selectConversation(conversation);
+
+                                    $userSearchResults.empty();
+                                    $userSearch.val('');
+
+                                }).fail(function(xhr) {
+
+                                    window.alert(
+                                        showError(xhr,
+                                            'Unable to open conversation.')
+                                    );
+
+                                }).always(function() {
+
+                                    $clicked.prop('disabled', false);
+
+                                });
 
                             });
 
+                            $userSearchResults.append($button);
+
                         });
 
-                        $userSearchResults.append($button);
+                    }).fail(function(xhr) {
+
+                        if (requestId !== userSearchRequest) {
+                            return;
+                        }
+
+                        $userSearchResults.empty();
+
+                        $('<div>')
+                            .addClass('list-group-item small text-danger')
+                            .text(showError(xhr, 'User search failed.'))
+                            .appendTo($userSearchResults);
 
                     });
+                }
 
-                }).fail(function (xhr) {
+                $userSearch.on('input.adminChat', function() {
 
-                    if (requestId !== userSearchRequest) {
-                        return;
-                    }
+                    clearTimeout(userSearchTimer);
 
-                    $userSearchResults.empty();
-
-                    $('<div>')
-                        .addClass('list-group-item small text-danger')
-                        .text(showError(xhr, 'User search failed.'))
-                        .appendTo($userSearchResults);
+                    userSearchTimer = window.setTimeout(function() {
+                        searchUsers();
+                    }, 300);
 
                 });
-            }
 
-            $userSearch.on('input.adminChat', function () {
+                // -------------------------------------------------
+                // SELECT CONVERSATION
+                // -------------------------------------------------
 
-                clearTimeout(userSearchTimer);
+                function selectConversation(conversation) {
 
-                userSearchTimer = window.setTimeout(function () {
-                    searchUsers();
-                }, 300);
+                    active = conversation.id;
 
-            });
+                    lastId = 0;
 
-            // -------------------------------------------------
-            // SELECT CONVERSATION
-            // -------------------------------------------------
+                    conversationVersion++;
 
-            function selectConversation(conversation) {
-
-                active = conversation.id;
-
-                lastId = 0;
-
-                conversationVersion++;
-
-                $('#chat-title').text(
-                    (conversation.user && conversation.user.name
-                        ? conversation.user.name
-                        : 'User') +
-                    ' · ' +
-                    (conversation.user && conversation.user.phone
-                        ? conversation.user.phone
-                        : '')
-                );
-
-                $messages.empty();
-
-                $('<p>')
-                    .addClass('text-muted text-center my-auto')
-                    .text('Loading messages...')
-                    .appendTo($messages);
-
-                loadMessages(true);
-
-                loadConversations();
-            }
-
-            // -------------------------------------------------
-            // MESSAGE RENDERING
-            // -------------------------------------------------
-
-            function renderMessage(message) {
-
-                var outgoing = message.sender === 'admin';
-
-                var $bubble = $('<div>').addClass(
-                    'admin-chat-bubble ' +
-                    (outgoing
-                        ? 'admin-chat-bubble--outgoing'
-                        : 'admin-chat-bubble--incoming')
-                );
-
-                if (message.body) {
-
-                    $('<div>')
-                        .css('white-space', 'pre-wrap')
-                        .text(message.body)
-                        .appendTo($bubble);
-                }
-
-                if (message.media_url) {
-
-                    var mime = String(message.media_mime || '');
-                    var url = String(message.media_url);
-
-                    if (mime.indexOf('image/') === 0) {
-
-                        $('<img>', {
-                            alt: 'Attachment',
-                            src: url
-                        }).css({
-                            maxWidth: 'min(260px, 65vw)',
-                            maxHeight: '240px',
-                            borderRadius: '8px'
-                        }).appendTo($bubble);
-
-                    } else if (mime.indexOf('video/') === 0) {
-
-                        $('<video>', {
-                            controls: true,
-                            playsinline: true,
-                            src: url
-                        }).css({
-                            maxWidth: 'min(300px, 65vw)',
-                            maxHeight: '240px'
-                        }).appendTo($bubble);
-
-                    } else if (mime.indexOf('audio/') === 0) {
-
-                        $('<audio>', {
-                            controls: true,
-                            preload: 'metadata',
-                            src: url
-                        }).appendTo($bubble);
-
-                    } else {
-
-                        $('<a>', {
-                            href: url,
-                            target: '_blank',
-                            rel: 'noopener noreferrer'
-                        })
-                            .text('Open attachment')
-                            .appendTo($bubble);
-                    }
-                }
-
-                $('<small>')
-                    .addClass('d-block text-muted mt-2 text-end')
-                    .text(
-                        (message.created_at || '') +
-                        (message.read_at ? ' · Seen' : '')
-                    )
-                    .appendTo($bubble);
-
-                return $bubble;
-            }
-
-            // -------------------------------------------------
-            // NOTIFICATIONS
-            // -------------------------------------------------
-
-            function notifyAdmin(message) {
-
-                var event;
-
-                if (typeof window.CustomEvent === 'function') {
-
-                    event = new CustomEvent('admin:incoming-chat-message', {
-                        detail: $.extend({}, message, {
-                            sender: 'user'
-                        })
-                    });
-
-                    window.dispatchEvent(event);
-                }
-
-                if (
-                    'Notification' in window &&
-                    Notification.permission === 'granted'
-                ) {
-
-                    var notification = new Notification(
-                        'New support message',
-                        {
-                            body: message.body || 'User sent an attachment.'
-                        }
+                    $('#chat-title').text(
+                        (conversation.user && conversation.user.name ?
+                            conversation.user.name :
+                            'User') +
+                        ' · ' +
+                        (conversation.user && conversation.user.phone ?
+                            conversation.user.phone :
+                            '')
                     );
 
-                    $(notification).on('click.adminChat', function () {
-                        window.focus();
-                        notification.close();
-                    });
-                }
-            }
+                    $messages.empty();
 
-            // -------------------------------------------------
-            // LOAD MESSAGES
-            // -------------------------------------------------
+                    $('<p>')
+                        .addClass('text-muted text-center my-auto')
+                        .text('Loading messages...')
+                        .appendTo($messages);
 
-            function loadMessages(reset) {
+                    loadMessages(true);
 
-                reset = !!reset;
-
-                if (!active) {
-                    return;
+                    loadConversations();
                 }
 
-                if (busy) {
+                // -------------------------------------------------
+                // MESSAGE RENDERING
+                // -------------------------------------------------
 
-                    pendingMessageRefresh = true;
-                    pendingMessageReset = pendingMessageReset || reset;
+                function renderMessage(message) {
 
-                    return;
-                }
+                    var outgoing = message.sender === 'admin';
 
-                busy = true;
+                    var $bubble = $('<div>').addClass(
+                        'admin-chat-bubble ' +
+                        (outgoing ?
+                            'admin-chat-bubble--outgoing' :
+                            'admin-chat-bubble--incoming')
+                    );
 
-                var requestedConversation = active;
-                var requestedVersion = conversationVersion;
+                    if (message.body) {
 
-                var messageElement = $messages.get(0);
-
-                var wasNearBottom = messageElement
-                    ? (
-                        messageElement.scrollHeight -
-                        $messages.scrollTop() -
-                        $messages.innerHeight()
-                    ) < 100
-                    : true;
-
-                var query = reset
-                    ? ''
-                    : '?after_id=' + encodeURIComponent(String(lastId));
-
-                request(
-                    root + '/' + requestedConversation + '/messages' + query
-                ).done(function (result) {
-
-                    if (
-                        requestedVersion !== conversationVersion ||
-                        Number(requestedConversation) !== Number(active)
-                    ) {
-                        return;
+                        $('<div>')
+                            .css('white-space', 'pre-wrap')
+                            .text(message.body)
+                            .appendTo($bubble);
                     }
 
-                    var all = $.isArray(result.data) ? result.data : [];
+                    if (message.media_url) {
 
-                    var previousId = lastId;
+                        var mime = String(message.media_mime || '');
+                        var url = String(message.media_url);
 
-                    $(window).trigger('admin:refresh-chat-unread');
+                        if (mime.indexOf('image/') === 0) {
 
-                    if (!reset && previousId > 0) {
+                            $('<img>', {
+                                alt: 'Attachment',
+                                src: url
+                            }).css({
+                                maxWidth: 'min(260px, 65vw)',
+                                maxHeight: '240px',
+                                borderRadius: '8px'
+                            }).appendTo($bubble);
 
-                        $.each(all, function (index, message) {
+                        } else if (mime.indexOf('video/') === 0) {
 
-                            if (
-                                message.sender === 'user' &&
-                                Number(message.id) > previousId
-                            ) {
-                                notifyAdmin(message);
-                            }
+                            $('<video>', {
+                                controls: true,
+                                playsinline: true,
+                                src: url
+                            }).css({
+                                maxWidth: 'min(300px, 65vw)',
+                                maxHeight: '240px'
+                            }).appendTo($bubble);
 
-                        });
-                    }
+                        } else if (mime.indexOf('audio/') === 0) {
 
-                    var $rendered = $();
-
-                    $.each(all, function (index, message) {
-
-                        $rendered = $rendered.add(
-                            renderMessage(message)
-                        );
-
-                    });
-
-                    var hasPlaceholder = $messages.find(
-                        'p.text-muted.text-center'
-                    ).length > 0;
-
-                    if (reset || hasPlaceholder) {
-
-                        $messages.empty();
-
-                        if ($rendered.length) {
-
-                            $messages.append($rendered);
+                            $('<audio>', {
+                                controls: true,
+                                preload: 'metadata',
+                                src: url
+                            }).appendTo($bubble);
 
                         } else {
 
-                            $('<p>')
-                                .addClass('text-muted text-center my-auto')
-                                .text('No messages yet. Send the first reply.')
-                                .appendTo($messages);
+                            $('<a>', {
+                                    href: url,
+                                    target: '_blank',
+                                    rel: 'noopener noreferrer'
+                                })
+                                .text('Open attachment')
+                                .appendTo($bubble);
                         }
-
-                    } else if ($rendered.length) {
-
-                        $messages.append($rendered);
                     }
 
-                    if (all.length) {
+                    $('<small>')
+                        .addClass('d-block text-muted mt-2 text-end')
+                        .text(
+                            (message.created_at || '') +
+                            (message.read_at ? ' · Seen' : '')
+                        )
+                        .appendTo($bubble);
 
-                        $.each(all, function (index, message) {
-
-                            var id = Number(message.id) || 0;
-
-                            if (id > lastId) {
-                                lastId = id;
-                            }
-
-                        });
-                    }
-
-                    if (!reset && all.length >= 200) {
-                        pendingMessageRefresh = true;
-                    }
-
-                    if (reset || wasNearBottom) {
-
-                        $messages.scrollTop(
-                            $messages.get(0).scrollHeight
-                        );
-                    }
-
-                    setStatus('Connected · refreshes automatically', true);
-
-                }).fail(function (xhr) {
-
-                    setStatus('Reconnecting...', false);
-
-                    console.warn(
-                        'Support chat sync failed:',
-                        showError(xhr)
-                    );
-
-                }).always(function () {
-
-                    busy = false;
-
-                    var shouldRefresh = pendingMessageRefresh && !!active;
-                    var shouldReset = pendingMessageReset;
-
-                    pendingMessageRefresh = false;
-                    pendingMessageReset = false;
-
-                    if (shouldRefresh) {
-                        loadMessages(shouldReset);
-                    }
-
-                });
-            }
-
-            // -------------------------------------------------
-            // CONVERSATION SEARCH
-            // -------------------------------------------------
-
-            $conversationSearch.on('input.adminChat', function () {
-
-                clearTimeout(conversationSearchTimer);
-
-                conversationSearchTimer = window.setTimeout(function () {
-
-                    loadConversations();
-
-                }, 250);
-
-            });
-
-            // -------------------------------------------------
-            // DESKTOP NOTIFICATION PERMISSION
-            // -------------------------------------------------
-
-            $('#enable-desktop-alerts').on('click.adminChat', function () {
-
-                if (!('Notification' in window)) {
-
-                    window.alert(
-                        'Notifications are not supported by this browser.'
-                    );
-
-                    return;
+                    return $bubble;
                 }
 
-                Notification.requestPermission().then(function (permission) {
+                // -------------------------------------------------
+                // NOTIFICATIONS
+                // -------------------------------------------------
 
-                    if (permission !== 'granted') {
+                function notifyAdmin(message) {
+
+                    var event;
+
+                    if (typeof window.CustomEvent === 'function') {
+
+                        event = new CustomEvent('admin:incoming-chat-message', {
+                            detail: $.extend({}, message, {
+                                sender: 'user'
+                            })
+                        });
+
+                        window.dispatchEvent(event);
+                    }
+
+                    if (
+                        'Notification' in window &&
+                        Notification.permission === 'granted'
+                    ) {
+
+                        var notification = new Notification(
+                            'New support message', {
+                                body: message.body || 'User sent an attachment.'
+                            }
+                        );
+
+                        $(notification).on('click.adminChat', function() {
+                            window.focus();
+                            notification.close();
+                        });
+                    }
+                }
+
+                // -------------------------------------------------
+                // LOAD MESSAGES
+                // -------------------------------------------------
+
+                function loadMessages(reset) {
+
+                    reset = !!reset;
+
+                    if (!active) {
+                        return;
+                    }
+
+                    if (busy) {
+
+                        pendingMessageRefresh = true;
+                        pendingMessageReset = pendingMessageReset || reset;
+
+                        return;
+                    }
+
+                    busy = true;
+
+                    var requestedConversation = active;
+                    var requestedVersion = conversationVersion;
+
+                    var messageElement = $messages.get(0);
+
+                    var wasNearBottom = messageElement ?
+                        (
+                            messageElement.scrollHeight -
+                            $messages.scrollTop() -
+                            $messages.innerHeight()
+                        ) < 100 :
+                        true;
+
+                    var query = reset ?
+                        '' :
+                        '?after_id=' + encodeURIComponent(String(lastId));
+
+                    request(
+                        root + '/' + requestedConversation + '/messages' + query
+                    ).done(function(result) {
+
+                        if (
+                            requestedVersion !== conversationVersion ||
+                            Number(requestedConversation) !== Number(active)
+                        ) {
+                            return;
+                        }
+
+                        var all = $.isArray(result.data) ? result.data : [];
+
+                        var previousId = lastId;
+
+                        $(window).trigger('admin:refresh-chat-unread');
+
+                        if (!reset && previousId > 0) {
+
+                            $.each(all, function(index, message) {
+
+                                if (
+                                    message.sender === 'user' &&
+                                    Number(message.id) > previousId
+                                ) {
+                                    notifyAdmin(message);
+                                }
+
+                            });
+                        }
+
+                        var $rendered = $();
+
+                        $.each(all, function(index, message) {
+
+                            $rendered = $rendered.add(
+                                renderMessage(message)
+                            );
+
+                        });
+
+                        var hasPlaceholder = $messages.find(
+                            'p.text-muted.text-center'
+                        ).length > 0;
+
+                        if (reset || hasPlaceholder) {
+
+                            $messages.empty();
+
+                            if ($rendered.length) {
+
+                                $messages.append($rendered);
+
+                            } else {
+
+                                $('<p>')
+                                    .addClass('text-muted text-center my-auto')
+                                    .text('No messages yet. Send the first reply.')
+                                    .appendTo($messages);
+                            }
+
+                        } else if ($rendered.length) {
+
+                            $messages.append($rendered);
+                        }
+
+                        if (all.length) {
+
+                            $.each(all, function(index, message) {
+
+                                var id = Number(message.id) || 0;
+
+                                if (id > lastId) {
+                                    lastId = id;
+                                }
+
+                            });
+                        }
+
+                        if (!reset && all.length >= 200) {
+                            pendingMessageRefresh = true;
+                        }
+
+                        if (reset || wasNearBottom) {
+
+                            $messages.scrollTop(
+                                $messages.get(0).scrollHeight
+                            );
+                        }
+
+                        setStatus('Connected · refreshes automatically', true);
+
+                    }).fail(function(xhr) {
+
+                        setStatus('Reconnecting...', false);
+
+                        console.warn(
+                            'Support chat sync failed:',
+                            showError(xhr)
+                        );
+
+                    }).always(function() {
+
+                        busy = false;
+
+                        var shouldRefresh = pendingMessageRefresh && !!active;
+                        var shouldReset = pendingMessageReset;
+
+                        pendingMessageRefresh = false;
+                        pendingMessageReset = false;
+
+                        if (shouldRefresh) {
+                            loadMessages(shouldReset);
+                        }
+
+                    });
+                }
+
+                // -------------------------------------------------
+                // CONVERSATION SEARCH
+                // -------------------------------------------------
+
+                $conversationSearch.on('input.adminChat', function() {
+
+                    clearTimeout(conversationSearchTimer);
+
+                    conversationSearchTimer = window.setTimeout(function() {
+
+                        loadConversations();
+
+                    }, 250);
+
+                });
+
+                // -------------------------------------------------
+                // DESKTOP NOTIFICATION PERMISSION
+                // -------------------------------------------------
+
+                $('#enable-desktop-alerts').on('click.adminChat', function() {
+
+                    if (!('Notification' in window)) {
 
                         window.alert(
-                            'Please allow notifications in browser settings.'
+                            'Notifications are not supported by this browser.'
                         );
 
                         return;
                     }
 
+                    Notification.requestPermission().then(function(permission) {
+
+                        if (permission !== 'granted') {
+
+                            window.alert(
+                                'Please allow notifications in browser settings.'
+                            );
+
+                            return;
+                        }
+
+                        if (
+                            !('serviceWorker' in navigator) ||
+                            !window.firebase ||
+                            !window.FIREBASE_CONFIG ||
+                            !window.FIREBASE_VAPID_KEY
+                        ) {
+
+                            window.alert(
+                                'Desktop alerts are enabled while this tab is open, but background push configuration is unavailable.'
+                            );
+
+                            return;
+                        }
+
+                        navigator.serviceWorker.register(
+                            '/firebase-messaging-sw.js'
+                        ).then(function(registration) {
+
+                            return navigator.serviceWorker.ready;
+
+                        }).then(function(registration) {
+
+                            var firebaseApp = window.firebase.apps.length ?
+                                window.firebase.app() :
+                                window.firebase.initializeApp(
+                                    window.FIREBASE_CONFIG
+                                );
+
+                            var messaging = window.firebase.messaging(firebaseApp);
+
+                            return messaging.getToken({
+                                vapidKey: window.FIREBASE_VAPID_KEY,
+                                serviceWorkerRegistration: registration
+                            });
+
+                        }).then(function(pushToken) {
+
+                            if (!pushToken) {
+                                throw new Error(
+                                'Firebase did not return a push token.');
+                            }
+
+                            return request(
+                                root.replace(/\/support-chat\/?$/,
+                                    '/push-subscribe'), {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        token: pushToken,
+                                        platform: 'web'
+                                    })
+                                }
+                            );
+
+                        }).done(function() {
+
+                            window.alert(
+                                'Background push alerts enabled for this admin account.'
+                            );
+
+                        }).catch(function(error) {
+
+                            window.alert(
+                                'Push registration failed: ' +
+                                (error.message || 'Unknown error')
+                            );
+
+                        });
+
+                    });
+
+                });
+
+                // -------------------------------------------------
+                // DISABLE ADMIN PUSH
+                // -------------------------------------------------
+
+                $('#disable-admin-push').on('click.adminChat', function() {
+
                     if (
-                        !('serviceWorker' in navigator) ||
                         !window.firebase ||
                         !window.FIREBASE_CONFIG ||
                         !window.FIREBASE_VAPID_KEY
                     ) {
 
-                        window.alert(
-                            'Desktop alerts are enabled while this tab is open, but background push configuration is unavailable.'
-                        );
+                        window.alert('Firebase configuration is unavailable.');
 
                         return;
                     }
 
-                    navigator.serviceWorker.register(
-                        '/firebase-messaging-sw.js'
-                    ).then(function (registration) {
+                    if (!('serviceWorker' in navigator)) {
 
-                        return navigator.serviceWorker.ready;
+                        window.alert('Service workers are not supported.');
 
-                    }).then(function (registration) {
+                        return;
+                    }
 
-                        var firebaseApp = window.firebase.apps.length
-                            ? window.firebase.app()
-                            : window.firebase.initializeApp(
-                                window.FIREBASE_CONFIG
-                            );
+                    navigator.serviceWorker.getRegistration('/').then(
+                        function(registration) {
 
-                        var messaging = window.firebase.messaging(firebaseApp);
+                            if (!registration) {
+                                throw new Error('No admin push registration found.');
+                            }
 
-                        return messaging.getToken({
-                            vapidKey: window.FIREBASE_VAPID_KEY,
-                            serviceWorkerRegistration: registration
-                        });
+                            var firebaseApp = window.firebase.apps.length ?
+                                window.firebase.app() :
+                                window.firebase.initializeApp(
+                                    window.FIREBASE_CONFIG
+                                );
 
-                    }).then(function (pushToken) {
+                            var messaging = window.firebase.messaging(firebaseApp);
+
+                            return messaging.getToken({
+                                vapidKey: window.FIREBASE_VAPID_KEY,
+                                serviceWorkerRegistration: registration
+                            });
+
+                        }
+                    ).then(function(pushToken) {
 
                         if (!pushToken) {
-                            throw new Error('Firebase did not return a push token.');
+                            throw new Error('No active push token found.');
                         }
 
                         return request(
-                            root.replace(/\/support-chat\/?$/, '/push-subscribe'),
-                            {
-                                method: 'POST',
+                            root.replace(/\/support-chat\/?$/, '/push-subscribe'), {
+                                method: 'DELETE',
                                 body: JSON.stringify({
-                                    token: pushToken,
-                                    platform: 'web'
+                                    token: pushToken
                                 })
                             }
                         );
 
-                    }).done(function () {
+                    }).done(function() {
 
                         window.alert(
-                            'Background push alerts enabled for this admin account.'
+                            'Admin background push disabled. Browser permission remains unchanged.'
                         );
 
-                    }).catch(function (error) {
+                    }).catch(function(error) {
 
                         window.alert(
-                            'Push registration failed: ' +
+                            'Unable to disable admin push: ' +
                             (error.message || 'Unknown error')
                         );
 
@@ -995,467 +1075,385 @@
 
                 });
 
-            });
+                // -------------------------------------------------
+                // VOICE RECORDING
+                // -------------------------------------------------
 
-            // -------------------------------------------------
-            // DISABLE ADMIN PUSH
-            // -------------------------------------------------
+                $recordButton.on('click.adminChat', function() {
 
-            $('#disable-admin-push').on('click.adminChat', function () {
+                    if (recorder && recorder.state === 'recording') {
 
-                if (
-                    !window.firebase ||
-                    !window.FIREBASE_CONFIG ||
-                    !window.FIREBASE_VAPID_KEY
-                ) {
+                        recorder.stop();
 
-                    window.alert('Firebase configuration is unavailable.');
-
-                    return;
-                }
-
-                if (!('serviceWorker' in navigator)) {
-
-                    window.alert('Service workers are not supported.');
-
-                    return;
-                }
-
-                navigator.serviceWorker.getRegistration('/').then(
-                    function (registration) {
-
-                        if (!registration) {
-                            throw new Error('No admin push registration found.');
-                        }
-
-                        var firebaseApp = window.firebase.apps.length
-                            ? window.firebase.app()
-                            : window.firebase.initializeApp(
-                                window.FIREBASE_CONFIG
-                            );
-
-                        var messaging = window.firebase.messaging(firebaseApp);
-
-                        return messaging.getToken({
-                            vapidKey: window.FIREBASE_VAPID_KEY,
-                            serviceWorkerRegistration: registration
-                        });
-
-                    }
-                ).then(function (pushToken) {
-
-                    if (!pushToken) {
-                        throw new Error('No active push token found.');
-                    }
-
-                    return request(
-                        root.replace(/\/support-chat\/?$/, '/push-subscribe'),
-                        {
-                            method: 'DELETE',
-                            body: JSON.stringify({
-                                token: pushToken
-                            })
-                        }
-                    );
-
-                }).done(function () {
-
-                    window.alert(
-                        'Admin background push disabled. Browser permission remains unchanged.'
-                    );
-
-                }).catch(function (error) {
-
-                    window.alert(
-                        'Unable to disable admin push: ' +
-                        (error.message || 'Unknown error')
-                    );
-
-                });
-
-            });
-
-            // -------------------------------------------------
-            // VOICE RECORDING
-            // -------------------------------------------------
-
-            $recordButton.on('click.adminChat', function () {
-
-                if (recorder && recorder.state === 'recording') {
-
-                    recorder.stop();
-
-                    $recordButton
-                        .text('Record')
-                        .removeClass('btn-danger')
-                        .addClass('btn-outline-secondary');
-
-                    $recordingStatus
-                        .text('Preparing voice attachment...')
-                        .removeClass('d-none');
-
-                    return;
-                }
-
-                if (
-                    !navigator.mediaDevices ||
-                    !navigator.mediaDevices.getUserMedia ||
-                    typeof MediaRecorder === 'undefined'
-                ) {
-
-                    window.alert(
-                        'Voice recording is not supported by this browser.'
-                    );
-
-                    return;
-                }
-
-                navigator.mediaDevices.getUserMedia({
-                    audio: true
-                }).then(function (newStream) {
-
-                    mediaStream = newStream;
-
-                    var mimeTypes = [
-                        'audio/webm;codecs=opus',
-                        'audio/webm',
-                        'audio/mp4'
-                    ];
-
-                    var selectedMime = '';
-
-                    $.each(mimeTypes, function (index, mime) {
-
-                        if (
-                            MediaRecorder.isTypeSupported &&
-                            MediaRecorder.isTypeSupported(mime)
-                        ) {
-                            selectedMime = mime;
-                            return false;
-                        }
-
-                    });
-
-                    recorder = selectedMime
-                        ? new MediaRecorder(mediaStream, {
-                            mimeType: selectedMime
-                        })
-                        : new MediaRecorder(mediaStream);
-
-                    chunks = [];
-                    recordedFile = null;
-
-                    recorder.ondataavailable = function (event) {
-
-                        if (event.data && event.data.size > 0) {
-                            chunks.push(event.data);
-                        }
-                    };
-
-                    recorder.onstop = function () {
-
-                        var type = recorder.mimeType || 'audio/webm';
-
-                        var extension = type.indexOf('mp4') !== -1
-                            ? 'mp4'
-                            : 'webm';
-
-                        var blob = new Blob(chunks, {
-                            type: type
-                        });
-
-                        recordedFile = new File(
-                            [blob],
-                            'voice-message.' + extension,
-                            {
-                                type: type
-                            }
-                        );
-
-                        $('#attachment').val('');
+                        $recordButton
+                            .text('Record')
+                            .removeClass('btn-danger')
+                            .addClass('btn-outline-secondary');
 
                         $recordingStatus
-                            .text('Voice message ready to send')
+                            .text('Preparing voice attachment...')
                             .removeClass('d-none');
 
-                        if (mediaStream) {
-
-                            mediaStream.getTracks().forEach(function (track) {
-                                track.stop();
-                            });
-
-                            mediaStream = null;
-                        }
-                    };
-
-                    recorder.start();
-
-                    $recordButton
-                        .text('Stop')
-                        .removeClass('btn-outline-secondary')
-                        .addClass('btn-danger');
-
-                    $recordingStatus
-                        .text('Recording... press Stop to attach')
-                        .removeClass('d-none');
-
-                }).catch(function () {
-
-                    window.alert(
-                        'Microphone permission was denied or unavailable.'
-                    );
-
-                });
-
-            });
-
-            // -------------------------------------------------
-            // FILE ATTACHMENT
-            // -------------------------------------------------
-
-            $('#attachment').on('change.adminChat', function () {
-
-                recordedFile = null;
-
-                $recordingStatus.addClass('d-none');
-
-            });
-
-            // -------------------------------------------------
-            // SEND MESSAGE
-            // -------------------------------------------------
-
-            $('#send-form').on('submit.adminChat', function (event) {
-
-                event.preventDefault();
-
-                if (!active) {
-
-                    window.alert('Select a conversation first.');
-
-                    return;
-                }
-
-                var $body = $('#body');
-                var $file = $('#attachment');
-
-                var message = $.trim($body.val() || '');
-
-                var selectedFile = $file.get(0).files[0];
-
-                if (!message && !selectedFile && !recordedFile) {
-                    return;
-                }
-
-                if (recorder && recorder.state === 'recording') {
-
-                    window.alert('Stop recording before sending.');
-
-                    return;
-                }
-
-                var formData = new FormData();
-
-                if (message) {
-                    formData.append('body', message);
-                }
-
-                var attachment = recordedFile || selectedFile;
-
-                if (attachment) {
-                    formData.append('attachment', attachment);
-                }
-
-                var conversationId = active;
-
-                var $sendButton = $('#send-form button[type="submit"]');
-
-                $sendButton.prop('disabled', true);
-
-                request(
-                    root + '/' + conversationId + '/send',
-                    {
-                        method: 'POST',
-                        body: formData
-                    }
-                ).done(function () {
-
-                    if (Number(active) !== Number(conversationId)) {
                         return;
                     }
 
-                    $body.val('');
-                    $file.val('');
+                    if (
+                        !navigator.mediaDevices ||
+                        !navigator.mediaDevices.getUserMedia ||
+                        typeof MediaRecorder === 'undefined'
+                    ) {
+
+                        window.alert(
+                            'Voice recording is not supported by this browser.'
+                        );
+
+                        return;
+                    }
+
+                    navigator.mediaDevices.getUserMedia({
+                        audio: true
+                    }).then(function(newStream) {
+
+                        mediaStream = newStream;
+
+                        var mimeTypes = [
+                            'audio/webm;codecs=opus',
+                            'audio/webm',
+                            'audio/mp4'
+                        ];
+
+                        var selectedMime = '';
+
+                        $.each(mimeTypes, function(index, mime) {
+
+                            if (
+                                MediaRecorder.isTypeSupported &&
+                                MediaRecorder.isTypeSupported(mime)
+                            ) {
+                                selectedMime = mime;
+                                return false;
+                            }
+
+                        });
+
+                        recorder = selectedMime ?
+                            new MediaRecorder(mediaStream, {
+                                mimeType: selectedMime
+                            }) :
+                            new MediaRecorder(mediaStream);
+
+                        chunks = [];
+                        recordedFile = null;
+
+                        recorder.ondataavailable = function(event) {
+
+                            if (event.data && event.data.size > 0) {
+                                chunks.push(event.data);
+                            }
+                        };
+
+                        recorder.onstop = function() {
+
+                            var type = recorder.mimeType || 'audio/webm';
+
+                            var extension = type.indexOf('mp4') !== -1 ?
+                                'mp4' :
+                                'webm';
+
+                            var blob = new Blob(chunks, {
+                                type: type
+                            });
+
+                            recordedFile = new File(
+                                [blob],
+                                'voice-message.' + extension, {
+                                    type: type
+                                }
+                            );
+
+                            $('#attachment').val('');
+
+                            $recordingStatus
+                                .text('Voice message ready to send')
+                                .removeClass('d-none');
+
+                            if (mediaStream) {
+
+                                mediaStream.getTracks().forEach(function(track) {
+                                    track.stop();
+                                });
+
+                                mediaStream = null;
+                            }
+                        };
+
+                        recorder.start();
+
+                        $recordButton
+                            .text('Stop')
+                            .removeClass('btn-outline-secondary')
+                            .addClass('btn-danger');
+
+                        $recordingStatus
+                            .text('Recording... press Stop to attach')
+                            .removeClass('d-none');
+
+                    }).catch(function() {
+
+                        window.alert(
+                            'Microphone permission was denied or unavailable.'
+                        );
+
+                    });
+
+                });
+
+                // -------------------------------------------------
+                // FILE ATTACHMENT
+                // -------------------------------------------------
+
+                $('#attachment').on('change.adminChat', function() {
 
                     recordedFile = null;
 
                     $recordingStatus.addClass('d-none');
 
-                    loadMessages(true);
+                });
 
-                    loadConversations();
+                // -------------------------------------------------
+                // SEND MESSAGE
+                // -------------------------------------------------
 
-                }).fail(function (xhr) {
+                $('#send-form').on('submit.adminChat', function(event) {
 
-                    window.alert(
-                        showError(xhr, 'Unable to send message.')
-                    );
+                    event.preventDefault();
 
-                }).always(function () {
+                    if (!active) {
 
-                    $sendButton.prop('disabled', false);
+                        window.alert('Select a conversation first.');
+
+                        return;
+                    }
+
+                    var $body = $('#body');
+                    var $file = $('#attachment');
+
+                    var message = $.trim($body.val() || '');
+
+                    var selectedFile = $file.get(0).files[0];
+
+                    if (!message && !selectedFile && !recordedFile) {
+                        return;
+                    }
+
+                    if (recorder && recorder.state === 'recording') {
+
+                        window.alert('Stop recording before sending.');
+
+                        return;
+                    }
+
+                    var formData = new FormData();
+
+                    if (message) {
+                        formData.append('body', message);
+                    }
+
+                    var attachment = recordedFile || selectedFile;
+
+                    if (attachment) {
+                        formData.append('attachment', attachment);
+                    }
+
+                    var conversationId = active;
+
+                    var $sendButton = $('#send-form button[type="submit"]');
+
+                    $sendButton.prop('disabled', true);
+
+                    request(
+                        root + '/' + conversationId + '/send', {
+                            method: 'POST',
+                            body: formData
+                        }
+                    ).done(function() {
+
+                        if (Number(active) !== Number(conversationId)) {
+                            return;
+                        }
+
+                        $body.val('');
+                        $file.val('');
+
+                        recordedFile = null;
+
+                        $recordingStatus.addClass('d-none');
+
+                        loadMessages(true);
+
+                        loadConversations();
+
+                    }).fail(function(xhr) {
+
+                        window.alert(
+                            showError(xhr, 'Unable to send message.')
+                        );
+
+                    }).always(function() {
+
+                        $sendButton.prop('disabled', false);
+
+                    });
+
+                });
+
+                // -------------------------------------------------
+                // REALTIME SUPPORT MESSAGE EVENT
+                // -------------------------------------------------
+
+                $(window).on(
+                    'admin:support-message.adminChat',
+                    function(event, payload) {
+
+                        if (
+                            !payload &&
+                            event.originalEvent &&
+                            event.originalEvent.detail
+                        ) {
+                            payload = event.originalEvent.detail;
+                        }
+
+                        payload = payload || {};
+
+                        if (
+                            active !== null &&
+                            Number(payload.conversation_id) === Number(active)
+                        ) {
+                            loadMessages(false);
+                        }
+
+                    }
+                );
+
+                // -------------------------------------------------
+                // REALTIME CONVERSATION SNAPSHOT
+                // -------------------------------------------------
+
+                $(window).on(
+                    'admin:conversations-snapshot.adminChat',
+                    function(event, snapshot) {
+
+                        if ($.trim($conversationSearch.val() || '')) {
+                            return;
+                        }
+
+                        if (
+                            !snapshot &&
+                            event.originalEvent &&
+                            event.originalEvent.detail
+                        ) {
+                            snapshot = event.originalEvent.detail;
+                        }
+
+                        if (snapshot) {
+                            loadConversations(snapshot);
+                        }
+
+                    }
+                );
+
+                // -------------------------------------------------
+                // PUSHER CONNECTION STATE
+                // -------------------------------------------------
+
+                $(window).on(
+                    'admin:broadcast-state.adminChat',
+                    function(event, state) {
+
+                        if (
+                            !state &&
+                            event.originalEvent &&
+                            event.originalEvent.detail
+                        ) {
+                            state = event.originalEvent.detail;
+                        }
+
+                        state = state || {};
+
+                        realtimeConnected = state.current === 'connected';
+
+                        if (realtimeConnected) {
+
+                            if (active) {
+                                loadMessages(false);
+                            }
+
+                            setStatus('Live · Pusher', true);
+
+                        } else {
+
+                            setStatus('Reconnecting...', false);
+
+                        }
+
+                    }
+                );
+
+                // -------------------------------------------------
+                // RECOVERY SYNC
+                // -------------------------------------------------
+
+                $(window).on(
+                    'admin:recovery-tick.adminChat',
+                    function() {
+
+                        if (!realtimeConnected && active) {
+                            loadMessages(false);
+                        }
+
+                    }
+                );
+
+                // -------------------------------------------------
+                // INITIAL LOAD
+                // -------------------------------------------------
+
+                loadConversations();
+
+                if (
+                    window.adminPusher &&
+                    window.adminPusher.connection &&
+                    window.adminPusher.connection.state === 'connected'
+                ) {
+                    realtimeConnected = true;
+                }
+
+                // -------------------------------------------------
+                // CLEANUP
+                // -------------------------------------------------
+
+                $(window).one('beforeunload.adminChat', function() {
+
+                    clearTimeout(userSearchTimer);
+                    clearTimeout(conversationSearchTimer);
+
+                    if (recorder && recorder.state === 'recording') {
+                        recorder.stop();
+                    }
+
+                    if (mediaStream) {
+
+                        mediaStream.getTracks().forEach(function(track) {
+                            track.stop();
+                        });
+
+                        mediaStream = null;
+                    }
 
                 });
 
             });
 
-            // -------------------------------------------------
-            // REALTIME SUPPORT MESSAGE EVENT
-            // -------------------------------------------------
-
-            $(window).on(
-                'admin:support-message.adminChat',
-                function (event, payload) {
-
-                    if (
-                        !payload &&
-                        event.originalEvent &&
-                        event.originalEvent.detail
-                    ) {
-                        payload = event.originalEvent.detail;
-                    }
-
-                    payload = payload || {};
-
-                    if (
-                        active !== null &&
-                        Number(payload.conversation_id) === Number(active)
-                    ) {
-                        loadMessages(false);
-                    }
-
-                }
-            );
-
-            // -------------------------------------------------
-            // REALTIME CONVERSATION SNAPSHOT
-            // -------------------------------------------------
-
-            $(window).on(
-                'admin:conversations-snapshot.adminChat',
-                function (event, snapshot) {
-
-                    if ($.trim($conversationSearch.val() || '')) {
-                        return;
-                    }
-
-                    if (
-                        !snapshot &&
-                        event.originalEvent &&
-                        event.originalEvent.detail
-                    ) {
-                        snapshot = event.originalEvent.detail;
-                    }
-
-                    if (snapshot) {
-                        loadConversations(snapshot);
-                    }
-
-                }
-            );
-
-            // -------------------------------------------------
-            // PUSHER CONNECTION STATE
-            // -------------------------------------------------
-
-            $(window).on(
-                'admin:broadcast-state.adminChat',
-                function (event, state) {
-
-                    if (
-                        !state &&
-                        event.originalEvent &&
-                        event.originalEvent.detail
-                    ) {
-                        state = event.originalEvent.detail;
-                    }
-
-                    state = state || {};
-
-                    realtimeConnected = state.current === 'connected';
-
-                    if (realtimeConnected) {
-
-                        if (active) {
-                            loadMessages(false);
-                        }
-
-                        setStatus('Live · Pusher', true);
-
-                    } else {
-
-                        setStatus('Reconnecting...', false);
-
-                    }
-
-                }
-            );
-
-            // -------------------------------------------------
-            // RECOVERY SYNC
-            // -------------------------------------------------
-
-            $(window).on(
-                'admin:recovery-tick.adminChat',
-                function () {
-
-                    if (!realtimeConnected && active) {
-                        loadMessages(false);
-                    }
-
-                }
-            );
-
-            // -------------------------------------------------
-            // INITIAL LOAD
-            // -------------------------------------------------
-
-            loadConversations();
-
-            if (
-                window.adminPusher &&
-                window.adminPusher.connection &&
-                window.adminPusher.connection.state === 'connected'
-            ) {
-                realtimeConnected = true;
-            }
-
-            // -------------------------------------------------
-            // CLEANUP
-            // -------------------------------------------------
-
-            $(window).one('beforeunload.adminChat', function () {
-
-                clearTimeout(userSearchTimer);
-                clearTimeout(conversationSearchTimer);
-
-                if (recorder && recorder.state === 'recording') {
-                    recorder.stop();
-                }
-
-                if (mediaStream) {
-
-                    mediaStream.getTracks().forEach(function (track) {
-                        track.stop();
-                    });
-
-                    mediaStream = null;
-                }
-
-            });
-
-        });
-
-    })(jQuery, window, document);
+        })(jQuery, window, document);
     </script>
 @endsection

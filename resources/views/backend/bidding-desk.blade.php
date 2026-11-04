@@ -192,9 +192,6 @@
                                         Status
                                     </th>
                                     <th>
-                                        Order
-                                    </th>
-                                    <th>
                                         Time
                                     </th>
                                 </tr>
@@ -378,6 +375,46 @@
                 font-size: 9px;
             }
         }
+        .user-detail-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 6px;
+    border-bottom: 1px solid #dee2e6;
+    scrollbar-width: thin;
+}
+
+.user-detail-tabs .nav-link {
+    white-space: nowrap;
+    font-weight: 700;
+    font-size: 13px;
+    color: #495057;
+    border-radius: 10px 10px 0 0;
+    padding: 10px 16px;
+}
+
+.user-detail-tabs .nav-link.active {
+    background: #212529;
+    color: #fff;
+    border-color: #212529;
+}
+
+.user-detail-tabs .nav-link .badge {
+    margin-left: 5px;
+}
+
+.user-detail-content {
+    padding-top: 15px;
+}
+
+.user-detail-panel {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 15px;
+    background: #fff;
+}
+
     </style>
 @endsection
 
@@ -602,76 +639,304 @@
                 }
             }
 
-            function renderModalDetails(data, append = false) {
-                const summary = data.summary || {};
-                $('#modalTotalBids').text(summary.total_bids || 0);
-                $('#modalTotalUsers').text(summary.total_users || 0);
-                $('#modalTotalAmount').text('₹' + money(summary.total_amount));
 
-                if (!append) $modalUserBreakdown.empty();
-                (data.users || []).forEach(user => {
-                    const $card = $('<section>', { class: 'border rounded-3 p-3' });
-                    const $heading = $('<div>', { class: 'd-flex flex-wrap justify-content-between gap-2 mb-2' });
-                    const $identity = $('<div>');
-                    $identity.append($('<strong>').text(user.user_name || ('User #' + user.user_id)));
-                    $identity.append($('<div>', { class: 'small text-muted' })
-                        .text('User #' + user.user_id + ' · ' + (user.user_phone || '-')));
-                    $heading.append($identity);
-                    $heading.append($('<span>', { class: 'badge bg-warning text-dark align-self-start' })
-                        .text((user.matching_bids || []).length + ' matching bids'));
+function renderModalDetails(data, append = false) {
+    const summary = data.summary || {};
 
-                    const $numbers = $('<div>', { class: 'd-flex flex-wrap gap-2' });
-                    (user.numbers || []).forEach(number => {
-                        const selected = String(number.number) === String(data.number);
-                        $numbers.append($('<span>', {
-                            class: 'badge ' + (selected ? 'bg-warning text-dark' : 'bg-light text-dark border') + ' p-2'
-                        }).text(number.number + ' · ' + number.total_bids + ' × ₹' + money(number.total_amount)));
-                    });
+    $('#modalTotalBids').text(summary.total_bids || 0);
+    $('#modalTotalUsers').text(summary.total_users || 0);
+    $('#modalTotalAmount').text('₹' + money(summary.total_amount));
 
-                    const bidText = (user.matching_bids || []).map(bid =>
-                        'Bid #' + bid.id +
-                        (bid.transaction_ids?.length ? ' · Txn #' + bid.transaction_ids.join(', #') : '') +
-                        ' · ₹' + money(bid.amount) + ' · ' + (bid.created_at || '-')
-                    ).join(' | ');
-                    $card.append($heading, $numbers, $('<div>', { class: 'small text-muted mt-2' }).text(bidText));
-                    $modalUserBreakdown.append($card);
-                });
+    // User tabs and content containers
+    if (!append) {
+        $modalUserBreakdown.empty();
 
-                if (!append) $modalBidTable.empty();
-                if (!Number(summary.total_bids || 0)) {
-                    setVisible($('#modalEmpty'), true);
-                    return;
-                }
-                setVisible($('#modalEmpty'), false);
+        $modalUserBreakdown.append(
+            $('<ul>', {
+                class: 'nav nav-tabs user-detail-tabs',
+                id: 'userDetailTabs',
+                role: 'tablist'
+            })
+        );
 
-                (data.bids || []).forEach(bid => {
-                    const $row = $('<tr>');
-                    const bidLabel = 'Bid #' + bid.id + (bid.transaction_id ? ' · Txn #' + bid.transaction_id : '');
-                    const $type = $('<span>', {
-                        class: 'badge type-badge ' + (bid.type === 'jodi' ? 'bg-warning text-dark' : bid.type === 'cross' ? 'bg-dark' : 'bg-primary')
-                    }).text(bid.type === 'jodi' ? 'Jodi' : bid.type === 'cross' ? 'Crossing' : 'Haruf');
-                    const status = String(bid.status || 'pending').toLowerCase();
-                    const statusClass = status === 'pending' ? 'bg-warning text-dark'
-                        : status === 'won' ? 'bg-success'
-                            : status === 'lost' ? 'bg-danger'
-                                : status === 'cancelled' ? 'bg-dark' : 'bg-secondary';
-                    const $status = $('<span>', { class: 'badge ' + statusClass + ' type-badge' }).text(bid.status || '-');
+        $modalUserBreakdown.append(
+            $('<div>', {
+                class: 'tab-content user-detail-content',
+                id: 'userDetailTabContent'
+            })
+        );
+    }
 
-                    $row.append($('<td>').text(bidLabel));
-                    const $userCell = $('<td>');
-                    $userCell.append($('<div>', { class: 'fw-bold' }).text(bid.user_name || ''));
-                    $userCell.append($('<small>', { class: 'text-muted' }).text('ID: ' + bid.user_id));
-                    $row.append($userCell);
-                    $row.append($('<td>').text(bid.user_phone || ''));
-                    $row.append($('<td>').append($type));
-                    $row.append($('<td>', { class: 'fw-bold' }).text(bid.number || ''));
-                    $row.append($('<td>', { class: 'fw-bold text-success' }).text('₹' + money(bid.amount)));
-                    $row.append($('<td>').append($status));
-                    $row.append($('<td>').append($('<small>', { class: 'fw-semibold' }).text(bid.order_no || '')));
-                    $row.append($('<td>').append($('<small>', { class: 'text-muted' }).text(bid.created_at || '-')));
-                    $modalBidTable.append($row);
-                });
-            }
+    const $tabs = $('#userDetailTabs');
+    const $tabContent = $('#userDetailTabContent');
+
+    (data.users || []).forEach((user, index) => {
+
+        const userId = String(user.user_id);
+        const tabId = 'user-tab-' + userId;
+        const paneId = 'user-pane-' + userId;
+
+        // Avoid duplicate tabs while loading more pages
+        if ($('#' + tabId).length) return;
+
+        const isActive = $tabs.children().length === 0;
+
+        // User tab
+        const $tabItem = $('<li>', {
+            class: 'nav-item',
+            role: 'presentation'
+        });
+
+        const $tabButton = $('<button>', {
+            type: 'button',
+            class: 'nav-link' + (isActive ? ' active' : ''),
+            id: tabId,
+            'data-bs-toggle': 'tab',
+            'data-bs-target': '#' + paneId,
+            role: 'tab',
+            'aria-controls': paneId,
+            'aria-selected': isActive ? 'true' : 'false'
+        });
+
+        $tabButton.append(
+            $('<span>').text(user.user_name || ('User #' + user.user_id))
+        );
+
+        $tabButton.append(
+            $('<span>', {
+                class: 'badge bg-warning text-dark'
+            }).text((user.matching_bids || []).length)
+        );
+
+        $tabItem.append($tabButton);
+        $tabs.append($tabItem);
+
+        // User tab content
+        const $pane = $('<div>', {
+            class: 'tab-pane fade' + (isActive ? ' show active' : ''),
+            id: paneId,
+            role: 'tabpanel',
+            'aria-labelledby': tabId,
+            tabindex: '0'
+        });
+
+        const $card = $('<div>', {
+            class: 'user-detail-panel'
+        });
+
+        // User identity
+        const $heading = $('<div>', {
+            class: 'd-flex flex-wrap justify-content-between gap-2 mb-3'
+        });
+
+        const $identity = $('<div>');
+
+        $identity.append(
+            $('<h6>', {
+                class: 'fw-bold mb-1'
+            }).text(user.user_name || ('User #' + user.user_id))
+        );
+
+        $identity.append(
+            $('<div>', {
+                class: 'small text-muted'
+            }).text(
+                'User #' + user.user_id +
+                ' · ' + (user.user_phone || '-')
+            )
+        );
+
+        $heading.append($identity);
+
+        $heading.append(
+            $('<span>', {
+                class: 'badge bg-warning text-dark align-self-start p-2'
+            }).text(
+                (user.matching_bids || []).length + ' Matching Bids'
+            )
+        );
+
+        $card.append($heading);
+
+        // User numbers
+        $card.append(
+            $('<div>', {
+                class: 'fw-bold small mb-2'
+            }).text('User Numbers')
+        );
+
+        const $numbers = $('<div>', {
+            class: 'd-flex flex-wrap gap-2 mb-3'
+        });
+
+        (user.numbers || []).forEach(number => {
+
+            const selected =
+                String(number.number) === String(data.number);
+
+            $numbers.append(
+                $('<span>', {
+                    class: 'badge ' +
+                        (selected
+                            ? 'bg-warning text-dark'
+                            : 'bg-light text-dark border') +
+                        ' p-2'
+                }).text(
+                    number.number +
+                    ' · ' + number.total_bids +
+                    ' × ₹' + money(number.total_amount)
+                )
+            );
+        });
+
+        $card.append($numbers);
+
+        // Matching bids
+        const $bidHeading = $('<div>', {
+            class: 'fw-bold small mb-2'
+        }).text('Matching Bid Details');
+
+        $card.append($bidHeading);
+
+        const $bidList = $('<div>', {
+            class: 'd-grid gap-2'
+        });
+
+        (user.matching_bids || []).forEach(bid => {
+
+            const $bidRow = $('<div>', {
+                class: 'd-flex flex-wrap justify-content-between align-items-center gap-2 border rounded-3 p-2'
+            });
+
+            const transactionText = bid.transaction_ids?.length
+                ? ' · Txn #' + bid.transaction_ids.join(', #')
+                : '';
+
+            const $bidInfo = $('<div>');
+
+            $bidInfo.append(
+                $('<div>', {
+                    class: 'fw-semibold small'
+                }).text('Bid #' + bid.id + transactionText)
+            );
+
+            $bidInfo.append(
+                $('<div>', {
+                    class: 'small text-muted'
+                }).text(bid.created_at || '-')
+            );
+
+            $bidRow.append($bidInfo);
+
+            $bidRow.append(
+                $('<strong>', {
+                    class: 'text-success'
+                }).text('₹' + money(bid.amount))
+            );
+
+            $bidList.append($bidRow);
+        });
+
+        $card.append($bidList);
+
+        $pane.append($card);
+        $tabContent.append($pane);
+    });
+
+    // Existing bids table remains unchanged
+    if (!append) $modalBidTable.empty();
+
+    if (!Number(summary.total_bids || 0)) {
+        setVisible($('#modalEmpty'), true);
+        return;
+    }
+
+    setVisible($('#modalEmpty'), false);
+
+    (data.bids || []).forEach(bid => {
+
+        const $row = $('<tr>');
+
+        const bidLabel = 'Bid #' + bid.id +
+            (bid.transaction_id ? ' · Txn #' + bid.transaction_id : '');
+
+        const $type = $('<span>', {
+            class: 'badge type-badge ' +
+                (bid.type === 'jodi'
+                    ? 'bg-warning text-dark'
+                    : bid.type === 'cross'
+                        ? 'bg-dark'
+                        : 'bg-primary')
+        }).text(
+            bid.type === 'jodi'
+                ? 'Jodi'
+                : bid.type === 'cross'
+                    ? 'Crossing'
+                    : 'Haruf'
+        );
+
+        const status = String(bid.status || 'pending').toLowerCase();
+
+        const statusClass = status === 'pending'
+            ? 'bg-warning text-dark'
+            : status === 'won'
+                ? 'bg-success'
+                : status === 'lost'
+                    ? 'bg-danger'
+                    : status === 'cancelled'
+                        ? 'bg-dark'
+                        : 'bg-secondary';
+
+        const $status = $('<span>', {
+            class: 'badge ' + statusClass + ' type-badge'
+        }).text(bid.status || '-');
+
+        $row.append($('<td>').text(bidLabel));
+
+        const $userCell = $('<td>');
+
+        $userCell.append(
+            $('<div>', {
+                class: 'fw-bold'
+            }).text(bid.user_name || '')
+        );
+
+        $userCell.append(
+            $('<small>', {
+                class: 'text-muted'
+            }).text('ID: ' + bid.user_id)
+        );
+
+        $row.append($userCell);
+        $row.append($('<td>').text(bid.user_phone || ''));
+        $row.append($('<td>').append($type));
+
+        $row.append(
+            $('<td>', {
+                class: 'fw-bold'
+            }).text(bid.number || '')
+        );
+
+        $row.append(
+            $('<td>', {
+                class: 'fw-bold text-success'
+            }).text('₹' + money(bid.amount))
+        );
+
+        $row.append($('<td>').append($status));
+
+        $row.append(
+            $('<td>').append(
+                $('<small>', {
+                    class: 'text-muted'
+                }).text(bid.created_at || '-')
+            )
+        );
+
+        $modalBidTable.append($row);
+    });
+}
+
 
             $modalLoadMore.on('click', function () {
                 if (activeDetails && activeDetails.page < activeDetails.lastPage) {
