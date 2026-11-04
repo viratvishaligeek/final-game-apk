@@ -213,6 +213,11 @@
                 .append($('<h5>').text(title))
                 .append($('<p>',{class:'mb-0'}).text(detail)));
         }
+        function updateSendButton() {
+            var hasBody = !!$.trim($('#body').val() || '');
+            var hasFile = !!($('#attachment').get(0).files && $('#attachment').get(0).files.length) || !!recordedFile;
+            $sendButton.prop('disabled', !active || (!hasBody && !hasFile));
+        }
 
         function renderContacts(items) {
             $contacts.empty();
@@ -304,6 +309,7 @@
 
         function selectConversation(conversation) {
             active = Number(conversation.id); lastId = 0; conversationVersion++;
+            updateSendButton();
             $shell.addClass('has-active-chat');
             var user = conversation.user || {}, name = user.name || 'User';
             $('#chat-name').text(name); $('#chat-meta').text(user.phone || 'Support conversation');
@@ -346,6 +352,7 @@
             api(url).done(function(result){
                 if (version!==conversationVersion || Number(active)!==Number(requested)) return;
                 var messages=$.isArray(result.data)?result.data:[];
+                if (messages.length && !reset) $messages.children('.wa-empty').remove();
                 var previous=lastId;
                 $(window).trigger('admin:refresh-chat-unread');
                 if (!reset && previous>0) $.each(messages,function(_,message){if(message.sender==='user' && Number(message.id)>previous) notifyAdmin(message);});
@@ -379,13 +386,13 @@
 
         $('#body').on('input.adminChat',function(){
             this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';
-            $sendButton.prop('disabled',!active || (!$.trim($(this).val()) && !$('#attachment').get(0).files.length && !recordedFile));
+            updateSendButton();
         });
         $('#attachment').on('change.adminChat',function(){
             recordedFile=null;
             var file=this.files && this.files[0];
             $('#composer-file-name').toggleClass('wa-hidden',!file).text(file?file.name:'');
-            $sendButton.prop('disabled',!active || (!$.trim($('#body').val()) && !file));
+            updateSendButton();
         });
 
         $('#send-form').on('submit.adminChat',function(event){
@@ -424,7 +431,7 @@
                     var type=recorder.mimeType||'audio/webm', ext=type.indexOf('mp4')!==-1?'mp4':'webm';
                     recordedFile=new File([new Blob(chunks,{type:type})],'voice-message.'+ext,{type:type});
                     $('#attachment').val(''); $('#composer-file-name').removeClass('wa-hidden').text('Voice message ready to send');
-                    $sendButton.prop('disabled',!active);
+                    updateSendButton();
                     if(mediaStream){mediaStream.getTracks().forEach(function(track){track.stop();});mediaStream=null;}
                 };
                 recorder.start(); $('#record-voice').addClass('text-danger').html('<i class="fas fa-stop"></i>');
