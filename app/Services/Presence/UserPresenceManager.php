@@ -15,8 +15,11 @@ class UserPresenceManager
     public function sync(User $user, ?\Illuminate\Support\Carbon $now = null): string
     {
         $now ??= now();
-        $foregroundCutoff = $now->copy()->subSeconds(
+        $foregroundLeaseCutoff = $now->copy()->subSeconds(
             max(1, (int) config('presence.heartbeat_timeout_seconds', 45))
+        );
+        $idleCutoff = $now->copy()->subSeconds(
+            max(1, (int) config('presence.idle_timeout_seconds', 300))
         );
         $backgroundCutoff = $now->copy()->subSeconds(
             max(1, (int) config('presence.background_grace_seconds', 90))
@@ -24,13 +27,17 @@ class UserPresenceManager
 
         $hasActiveSession = $user->presenceSessions()
             ->whereNull('ended_at')
-            ->where(function ($query) use ($foregroundCutoff, $backgroundCutoff) {
-                $query->where(function ($foreground) use ($foregroundCutoff) {
+            ->where(function ($query) use ($foregroundLeaseCutoff, $idleCutoff, $backgroundCutoff) {
+                $query->where(function ($foreground) use ($foregroundLeaseCutoff, $idleCutoff) {
+                    // updated_at is the heartbeat lease; last_seen_at is actual
+                    // user activity, so an app that keeps heartbeating while
+                    // idle still expires after the configured idle timeout.
                     $foreground->where('app_state', 'foreground')
-                        ->where('last_seen_at', '>=', $foregroundCutoff);
+                        ->where('updated_at', '>=', $foregroundLeaseCutoff)
+                        ->where('last_seen_at', '>=', $idleCutoff);
                 })->orWhere(function ($background) use ($backgroundCutoff) {
                     $background->where('app_state', 'background')
-                        ->where('last_seen_at', '>=', $backgroundCutoff);
+                        ->where('updated_at', '>=', $backgroundCutoff);
                 });
             })
             ->exists();
