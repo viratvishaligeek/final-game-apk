@@ -502,8 +502,8 @@
             if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder==='undefined'){
                 window.alert('Voice recording is not supported by this browser.');return;
             }
-            clearComposerAttachment();
             navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+                clearComposerAttachment();
                 mediaStream=stream; chunks=[];
                 var types=['audio/webm;codecs=opus','audio/webm','audio/mp4'], mime='';
                 $.each(types,function(_,type){if(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)){mime=type;return false;}});
