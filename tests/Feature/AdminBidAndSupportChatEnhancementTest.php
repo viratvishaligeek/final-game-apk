@@ -323,6 +323,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             'sender_id' => $recentUser->id,
             'body' => 'Most recent existing conversation',
         ]);
+        $olderConversation->forceFill(['updated_at' => now()->subMinute()])->saveQuietly();
 
         $payload = app(SupportChatController::class)
             ->conversations(Request::create('/admin/support-chat/conversations', 'GET'))
