@@ -298,6 +298,55 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame(0, $payload['data'][0]['unread_count']);
     }
 
+    public function test_admin_inbox_endpoint_returns_existing_conversations_without_user_search(): void
+    {
+        $admin = Admin::query()->create([
+            'name' => 'Inbox Admin',
+            'email' => 'inbox-admin@example.test',
+            'password' => 'test-password',
+            'status' => 'active',
+        ]);
+        Auth::guard('admin')->setUser($admin);
+
+        $olderUser = $this->makeUser('9876500041');
+        $recentUser = $this->makeUser('9876500042');
+        $olderConversation = SupportConversation::query()->create(['user_id' => $olderUser->id]);
+        $recentConversation = SupportConversation::query()->create(['user_id' => $recentUser->id]);
+
+        $olderConversation->messages()->create([
+            'sender_type' => 'user',
+            'sender_id' => $olderUser->id,
+            'body' => 'Older existing conversation',
+        ]);
+        $recentConversation->messages()->create([
+            'sender_type' => 'user',
+            'sender_id' => $recentUser->id,
+            'body' => 'Most recent existing conversation',
+        ]);
+
+        $payload = app(SupportChatController::class)
+            ->conversations(Request::create('/admin/support-chat/conversations', 'GET'))
+            ->getData(true);
+
+        $this->assertCount(2, $payload['data']);
+        $this->assertSame($recentConversation->id, $payload['data'][0]['id']);
+        $this->assertSame($recentUser->id, $payload['data'][0]['user']['id']);
+        $this->assertSame('Most recent existing conversation', $payload['data'][0]['last_message_preview']);
+        $this->assertSame(1, $payload['data'][0]['unread_count']);
+        $this->assertSame($olderConversation->id, $payload['data'][1]['id']);
+    }
+
+    public function test_payment_alert_refresh_does_not_publish_alert_payload_as_a_chat_snapshot(): void
+    {
+        $layout = file_get_contents(resource_path('views/backend/include/layout.blade.php'));
+
+        $this->assertNotFalse($layout);
+        $this->assertStringNotContainsString(
+            "new CustomEvent('admin:conversations-snapshot', {detail: payload})",
+            $layout
+        );
+    }
+
     public function test_admin_all_user_search_route_is_protected_by_admin_authentication(): void
     {
         $route = Route::getRoutes()->getByAction(SupportChatController::class . '@searchUsers');
