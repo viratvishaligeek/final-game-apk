@@ -608,6 +608,145 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $this->assertSame('inactive', $user->fresh()->live_status);
     }
 
+    public function test_foreground_heartbeat_marks_the_account_active_and_returns_server_idle_timeout(): void
+    {
+        $user = $this->makeUser('9876500101');
+        $request = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'foreground-device-session',
+            'platform' => 'android',
+            'app_state' => 'foreground',
+        ]);
+        $request->setUserResolver(fn () => $user);
+
+        $response = app(PresenceController::class)->heartbeat($request);
+        $payload = $response->getData(true);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('active', $payload['live_status']);
+        $this->assertSame(300, $payload['idle_timeout_seconds']);
+        $this->assertSame('active', $user->fresh()->live_status);
+        $this->assertSame('foreground', UserPresenceSession::query()
+            ->where('session_id', 'foreground-device-session')->value('app_state'));
+        $this->assertNull(UserPresenceSession::query()
+            ->where('session_id', 'foreground-device-session')->value('ended_at'));
+    }
+
+    public function test_idle_heartbeat_ends_only_that_device_session_and_marks_last_device_inactive(): void
+    {
+        $user = $this->makeUser('9876500102');
+        $request = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'idle-device-session',
+            'platform' => 'android',
+            'app_state' => 'foreground',
+        ]);
+        $request->setUserResolver(fn () => $user);
+        app(PresenceController::class)->heartbeat($request);
+        $this->assertSame('active', $user->fresh()->live_status);
+
+        $idleRequest = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'idle-device-session',
+            'platform' => 'android',
+            'app_state' => 'idle',
+        ]);
+        $idleRequest->setUserResolver(fn () => $user);
+        $response = app(PresenceController::class)->heartbeat($idleRequest);
+
+        $this->assertSame('inactive', $response->getData(true)['live_status']);
+        $this->assertSame('inactive', $user->fresh()->live_status);
+        $this->assertNotNull(UserPresenceSession::query()
+            ->where('session_id', 'idle-device-session')->value('ended_at'));
+    }
+
+    public function test_idle_device_does_not_take_an_account_offline_while_another_device_is_foreground(): void
+    {
+        $user = $this->makeUser('9876500103');
+        $request = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'idle-device-one',
+            'platform' => 'android',
+            'app_state' => 'foreground',
+        ]);
+        $request->setUserResolver(fn () => $user);
+        app(PresenceController::class)->heartbeat($request);
+
+        UserPresenceSession::query()->create([
+            'user_id' => $user->id,
+            'session_id' => 'active-device-two',
+            'platform' => 'web',
+            'app_state' => 'foreground',
+            'last_seen_at' => now(),
+        ]);
+
+        $idleRequest = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'idle-device-one',
+            'platform' => 'android',
+            'app_state' => 'idle',
+        ]);
+        $idleRequest->setUserResolver(fn () => $user);
+        $response = app(PresenceController::class)->heartbeat($idleRequest);
+
+        $this->assertSame('active', $response->getData(true)['live_status']);
+        $this->assertSame('active', $user->fresh()->live_status);
+        $this->assertNull(UserPresenceSession::query()
+            ->where('session_id', 'active-device-two')->value('ended_at'));
+    }
+
+    public function test_background_session_gets_a_grace_period_then_expires(): void
+    {
+        $user = $this->makeUser('9876500104');
+        $user->forceFill(['live_status' => 'active'])->save();
+        UserPresenceSession::query()->create([
+            'user_id' => $user->id,
+            'session_id' => 'background-grace-session',
+            'platform' => 'android',
+            'app_state' => 'background',
+            'last_seen_at' => now()->subSeconds(30),
+        ]);
+
+        Artisan::call('presence:expire');
+        $this->assertSame('active', $user->fresh()->live_status);
+
+        UserPresenceSession::query()->where('session_id', 'background-grace-session')
+            ->update(['last_seen_at' => now()->subSeconds(120)]);
+
+        Artisan::call('presence:expire');
+        $this->assertSame('inactive', $user->fresh()->live_status);
+    }
+
+    public function test_admin_conversation_payload_includes_persisted_live_presence_fields(): void
+    {
+        $admin = Admin::query()->create([
+            'name' => 'Presence Inbox Admin',
+            'email' => 'presence-inbox@example.test',
+            'password' => 'test-password',
+            'status' => 'active',
+        ]);
+        Auth::guard('admin')->setUser($admin);
+        $user = $this->makeUser('9876500105');
+        $user->forceFill([
+            'live_status' => 'active',
+            'live_last_seen_at' => now()->subSeconds(3),
+        ])->save();
+        $conversation = SupportConversation::query()->create(['user_id' => $user->id]);
+
+        $payload = app(SupportChatController::class)
+            ->conversations(Request::create('/admin/support-chat/conversations', 'GET'))
+            ->getData(true);
+
+        $contact = collect($payload['data'])->firstWhere('id', $conversation->id);
+        $this->assertSame('active', $contact['user']['live_status']);
+        $this->assertNotNull($contact['user']['live_last_seen_at']);
+    }
+
+    public function test_admin_live_chat_list_handles_realtime_presence_events(): void
+    {
+        $view = file_get_contents(resource_path('views/backend/support-chat/index.blade.php'));
+
+        $this->assertNotFalse($view);
+        $this->assertStringContainsString("admin:user-presence.adminChat", $view);
+        $this->assertStringContainsString("presenceElement(user)", $view);
+        $this->assertStringContainsString("presenceText(user)", $view);
+    }
+
     public function test_presence_session_identifier_cannot_be_reused_by_another_user(): void
     {
         $owner = $this->makeUser('9876500096');
