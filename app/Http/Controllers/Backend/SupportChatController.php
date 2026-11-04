@@ -44,7 +44,7 @@ class SupportChatController extends Controller
             })
             ->orderBy('name')
             ->limit(50)
-            ->get(['id', 'name', 'phone', 'status']);
+            ->get(['id', 'name', 'phone', 'status', 'live_status', 'live_last_seen_at']);
 
         $adminId = (int) auth('admin')->id();
         $conversations = SupportConversation::query()
@@ -67,6 +67,8 @@ class SupportChatController extends Controller
                     'name' => $user->name,
                     'phone' => $user->phone,
                     'status' => $user->status,
+                    'live_status' => $user->live_status ?? 'inactive',
+                    'live_last_seen_at' => $user->live_last_seen_at?->toIso8601String(),
                     'conversation_id' => $conversation?->id,
                     'has_conversation' => (bool) $conversation,
                     'unread_count' => (int) ($conversation?->unread_count ?? 0),
@@ -148,7 +150,7 @@ class SupportChatController extends Controller
         return response()->json([
             'meta' => ['total_unread_count' => (int) $totalUnread],
             'data' => SupportConversation::query()
-                ->with(['user:id,name,phone', 'latestMessage:id,conversation_id,body,sender_type,created_at'])
+                ->with(['user:id,name,phone,live_status,live_last_seen_at', 'latestMessage:id,conversation_id,body,sender_type,created_at'])
                 ->when($phone !== '', fn ($query) => $query->whereHas('user', fn ($userQuery) => $userQuery->where('phone', 'like', '%' . $phone . '%')))
                 ->withCount(['messages as unread_count' => function ($query) use ($adminId) {
                     $query->where('sender_type', 'user')
@@ -163,7 +165,7 @@ class SupportChatController extends Controller
                 ->get()
                 ->map(fn ($conversation) => [
                     'id' => $conversation->id,
-                    'user' => $conversation->user?->only(['id', 'name', 'phone']),
+                    'user' => $conversation->user?->only(['id', 'name', 'phone', 'live_status', 'live_last_seen_at']),
                     'unread_count' => $conversation->unread_count,
                     'last_message_at' => $conversation->messages_max_created_at,
                     'last_message_id' => $conversation->latestMessage?->id,
