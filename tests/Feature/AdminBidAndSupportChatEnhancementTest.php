@@ -690,6 +690,37 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             ->where('session_id', 'active-device-two')->value('ended_at'));
     }
 
+    public function test_repeated_background_heartbeats_do_not_extend_the_background_grace_lease(): void
+    {
+        $user = $this->makeUser('9876500106');
+        $request = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'legacy-background-session',
+            'platform' => 'android',
+            'app_state' => 'foreground',
+        ]);
+        $request->setUserResolver(fn () => $user);
+        app(PresenceController::class)->heartbeat($request);
+
+        $backgroundRequest = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'legacy-background-session',
+            'platform' => 'android',
+            'app_state' => 'background',
+        ]);
+        $backgroundRequest->setUserResolver(fn () => $user);
+        app(PresenceController::class)->heartbeat($backgroundRequest);
+        $originalLastSeen = UserPresenceSession::query()
+            ->where('session_id', 'legacy-background-session')->value('last_seen_at');
+
+        $this->travel(2)->minutes();
+        app(PresenceController::class)->heartbeat($backgroundRequest->duplicate());
+
+        $session = UserPresenceSession::query()
+            ->where('session_id', 'legacy-background-session')->first();
+
+        $this->assertSame($originalLastSeen, $session->last_seen_at->toDateTimeString());
+        $this->assertSame('inactive', $user->fresh()->live_status);
+    }
+
     public function test_background_session_gets_a_grace_period_then_expires(): void
     {
         $user = $this->makeUser('9876500104');
