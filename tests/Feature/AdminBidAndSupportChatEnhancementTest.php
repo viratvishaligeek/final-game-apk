@@ -20,6 +20,7 @@ use App\Models\SupportConversation;
 use App\Models\SupportConversationAdminRead;
 use App\Models\User;
 use App\Models\UserPresenceSession;
+use App\Models\Winner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -595,14 +596,15 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             'live_last_seen_at' => now()->subMinute(),
         ])->save();
 
-        UserPresenceSession::query()->create([
+        $staleSession = UserPresenceSession::query()->create([
             'user_id' => $user->id,
             'session_id' => 'stale-device-session',
             'platform' => 'web',
             'app_state' => 'foreground',
             'last_seen_at' => now()->subSeconds(90),
-            'updated_at' => now()->subSeconds(90),
         ]);
+        UserPresenceSession::query()->whereKey($staleSession->id)
+            ->update(['updated_at' => now()->subSeconds(90)]);
 
         Artisan::call('presence:expire');
 
@@ -663,7 +665,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
 
         $this->assertSame('inactive', $response->getData(true)['live_status']);
         $this->assertSame('inactive', $user->fresh()->live_status);
-        $this->assertSame($lastActivity, $session->last_seen_at->toDateTimeString());
+        $this->assertEquals($lastActivity, $session->last_seen_at);
         $this->assertTrue($session->updated_at->greaterThan($session->last_seen_at));
     }
 
@@ -759,7 +761,7 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
         $session = UserPresenceSession::query()
             ->where('session_id', 'legacy-background-session')->first();
 
-        $this->assertSame($originalLastSeen, $session->last_seen_at->toDateTimeString());
+        $this->assertEquals($originalLastSeen, $session->last_seen_at);
         $this->assertSame('inactive', $user->fresh()->live_status);
     }
 
