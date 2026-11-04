@@ -520,6 +520,7 @@
             if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder==='undefined'){
                 window.alert('Voice recording is not supported by this browser.');return;
             }
+            clearComposerAttachment();
             navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
                 clearComposerAttachment();
                 mediaStream=stream; chunks=[];
@@ -534,7 +535,6 @@
                     if(mediaStream){mediaStream.getTracks().forEach(function(track){track.stop();});mediaStream=null;}
                 };
                 recorder.start(); $('#record-voice').addClass('text-danger').html('<i class="fas fa-stop"></i>');
-                $('#recording-status').removeClass('wa-hidden');
             }).catch(function(){window.alert('Microphone permission was denied or unavailable.');});
         });
 
