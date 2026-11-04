@@ -712,7 +712,13 @@ class AdminBidAndSupportChatEnhancementTest extends TestCase
             ->where('session_id', 'legacy-background-session')->value('last_seen_at');
 
         $this->travel(2)->minutes();
-        app(PresenceController::class)->heartbeat($backgroundRequest->duplicate());
+        $repeatedBackgroundRequest = Request::create('/api/v1/presence/heartbeat', 'POST', [
+            'session_id' => 'legacy-background-session',
+            'platform' => 'android',
+            'app_state' => 'background',
+        ]);
+        $repeatedBackgroundRequest->setUserResolver(fn () => $user);
+        app(PresenceController::class)->heartbeat($repeatedBackgroundRequest);
 
         $session = UserPresenceSession::query()
             ->where('session_id', 'legacy-background-session')->first();
