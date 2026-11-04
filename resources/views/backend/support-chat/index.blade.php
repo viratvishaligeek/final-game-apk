@@ -30,6 +30,10 @@
     .wa-contact-name{font-size:.93rem;font-weight:600;color:#111b21;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .wa-contact-time{font-size:.7rem;color:#667781;white-space:nowrap}
     .wa-contact-preview{font-size:.78rem;color:#667781;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+    .wa-contact-presence{display:flex;align-items:center;gap:5px;margin-top:3px;font-size:.68rem;color:#667781;line-height:1.2}
+    .wa-presence-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#98a5ad}
+    .wa-contact-presence.is-online{color:#128c55}
+    .wa-contact-presence.is-online .wa-presence-dot{background:#25a66a;box-shadow:0 0 0 2px rgba(37,166,106,.12)}
     .wa-unread{min-width:19px;height:19px;padding:0 5px;border-radius:20px;background:#25d366;color:#fff;font-size:.68rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
     .wa-main{min-width:0;flex:1;display:flex;flex-direction:column;background:#efeae2}
     .wa-chat-head{height:68px;flex:0 0 68px;display:flex;align-items:center;gap:12px;padding:10px 18px;background:#f0f2f5;border-bottom:1px solid #e9edef}
@@ -172,6 +176,7 @@
         var $shell = $('#wa-shell'), $contacts = $('#conversations'), $messages = $('#messages');
         var $search = $('#user-search'), $searchResults = $('#user-search-results');
         var $sendButton = $('#send-form button[type="submit"]');
+        var conversationItems = [], searchItems = [];
         var initialConversationOpened = false;
 
         function api(url, options) {
@@ -200,6 +205,17 @@
             var date = new Date(value);
             if (isNaN(date.getTime())) return '';
             return date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        }
+        function presenceText(user) {
+            if (String(user && user.live_status || '').toLowerCase() === 'active') return 'Active';
+            if (user && user.live_last_seen_at) return 'Last seen ' + formatTime(user.live_last_seen_at);
+            return 'Inactive';
+        }
+        function presenceElement(user) {
+            var online = String(user && user.live_status || '').toLowerCase() === 'active';
+            return $('<div>',{class:'wa-contact-presence'+(online?' is-online':'')})
+                .append($('<span>',{class:'wa-presence-dot'}))
+                .append($('<span>').text(presenceText(user)));
         }
         function dateKey(value) {
             var date = new Date(value);
@@ -302,6 +318,7 @@
         }
 
         function renderContacts(items) {
+            conversationItems = $.isArray(items) ? items : [];
             $contacts.empty();
             $('#conversation-count').text(items.length ? items.length + ' chats' : '');
             if (!items.length) {
@@ -319,7 +336,7 @@
                 var $bottom = $('<div>',{class:'wa-contact-bottom'});
                 $bottom.append($('<div>',{class:'wa-contact-preview'}).text(item.last_message_preview || 'Start a conversation'));
                 if (Number(item.unread_count)>0) $bottom.append($('<span>',{class:'wa-unread'}).text(item.unread_count>99?'99+':item.unread_count));
-                $copy.append($top,$bottom); $button.append($copy);
+                $copy.append($top,presenceElement(user),$bottom); $button.append($copy);
                 $button.on('click.adminChat',function(){ selectConversation(item); });
                 $contacts.append($button);
             });
@@ -345,16 +362,17 @@
         }
 
         function renderSearchResults(users) {
+            searchItems = $.isArray(users) ? users : [];
             $searchResults.empty().addClass('is-visible');
-            if (!users.length) {
+            if (!searchItems.length) {
                 $searchResults.append($('<div>',{class:'p-3 small text-muted'}).text('No registered users found.'));
                 return;
             }
-            $.each(users,function(_,user) {
+            $.each(searchItems,function(_,user) {
                 var name = user.name || 'User #'+user.id;
                 var $button = $('<button>',{type:'button',class:'wa-search-result'});
                 $button.append($('<strong>').text(name));
-                $button.append($('<small>').text((user.phone || 'No phone')+' · User #'+user.id+(user.has_conversation?' · Existing chat':' · Start chat')));
+                $button.append($('<small>').text((user.phone || 'No phone')+' · User #'+user.id+(user.has_conversation?' · Existing chat':' · Start chat')+' · '+presenceText(user)));
                 $button.on('click.adminChat',function(){
                     $button.prop('disabled',true);
                     api(root+'/conversations',{method:'POST',data:JSON.stringify({user_id:user.id})})
@@ -394,7 +412,7 @@
             updateSendButton();
             $shell.addClass('has-active-chat');
             var user = conversation.user || {}, name = user.name || 'User';
-            $('#chat-name').text(name); $('#chat-meta').text(user.phone || 'Support conversation');
+            $('#chat-name').text(name); $('#chat-meta').text([user.phone || 'Support conversation', presenceText(user)].join(' · '));
             $('#chat-avatar').text(initials(name));
             $messages.empty().append($('<div>',{class:'wa-empty'}).text('Loading messages…'));
             loadMessages(true); loadConversations();
@@ -551,6 +569,27 @@
                 return api(root.replace(/\/support-chat\/?$/,'/push-subscribe'),{method:'DELETE',data:JSON.stringify({token:token})});
             }).then(function(){window.alert('Admin background push disabled. Browser permission remains unchanged.');})
             .catch(function(error){window.alert('Unable to disable admin push: '+(error.message||'Unknown error'));});
+        });
+
+        $(window).on('admin:user-presence.adminChat',function(event,payload){
+            payload=payload || (event.originalEvent && event.originalEvent.detail) || {};
+            var userId=Number(payload.user_id);
+            if(!userId)return;
+            var apply=function(user){
+                if(Number(user.id)!==userId)return;
+                user.live_status=payload.live_status || 'inactive';
+                user.live_last_seen_at=payload.last_seen_at || user.live_last_seen_at || null;
+            };
+            $.each(conversationItems,function(_,item){apply(item.user || {});});
+            $.each(searchItems, function(_,item){apply(item);});
+            renderContacts(conversationItems);
+            if(searchItems.length && $.trim($search.val()))renderSearchResults(searchItems);
+            if(active){
+                var selected=conversationItems.find(function(item){return Number(item.id)===Number(active);});
+                if(selected && selected.user){
+                    $('#chat-meta').text([selected.user.phone || 'Support conversation',presenceText(selected.user)].join(' · '));
+                }
+            }
         });
 
         $(window).on('admin:support-message.adminChat',function(event,payload){

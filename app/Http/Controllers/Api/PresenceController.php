@@ -2,94 +2,125 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\UserPresenceChanged;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\UserPresenceSession;
+use App\Services\Presence\UserPresenceManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PresenceController extends Controller
 {
     public function heartbeat(Request $request): JsonResponse
     {
+        $presence = app(UserPresenceManager::class);
         $validated = $request->validate([
             'session_id' => ['required', 'string', 'max:64'],
             'platform' => ['nullable', 'string', 'in:web,android,ios'],
-            'app_state' => ['nullable', 'string', 'in:foreground,background'],
+            'app_state' => ['nullable', 'string', 'in:foreground,background,idle'],
+            'activity' => ['sometimes', 'boolean'],
+            'activity_at' => ['nullable', 'date'],
         ]);
 
-        $user = $request->user();
-        $session = UserPresenceSession::query()->firstOrNew([
-            'session_id' => $validated['session_id'],
-        ]);
+        $userId = (int) $request->user()->id;
+        $now = now();
 
-        if ($session->exists && (int) $session->user_id !== (int) $user->id) {
+        $result = DB::transaction(function () use ($validated, $userId, $now, $presence) {
+            // Serialize status reconciliation per account so simultaneous
+            // heartbeats/disconnects from different devices cannot race.
+            $user = User::query()->lockForUpdate()->findOrFail($userId);
+            $session = UserPresenceSession::query()
+                ->where('session_id', $validated['session_id'])
+                ->lockForUpdate()
+                ->first();
+
+            if ($session && (int) $session->user_id !== $userId) {
+                return null;
+            }
+
+            $session ??= new UserPresenceSession([
+                'user_id' => $userId,
+                'session_id' => $validated['session_id'],
+            ]);
+
+            $appState = $validated['app_state'] ?? 'foreground';
+            $isNewSession = !$session->exists;
+            $activity = (bool) ($validated['activity'] ?? $isNewSession);
+            $activityAt = $activity
+                ? (isset($validated['activity_at'])
+                    ? \Illuminate\Support\Carbon::parse($validated['activity_at'])
+                    : $now)
+                : null;
+            if ($activityAt && $activityAt->greaterThan($now)) {
+                $activityAt = $now;
+            }
+
+            $repeatedBackgroundHeartbeat = $session->exists
+                && $session->app_state === 'background'
+                && $appState === 'background'
+                && $session->ended_at === null;
+
+            $session->user_id = $userId;
+            $session->platform = $validated['platform'] ?? $session->platform;
+            $session->app_state = $appState;
+            // last_seen_at records user interaction, while updated_at is the
+            // heartbeat lease. Heartbeats without interaction keep the lease
+            // alive but cannot keep an idle user online indefinitely.
+            if (!$repeatedBackgroundHeartbeat) {
+                if ($activityAt || !$session->last_seen_at) {
+                    $session->last_seen_at = $activityAt ?? $now;
+                }
+                // An idle client relinquishes its lease. Its next interaction
+                // reactivates the same session with a foreground heartbeat.
+                $session->ended_at = $appState === 'idle' ? $now : null;
+                $session->save();
+            }
+
+            if ($activityAt && !$repeatedBackgroundHeartbeat) {
+                $user->forceFill(['live_last_seen_at' => $activityAt])->save();
+            }
+            $status = $presence->sync($user, $now);
+
+            return $status;
+        });
+
+        if ($result === null) {
             return response()->json([
                 'success' => false,
                 'message' => 'Presence session does not belong to this account.',
             ], 409);
         }
 
-        $now = now();
-        $session->user_id = $user->id;
-        $session->platform = $validated['platform'] ?? $session->platform;
-        $session->app_state = $validated['app_state'] ?? 'foreground';
-
-        // The client sends a heartbeat every 15 seconds; persist at most once per interval.
-        $persistHeartbeat = !$session->exists
-            || !$session->last_seen_at
-            || $session->last_seen_at->lt($now->copy()->subSeconds(15));
-
-        if (!$session->exists || $persistHeartbeat || $session->ended_at !== null) {
-            $session->last_seen_at = $now;
-            $session->ended_at = null;
-            $session->save();
-        }
-
-        if ($user->live_status !== 'active') {
-            $user->forceFill([
-                'live_status' => 'active',
-                'live_last_seen_at' => $now,
-            ])->save();
-
-            UserPresenceChanged::dispatch($user->id, 'active', $now->toIso8601String());
-        } elseif ($persistHeartbeat) {
-            $user->forceFill(['live_last_seen_at' => $now])->save();
-        }
-
-        return response()->json(['success' => true, 'live_status' => 'active']);
+        return response()->json([
+            'success' => true,
+            'live_status' => $result,
+            'idle_timeout_seconds' => max(30, (int) config('presence.idle_timeout_seconds', 300)),
+        ]);
     }
 
     public function disconnect(Request $request): JsonResponse
     {
+        $presence = app(UserPresenceManager::class);
         $validated = $request->validate([
             'session_id' => ['required', 'string', 'max:64'],
         ]);
-        $user = $request->user();
 
-        $session = UserPresenceSession::query()
-            ->where('user_id', $user->id)
-            ->where('session_id', $validated['session_id'])
-            ->first();
+        $userId = (int) $request->user()->id;
 
-        if ($session) {
-            $session->forceFill(['ended_at' => now()])->save();
-        }
+        DB::transaction(function () use ($validated, $userId, $presence) {
+            $user = User::query()->lockForUpdate()->findOrFail($userId);
+            $session = UserPresenceSession::query()
+                ->where('user_id', $userId)
+                ->where('session_id', $validated['session_id'])
+                ->lockForUpdate()
+                ->first();
 
-        $anotherSessionIsActive = UserPresenceSession::query()
-            ->where('user_id', $user->id)
-            ->whereNull('ended_at')
-            ->where('last_seen_at', '>=', now()->subSeconds(30))
-            ->exists();
-
-        if (!$anotherSessionIsActive && $user->live_status !== 'inactive') {
-            $user->forceFill(['live_status' => 'inactive'])->save();
-            UserPresenceChanged::dispatch(
-                $user->id,
-                'inactive',
-                $user->live_last_seen_at?->toIso8601String()
-            );
-        }
+            if ($session) {
+                $session->forceFill(['ended_at' => now()])->save();
+                $presence->sync($user);
+            }
+        });
 
         return response()->json(['success' => true]);
     }
