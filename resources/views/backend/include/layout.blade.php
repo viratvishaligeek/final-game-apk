@@ -384,7 +384,7 @@
             if (document.visibilityState === 'visible') {
                 void loadPending();
                 void refreshHeaderChatNotifications();
-                window.dispatchEvent(new Event('admin:recovery-tick'));
+                $(window).trigger('admin:recovery-tick');
             }
         });
         if (config.driver === 'pusher' && config.configured && config.key && window.Pusher) {
@@ -408,7 +408,7 @@
                             void refreshHeaderChatNotifications();
                         } else {
                             startRealtimeFallback();
-                            window.dispatchEvent(new Event('admin:recovery-tick'));
+                            $(window).trigger('admin:recovery-tick');
                         }
                     });
                 }
@@ -420,7 +420,7 @@
                     });
                     client.subscribe('private-admin.support-chat.' + config.siteKey).bind('support.message.created', payload => {
                         playChatNotification(payload);
-                        window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
+                        $(window).trigger('admin:support-message', [payload]);
                         void refreshHeaderChatNotifications();
                     });
                 }
@@ -428,9 +428,7 @@
                 else {
                     void loadPending();
                 }
-                window.dispatchEvent(new CustomEvent('admin:broadcast-state', {
-                    detail: {current: client.connection.state}
-                }));
+                $(window).trigger('admin:broadcast-state', [{current: client.connection.state}]);
             } catch (error) {
                 console.error('Admin Pusher realtime connection failed.', error);
                 startRealtimeFallback();
