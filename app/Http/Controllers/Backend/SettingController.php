@@ -45,6 +45,11 @@ class SettingController extends Controller
             'homepage_seo_heading' => ['nullable', 'string', 'max:255'],
             'homepage_seo_content' => ['nullable', 'string', 'max:15000'],
             'homepage_note_text' => ['nullable', 'string', 'max:2000'],
+            'app_section_heading' => ['nullable', 'string', 'max:255'],
+            'app_section_description' => ['nullable', 'string', 'max:1000'],
+            'app_download_label' => ['nullable', 'string', 'max:100'],
+            'guessing_login_url' => ['nullable', 'url', 'starts_with:https://', 'max:1000'],
+            'guessing_register_url' => ['nullable', 'url', 'starts_with:https://', 'max:1000'],
             'sticky_social_enabled' => ['nullable', 'in:0,1'],
             'announcement_text' => ['nullable', 'string', 'max:500'],
             'add_money_notice' => ['nullable', 'string', 'max:1000'],
@@ -103,7 +108,7 @@ class SettingController extends Controller
 
         try {
             DB::transaction(function () use ($request, $validated, &$newFiles, &$oldFiles) {
-                foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'header_cta_label', 'header_cta_url', 'homepage_primary_cta_label', 'homepage_primary_cta_url', 'homepage_secondary_cta_label', 'homepage_secondary_cta_url', 'homepage_guide_heading', 'homepage_guide_content', 'homepage_seo_heading', 'homepage_seo_content', 'homepage_note_text', 'sticky_social_enabled', 'announcement_text', 'add_money_notice', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'og_title', 'og_description', 'robots_default', 'twitter_card', 'app_download_url', 'latest_url', 'latest_version', 'update_date', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'social_whatsapp', 'web_marquee', 'disclaimer_content', 'chart_chunk_size', 'community_post_approval', 'referral_percentage', 'referral_min_amount'] as $key) {
+                foreach (['title', 'email', 'site_description', 'site_tagline', 'homepage_heading_line1', 'homepage_heading_line2', 'homepage_heading_line3', 'homepage_intro', 'header_cta_label', 'header_cta_url', 'homepage_primary_cta_label', 'homepage_primary_cta_url', 'homepage_secondary_cta_label', 'homepage_secondary_cta_url', 'homepage_guide_heading', 'homepage_guide_content', 'homepage_seo_heading', 'homepage_seo_content', 'homepage_note_text', 'app_section_heading', 'app_section_description', 'app_download_label', 'guessing_login_url', 'guessing_register_url', 'sticky_social_enabled', 'announcement_text', 'add_money_notice', 'meta_title', 'meta_description', 'meta_keywords', 'canonical_url', 'og_title', 'og_description', 'robots_default', 'twitter_card', 'app_download_url', 'latest_url', 'latest_version', 'update_date', 'copyright_text', 'footer_description', 'contact_phone', 'contact_address', 'social_facebook', 'social_instagram', 'social_youtube', 'social_telegram', 'social_whatsapp', 'web_marquee', 'disclaimer_content', 'chart_chunk_size', 'community_post_approval', 'referral_percentage', 'referral_min_amount'] as $key) {
                     if (array_key_exists($key, $validated)) {
                         Setting::updateOrCreate(
                             ['option' => $key],
