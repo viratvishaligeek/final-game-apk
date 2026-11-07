@@ -95,9 +95,6 @@
                                     data-live-status="{{ $user->live_status ?? 'inactive' }}">
                                     {{ ucfirst($user->live_status ?? 'inactive') }}
                                 </span>
-                                <small class="d-block text-muted" data-live-last-seen="{{ $user->id }}">
-                                    {{ $user->live_last_seen_at?->timezone(config('app.timezone'))->format('d M, h:i A') ?? '—' }}
-                                </small>
                             </td>
                             <td>{{ $user->created_at ? $user->created_at->format('d M Y') : 'N/A' }}</td>
                             <td>

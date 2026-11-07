@@ -48,9 +48,11 @@ class PresenceController extends Controller
             $isNewSession = !$session->exists;
             $activity = (bool) ($validated['activity'] ?? $isNewSession);
             $activityAt = $activity
-                ? (isset($validated['activity_at'])
-                    ? \Illuminate\Support\Carbon::parse($validated['activity_at'])
-                    : $now)
+                ? (
+                    isset($validated['activity_at'])
+                    ? \Illuminate\Support\Carbon::parse($validated['activity_at'])->utc()
+                    : $now->copy()->utc()
+                )
                 : null;
             if ($activityAt && $activityAt->greaterThan($now)) {
                 $activityAt = $now;
