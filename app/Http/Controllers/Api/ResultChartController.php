@@ -8,6 +8,7 @@ use App\Models\Result;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ResultChartController extends Controller
 {
@@ -16,7 +17,12 @@ class ResultChartController extends Controller
         $validated = $request->validate([
             'month' => ['nullable', 'integer', 'between:1,12'],
             'year' => ['nullable', 'integer', 'min:2000', 'max:2100'],
-            'game_id' => ['nullable', 'integer', 'exists:games,id'],
+            'game_id' => [
+                'nullable', 'integer',
+                Rule::exists('games', 'id')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
         ]);
 
         $timezone = config('app.timezone');
