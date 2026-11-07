@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -45,7 +46,12 @@ class CommunityAuthController extends Controller
         $request->merge(['phone' => preg_replace('/[\s-]/', '', trim((string) $request->input('phone'))) ?? '']);
         $data = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:200'],
-            'phone' => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/', 'unique:users,phone'],
+            'phone' => [
+                'required', 'string', 'regex:/^\+?[0-9]{7,15}$/',
+                Rule::unique('users', 'phone')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'password' => ['required', 'string', 'min:8', 'max:200', 'confirmed'],
         ]);
 
