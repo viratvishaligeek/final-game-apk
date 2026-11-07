@@ -4,11 +4,7 @@
     ' ' .
     $monthLabel .
     ' Satta King Result Chart | ' .
-    setting(
-    'title',
-    'Play Online
-    Khaiwal',
-    ))
+    setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))))
 @section('meta_description',
     'Browse saved date-wise Satta King results for ' .
     $game->name .
