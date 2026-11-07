@@ -65,7 +65,7 @@ class MainController extends Controller
             '@type' => 'WebPage',
             'name' => (string) app(AppSettingsService::class)->value('meta_title', (string) config('sites.current.name', config('app.name', 'Play Online Khaiwal')) . ' | Satta King Results & Monthly Charts'),
             'url' => $homeCanonical,
-            'description' => app(AppSettingsService::class)->value('meta_description', 'Satta King result records and monthly charts on Play Online Khaiwal.'),
+            'description' => app(AppSettingsService::class)->value('meta_description', 'Satta King result records and monthly charts on ' . config('sites.current.name', config('app.name', 'Play Online Khaiwal')) . '.'),
         ]];
         if ($faqs->isNotEmpty()) {
             $homeGraph[] = [
