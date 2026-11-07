@@ -147,7 +147,12 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'order_no' => ['nullable', 'required_without:game_id', 'string', 'max:100'],
-            'game_id' => ['nullable', 'required_without:order_no', 'integer', 'exists:games,id'],
+            'game_id' => [
+                'nullable', 'required_without:order_no', 'integer',
+                Rule::exists('games', 'id')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
