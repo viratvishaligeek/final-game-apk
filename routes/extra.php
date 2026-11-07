@@ -68,6 +68,21 @@ Route::get('/optimize-clear', function () {
 //     ]);
 // });
 
+Route::get('/robots.txt', function () {
+    $base = rtrim((string) config('sites.current.url', config('app.url')), '/');
+    $robots = implode("\n", [
+        'User-agent: *',
+        'Disallow: /admin/',
+        'Disallow: /login',
+        'Disallow: /firebase-config.js',
+        'Disallow: /firebase-config.json',
+        'Sitemap: ' . $base . '/sitemap.xml',
+        '',
+    ]);
+
+    return response($robots, 200)->header('Content-Type', 'text/plain; charset=UTF-8');
+})->name('robots');
+
 $buildPublicSitemapEntries = function (): array {
     $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('sites.current.url', config('app.url'))), '/');
     $entries = [$base . '/' => null];
