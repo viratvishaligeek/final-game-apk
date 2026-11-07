@@ -116,10 +116,14 @@ class SiteIsolationTest extends TestCase
 
         $gameIndexes = collect(Schema::getIndexes('games'))->pluck('name');
         $pageIndexes = collect(Schema::getIndexes('pages'))->pluck('name');
+        $alertIndexes = collect(Schema::getIndexes('admin_payment_alerts'))->pluck('name');
+        $presenceIndexes = collect(Schema::getIndexes('user_presence_sessions'))->pluck('name');
 
         $this->assertContains('games_site_key_name_unique', $gameIndexes);
         $this->assertContains('games_site_key_slug_unique', $gameIndexes);
         $this->assertContains('pages_site_key_name_unique', $pageIndexes);
+        $this->assertContains('admin_payment_alerts_site_attempt_unique', $alertIndexes);
+        $this->assertContains('user_presence_sessions_site_session_unique', $presenceIndexes);
     }
 
     public function test_robots_txt_advertises_the_current_domain_sitemap(): void
