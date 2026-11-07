@@ -206,7 +206,6 @@ class AuthController extends Controller
 
         DB::table('password_reset_otps')
             ->where('site_key', $siteKey)
-            ->where('site_key', $siteKey)
             ->where('phone', $phone)
             ->delete();
 
