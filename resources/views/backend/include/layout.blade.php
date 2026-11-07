@@ -373,7 +373,7 @@
             fallbackRefreshTimer = window.setInterval(() => {
                 void loadPending();
                 void refreshHeaderChatNotifications();
-                window.dispatchEvent(new Event('admin:recovery-tick'));
+                $(window).trigger('admin:recovery-tick');
             }, 30000);
         };
         const stopRealtimeFallback = () => {
@@ -401,7 +401,7 @@
                 if (!window.adminPusherLifecycleBound) {
                     window.adminPusherLifecycleBound = true;
                     client.connection.bind('state_change', state => {
-                        window.dispatchEvent(new CustomEvent('admin:broadcast-state', {detail: state}));
+                        $(window).trigger('admin:broadcast-state', [state]);
                         if (state.current === 'connected') {
                             stopRealtimeFallback();
                             void loadPending();
@@ -416,7 +416,7 @@
                     window.adminPusherChannelsBound = true;
                     client.subscribe('private-admin.payment-alerts.' + config.siteKey).bind('payment.failed', addAlert);
                     client.subscribe('private-admin.user-presence.' + config.siteKey).bind('presence.changed', payload => {
-                        window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
+                        $(window).trigger('admin:user-presence', [payload]);
                     });
                     client.subscribe('private-admin.support-chat.' + config.siteKey).bind('support.message.created', payload => {
                         playChatNotification(payload);
