@@ -8,6 +8,7 @@ use App\Models\Winner;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Validation\Rule;
 
 class WinnerController extends Controller
 {
@@ -15,7 +16,12 @@ class WinnerController extends Controller
     {
         $validated = $request->validate([
             'date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
-            'game_id' => ['nullable', 'integer', 'exists:games,id'],
+            'game_id' => [
+                'nullable', 'integer',
+                Rule::exists('games', 'id')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'type' => ['nullable', 'string', 'in:jodi,haruf'],
             'user' => ['nullable', 'string', 'max:100'],
         ]);
