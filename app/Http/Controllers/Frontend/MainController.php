@@ -60,10 +60,10 @@ class MainController extends Controller
         $monthlyTables = $charts->homepageTables($games, $monthStart, $monthEnd, $monthDays, $chunkSize);
         $monthLabel = $charts->monthLabel($selectedYear, $selectedMonth);
 
-        $homeCanonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/') . '/';
+        $homeCanonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('sites.current.url', config('app.url'))), '/') . '/';
         $homeGraph = [[
             '@type' => 'WebPage',
-            'name' => 'Play Online Khaiwal | Satta King Results & Monthly Charts',
+            'name' => (string) app(AppSettingsService::class)->value('meta_title', (string) config('sites.current.name', config('app.name', 'Play Online Khaiwal')) . ' | Satta King Results & Monthly Charts'),
             'url' => $homeCanonical,
             'description' => app(AppSettingsService::class)->value('meta_description', 'Satta King result records and monthly charts on Play Online Khaiwal.'),
         ]];
