@@ -309,7 +309,7 @@
 
                     window.Swal.fire({
                         title: 'Approve Wallet Top-up?',
-                        html: '<div class="text-center"><p class="mb-1">User: <strong>' + safeName + '</strong></p><p>Amount: <strong class="text-success">₹' + safeAmount + '</strong></p><small class="text-muted">This amount will be credited to the user's wallet.</small></div>',
+                        html: '<div class="text-center"><p class="mb-1">User: <strong>' + safeName + '</strong></p><p>Amount: <strong class="text-success">₹' + safeAmount + '</strong></p><small class="text-muted">This amount will be credited to the user&#39;s wallet.</small></div>',
                         icon: 'question',
                         showCancelButton: true,
                         confirmButtonColor: '#1cc88a',
