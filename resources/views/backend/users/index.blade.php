@@ -369,9 +369,10 @@
             });
         });
 
-        $(window).on('admin:user-presence', function (event) {
-            const presence = event.originalEvent?.detail || event.detail || {};
+        $(window).off('admin:user-presence.adminUsers').on('admin:user-presence.adminUsers', function (event, payload) {
+            const presence = payload || (event.originalEvent && event.originalEvent.detail) || event.detail || {};
             const userId = Number(presence.user_id);
+            if (!userId) return;
             const $cell = $('[data-live-status-cell="' + userId + '"]');
             if (!$cell.length) return;
 
@@ -393,32 +394,6 @@
                     Number.isNaN(date.getTime()) ? presence.last_seen_at : date.toLocaleString('en-IN')
                 );
             }
-            showCreditError(message);
-            setCreditBusy(false);
-        } finally {
-            if (window.feather) feather.replace();
-        }
-    });
-
-    $(window).on('admin:user-presence.adminUsers', function (event) {
-        const presence = event.originalEvent?.detail || event.detail || {};
-        const $cell = $('[data-live-status-cell="' + Number(presence.user_id) + '"]');
-        if (!$cell.length) return;
-        const status = presence.live_status === 'active' ? 'active' : 'inactive';
-        const activeFilter = @json($liveStatus ?? null);
-        if (activeFilter && activeFilter !== status) {
-            $cell.closest('tr').remove();
-            return;
-        }
-        const $badge = $cell.find('[data-live-status]');
-        $badge.attr('data-live-status', status)
-            .text(status.charAt(0).toUpperCase() + status.slice(1))
-            .attr('class', 'badge ' + (status === 'active' ? 'bg-success' : 'bg-secondary'));
-        if (presence.last_seen_at) {
-            const date = new Date(presence.last_seen_at);
-            $cell.find('[data-live-last-seen]').text(Number.isNaN(date.getTime()) ? presence.last_seen_at : date.toLocaleString('en-IN'));
-        }
-    });
-});
+        });
 </script>
 @endsection
