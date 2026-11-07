@@ -69,7 +69,8 @@ Route::get('/optimize-clear', function () {
 // });
 
 Route::get('/robots.txt', function () {
-    $base = rtrim((string) config('sites.current.url', config('app.url')), '/');
+    $canonicalSetting = app(AppSettingsService::class)->value('canonical_url');
+    $base = rtrim((string) (filled($canonicalSetting) ? $canonicalSetting : config('sites.current.url', config('app.url'))), '/');
     $robots = implode("\n", [
         'User-agent: *',
         'Disallow: /admin/',
