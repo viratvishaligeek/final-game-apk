@@ -27,6 +27,7 @@ use App\Models\UserPresenceSession;
 use App\Models\WalletRequest;
 use App\Models\Winner;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class SiteIsolationTest extends TestCase
@@ -107,4 +108,25 @@ class SiteIsolationTest extends TestCase
 
         $this->assertSame('play-online-khaiwal', config('sites.current_key'));
     }
+    public function test_site_scoped_unique_indexes_and_password_reset_storage_are_migrated(): void
+    {
+        $this->assertTrue(Schema::hasColumn('games', 'site_key'));
+        $this->assertTrue(Schema::hasColumn('pages', 'site_key'));
+        $this->assertTrue(Schema::hasColumn('password_reset_otps', 'site_key'));
+
+        $gameIndexes = collect(Schema::getIndexes('games'))->pluck('name');
+        $pageIndexes = collect(Schema::getIndexes('pages'))->pluck('name');
+
+        $this->assertContains('games_site_key_name_unique', $gameIndexes);
+        $this->assertContains('games_site_key_slug_unique', $gameIndexes);
+        $this->assertContains('pages_site_key_name_unique', $pageIndexes);
+    }
+
+    public function test_robots_txt_advertises_the_current_domain_sitemap(): void
+    {
+        $this->get('https://galidisawar.com/robots.txt')
+            ->assertOk()
+            ->assertSee('Sitemap: https://galidisawar.com/sitemap.xml', false);
+    }
+
 }
