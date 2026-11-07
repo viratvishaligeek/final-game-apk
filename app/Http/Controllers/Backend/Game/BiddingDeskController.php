@@ -13,6 +13,7 @@ use App\Services\BidAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class BiddingDeskController extends Controller
@@ -32,7 +33,12 @@ class BiddingDeskController extends Controller
     public function data(Request $request)
     {
         $validated = $request->validate([
-            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'game_id' => [
+                'required', 'integer',
+                Rule::exists('games', 'id')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'date' => ['nullable', 'date_format:Y-m-d'],
         ]);
 
@@ -48,7 +54,12 @@ class BiddingDeskController extends Controller
     public function details(Request $request)
     {
         $validated = $request->validate([
-            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'game_id' => [
+                'required', 'integer',
+                Rule::exists('games', 'id')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'date' => ['required', 'date_format:Y-m-d'],
             'number' => ['required', 'string', 'max:30'],
             'type' => ['nullable', 'in:jodi,haruf,cross'],
