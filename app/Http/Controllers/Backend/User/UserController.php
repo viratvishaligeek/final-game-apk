@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use App\Services\Admin\UserBidActivityService;
 use App\Services\WalletService;
@@ -48,7 +49,14 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'name'       => 'required|string|max:200',
-            'phone'      => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/', 'unique:users,phone'],
+            'phone'      => [
+                'required',
+                'string',
+                'regex:/^\+?[0-9]{7,15}$/',
+                Rule::unique('users', 'phone')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'password'   => 'required|string|min:6',
             'gender'     => 'nullable|string|in:Male,Female,Other',
             'city'       => 'nullable|string|max:200',
@@ -201,7 +209,14 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'name'       => 'required|string|max:200',
-            'phone'      => ['required', 'string', 'regex:/^\+?[0-9]{7,15}$/', 'unique:users,phone,' . $user->id],
+            'phone'      => [
+                'required',
+                'string',
+                'regex:/^\+?[0-9]{7,15}$/',
+                Rule::unique('users', 'phone')
+                    ->where(fn ($query) => $query->where('site_key', config('sites.current_key')))
+                    ->ignore($user->id),
+            ],
             'password'   => 'nullable|string|min:6',
             'gender'     => 'nullable|string|in:Male,Female,Other',
             'city'       => 'nullable|string|max:200',
