@@ -85,6 +85,9 @@ jobs:
           php -l app/Http/Controllers/Api/ResultChartController.php
           php -l app/Http/Controllers/Frontend/CommunityAuthController.php
           php -l app/Http/Controllers/Backend/SettingController.php
+          php -l app/Http/Controllers/Backend/PagesController.php
+          php -l app/Http/Controllers/Frontend/MainController.php
+          php -l routes/extra.php
           php -l app/Models/Notification.php
           php -l database/migrations/2026_11_07_000001_scope_password_reset_otps_by_site.php
           php -l database/migrations/2026_11_07_000002_scope_remaining_unique_keys_by_site.php
