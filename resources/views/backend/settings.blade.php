@@ -119,6 +119,7 @@
                         'app_download_label' => ['App Download Button Label', 'text'],
                         'guessing_login_url' => ['Guessing Forum Login URL (HTTPS)', 'url'],
                         'guessing_register_url' => ['Guessing Forum Register URL (HTTPS)', 'url'],
+                        'guessing_submit_url' => ['Guessing Forum Submit Post URL (HTTPS)', 'url'],
                         'sticky_social_enabled' => ['Show Floating Social Buttons (0/1)', 'text'],
                         'announcement_text' => ['Announcement Text', 'textarea'],
                         'meta_title' => ['Default SEO Title', 'text'],
