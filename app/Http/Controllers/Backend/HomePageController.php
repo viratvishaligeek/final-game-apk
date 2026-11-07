@@ -59,6 +59,7 @@ class HomePageController extends Controller
         if ($image) {
             $validated['image'] = $image;
         }
+        HomePage::create($validated);
         return redirect()
             ->route('admin.home-page.index')
             ->with('success', 'Home page section created successfully.');
