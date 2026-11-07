@@ -2,7 +2,8 @@
     $siteName = filled(setting('title'))
         ? setting('title')
         : (string) config('sites.current.name', config('app.name', 'Play Online Khaiwal'));
-    $canonicalBase = rtrim((string) setting('canonical_url', config('sites.current.url', config('app.url'))), '/');
+    $canonicalSetting = setting('canonical_url');
+    $canonicalBase = rtrim((string) (filled($canonicalSetting) ? $canonicalSetting : config('sites.current.url', config('app.url'))), '/');
     $defaultTitle = filled(setting('meta_title'))
         ? setting('meta_title')
         : $siteName . ' | Satta King Results & Monthly Charts';
