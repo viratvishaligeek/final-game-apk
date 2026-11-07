@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -40,9 +41,19 @@ class AuthController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:200'],
-            'phone' => ['required', 'string', 'max:10', 'regex:/^\+?[0-9]{7,15}$/', 'unique:users,phone'],
+            'phone' => [
+                'required', 'string', 'max:10', 'regex:/^\+?[0-9]{7,15}$/',
+                Rule::unique('users', 'phone')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'password' => ['required', 'string', 'min:8'],
-            'referral_code' => ['nullable', 'string', 'max:32', 'exists:users,referral_code'],
+            'referral_code' => [
+                'nullable', 'string', 'max:32',
+                Rule::exists('users', 'referral_code')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
         ]);
 
         $duplicate = User::query()
@@ -168,7 +179,8 @@ class AuthController extends Controller
         }
 
         $phone = $validated['phone'];
-        $rateLimitKey = 'password-reset-send:' . hash('sha256', $phone);
+        $siteKey = (string) config('sites.current_key');
+        $rateLimitKey = 'password-reset-send:' . $siteKey . ':' . hash('sha256', $phone);
 
         if (RateLimiter::tooManyAttempts($rateLimitKey, 3)) {
             return response()->json([
@@ -193,10 +205,12 @@ class AuthController extends Controller
         $otp = (string) random_int(100000, 999999);
 
         DB::table('password_reset_otps')
+            ->where('site_key', $siteKey)
             ->where('phone', $phone)
             ->delete();
 
         DB::table('password_reset_otps')->insert([
+            'site_key' => $siteKey,
             'phone' => $phone,
             'otp' => Hash::make($otp),
             'expires_at' => now()->addMinutes(10),
@@ -235,6 +249,7 @@ class AuthController extends Controller
             }
         } catch (\Throwable $exception) {
             DB::table('password_reset_otps')
+                ->where('site_key', $siteKey)
                 ->where('phone', $phone)
                 ->delete();
 
@@ -268,7 +283,8 @@ class AuthController extends Controller
         ]);
 
         $phone = $validated['phone'];
-        $attemptKey = 'password-reset-verify:' . hash('sha256', $phone);
+        $siteKey = (string) config('sites.current_key');
+        $attemptKey = 'password-reset-verify:' . $siteKey . ':' . hash('sha256', $phone);
 
         if (RateLimiter::tooManyAttempts($attemptKey, 5)) {
             return response()->json([
@@ -277,7 +293,7 @@ class AuthController extends Controller
             ], 429);
         }
 
-        $result = DB::transaction(function () use ($phone, $validated, $attemptKey) {
+        $result = DB::transaction(function () use ($phone, $siteKey, $validated, $attemptKey) {
             $user = $this->findUserByPhone($phone);
 
             if (!$user || $this->isUserInactive($user)) {
