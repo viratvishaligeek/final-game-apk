@@ -21,5 +21,12 @@ class HomePage extends Model
         'phone',
         'telegram',
         'background',
+        'image',
+        'image_alt',
+        'button_label',
+        'button_url',
+        'button_style',
+        'layout',
+        'display_order',
     ];
 }

@@ -21,7 +21,7 @@
 
 @section('content')
     <div class="container-fluid px-4">
-        <form action="{{ route('admin.home-page.store') }}" method="POST">@csrf
+        <form action="{{ route('admin.home-page.store') }}" method="POST" enctype="multipart/form-data">@csrf
             <div class="row">
                 <div class="col-xl-8">
                     <div class="card mb-4">
@@ -36,6 +36,10 @@
                                 <label for="content" class="small mb-1"> Content <span class="text-danger">*</span>
                                 </label>
                                 <textarea id="content" name="content" class="form-control ">{{ old('content') }}</textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3"><label for="image_file" class="small mb-1">Section Image</label><input type="file" class="form-control" id="image_file" name="image_file" accept="image/jpeg,image/png,image/webp,image/gif"></div>
+                                <div class="col-md-6 mb-3"><label for="image_alt" class="small mb-1">Image Alt Text</label><input type="text" class="form-control" id="image_alt" name="image_alt" value="{{ old('image_alt') }}" maxlength="255"></div>
                             </div>
                         </div>
                     </div>
@@ -66,6 +70,13 @@
                     </div>
                 </div>
                 <div class="col-xl-4">
+<div class="card mb-4"><div class="card-header"><i class="me-2" data-feather="mouse-pointer"></i> Section Button & Layout</div><div class="card-body">
+<div class="mb-3"><label for="button_label" class="small mb-1">Button Label</label><input type="text" class="form-control" id="button_label" name="button_label" value="{{ old('button_label') }}" maxlength="100"></div>
+<div class="mb-3"><label for="button_url" class="small mb-1">Button URL</label><input type="text" class="form-control" id="button_url" name="button_url" value="{{ old('button_url') }}" maxlength="1000" placeholder="/chart or https://example.com"></div>
+<div class="row"><div class="col-md-6 mb-3"><label for="button_style" class="small mb-1">Button Style</label><select class="form-select" id="button_style" name="button_style">@foreach(['primary'=>'Primary','secondary'=>'Secondary','outline'=>'Outline','whatsapp'=>'WhatsApp','telegram'=>'Telegram'] as $value=>$label)<option value="{{ $value }}" @selected(old('button_style', 'primary') === $value)>{{ $label }}</option>@endforeach</select></div>
+<div class="col-md-6 mb-3"><label for="layout" class="small mb-1">Content Layout</label><select class="form-select" id="layout" name="layout">@foreach(['standard'=>'Standard','image-left'=>'Image Left','image-right'=>'Image Right','image-top'=>'Image Top','banner'=>'Wide Banner'] as $value=>$label)<option value="{{ $value }}" @selected(old('layout', 'standard') === $value)>{{ $label }}</option>@endforeach</select></div></div>
+<div class="mb-0"><label for="display_order" class="small mb-1">Display Order</label><input type="number" min="0" max="9999" class="form-control" id="display_order" name="display_order" value="{{ old('display_order', 0) }}"></div>
+</div></div>
                     <div class="card mb-4">
                         <div class="card-header"> <i class="me-2" data-feather="settings"></i> Section Settings </div>
                         <div class="card-body">

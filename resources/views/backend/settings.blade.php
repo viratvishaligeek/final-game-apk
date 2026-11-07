@@ -41,17 +41,23 @@
                         <label class="small mb-1" for="site_logo">Site Logo</label>
                         <input class="form-control" id="site_logo" name="site_logo" type="file"
                             accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                        @php($currentLogo = optional($setting->firstWhere('option', 'site_logo'))->value)
+                        @if($currentLogo)<img src="{{ asset('logos/'.basename($currentLogo)) }}" alt="Current site logo" class="img-thumbnail mt-2" style="max-height:70px">@endif
                     </div>
                     <div class="col-lg-6 mb-3">
                         <label class="small mb-1" for="site_favicon">Site Favicon</label>
                         <input class="form-control" id="site_favicon" name="site_favicon" type="file"
                             accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                        @php($currentFavicon = optional($setting->firstWhere('option', 'site_favicon'))->value)
+                        @if($currentFavicon)<img src="{{ asset('logos/'.basename($currentFavicon)) }}" alt="Current favicon" class="img-thumbnail mt-2" style="max-height:50px">@endif
                     </div>
                     <div class="col-lg-6 mb-3">
                         <label class="small mb-1" for="og_image">Default Open Graph Image</label>
                         <input class="form-control" id="og_image" name="og_image" type="file"
                             accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
                         <small class="text-muted">Used for social previews when an individual page has no dedicated image.</small>
+                        @php($currentOgImage = optional($setting->firstWhere('option', 'og_image'))->value)
+                        @if($currentOgImage)<img src="{{ asset('logos/'.basename($currentOgImage)) }}" alt="Current Open Graph image" class="img-thumbnail mt-2" style="max-height:90px">@endif
                         @error('og_image')<small class="text-danger">{{ $message }}</small>@enderror
                     </div>
                 </div>
@@ -103,6 +109,27 @@
                         'homepage_heading_line2' => ['Homepage Heading — Line 2', 'text'],
                         'homepage_heading_line3' => ['Homepage Heading — Line 3', 'text'],
                         'homepage_intro' => ['Homepage Introduction', 'textarea'],
+                        'header_cta_label' => ['Header CTA Button Label', 'text'],
+                        'header_cta_url' => ['Header CTA Button URL', 'text'],
+                        'homepage_primary_cta_label' => ['Homepage Primary Button Label', 'text'],
+                        'homepage_primary_cta_url' => ['Homepage Primary Button URL', 'text'],
+                        'homepage_secondary_cta_label' => ['Homepage Secondary Button Label', 'text'],
+                        'homepage_secondary_cta_url' => ['Homepage Secondary Button URL', 'text'],
+                        'homepage_guide_heading' => ['Homepage Guide Heading', 'text'],
+                        'homepage_guide_content' => ['Homepage Guide Content (HTML allowed)', 'textarea'],
+                        'homepage_seo_heading' => ['Homepage SEO Section Heading', 'text'],
+                        'homepage_seo_content' => ['Homepage SEO Section Content (HTML allowed)', 'textarea'],
+                        'homepage_note_text' => ['Homepage Note / Notice', 'textarea'],
+                        'homepage_terms_heading' => ['Homepage Important Terms Heading', 'text'],
+                        'homepage_terms_content' => ['Homepage Important Terms / Glossary (HTML allowed)', 'textarea'],
+                        'site_counter_text' => ['Small Counter / Status Text (leave blank to hide)', 'text'],
+                        'app_section_heading' => ['Homepage App / Contact Section Heading', 'text'],
+                        'app_section_description' => ['Homepage App / Contact Section Description', 'textarea'],
+                        'app_download_label' => ['App Download Button Label', 'text'],
+                        'guessing_login_url' => ['Guessing Forum Login URL (HTTPS)', 'url'],
+                        'guessing_register_url' => ['Guessing Forum Register URL (HTTPS)', 'url'],
+                        'guessing_submit_url' => ['Guessing Forum Submit Post URL (HTTPS)', 'url'],
+                        'sticky_social_enabled' => ['Show Floating Social Buttons', 'toggle'],
                         'announcement_text' => ['Announcement Text', 'textarea'],
                         'meta_title' => ['Default SEO Title', 'text'],
                         'meta_description' => ['Default Meta Description', 'textarea'],
@@ -133,6 +160,11 @@
                             <label class="small mb-1" for="{{ $key }}">{{ $field[0] }}</label>
                             @if ($field[1] === 'textarea')
                                 <textarea class="form-control" id="{{ $key }}" name="{{ $key }}" rows="3">{{ old($key, optional($setting->firstWhere('option', $key))->value) }}</textarea>
+                            @elseif ($field[1] === 'toggle')
+                                <select class="form-select" id="{{ $key }}" name="{{ $key }}">
+                                    <option value="1" {{ old($key, optional($setting->firstWhere('option', $key))->value ?? '1') === '1' ? 'selected' : '' }}>Enabled</option>
+                                    <option value="0" {{ old($key, optional($setting->firstWhere('option', $key))->value ?? '1') === '0' ? 'selected' : '' }}>Disabled</option>
+                                </select>
                             @elseif ($field[1] === 'select')
                                 <select class="form-select" id="{{ $key }}" name="{{ $key }}">
                                     @if ($key === 'robots_default')
