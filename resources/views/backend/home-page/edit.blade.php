@@ -28,7 +28,7 @@
 @section('content')
     <div class="container-fluid px-4">
 
-        <form action="{{ route('admin.home-page.update', $homePage->id) }}" method="POST">
+        <form action="{{ route('admin.home-page.update', $homePage->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="row">
@@ -53,6 +53,10 @@
                                     <span class="text-danger">*</span>
                                 </label>
                                 <textarea id="content" name="content" class="form-control ">{{ old('content', $homePage->content) }}</textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3"><label for="image_file" class="small mb-1">Replace Section Image</label><input type="file" class="form-control" id="image_file" name="image_file" accept="image/jpeg,image/png,image/webp,image/gif">@if($homePage->image)<img src="{{ app(\\App\\Services\\ProjectStorage::class)->publicUrl($homePage->image) }}" alt="{{ $homePage->image_alt ?: $homePage->title }}" class="img-thumbnail mt-2" style="max-height:130px">@endif</div>
+                                <div class="col-md-6 mb-3"><label for="image_alt" class="small mb-1">Image Alt Text</label><input type="text" class="form-control" id="image_alt" name="image_alt" value="{{ old('image_alt', $homePage->image_alt) }}" maxlength="255">@if($homePage->image)<label class="d-block mt-2"><input type="checkbox" name="remove_image" value="1"> Remove current image</label>@endif</div>
                             </div>
                         </div>
                     </div>
