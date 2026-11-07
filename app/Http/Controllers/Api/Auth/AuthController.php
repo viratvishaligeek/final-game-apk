@@ -251,7 +251,6 @@ class AuthController extends Controller
         } catch (\Throwable $exception) {
             DB::table('password_reset_otps')
                 ->where('site_key', $siteKey)
-                ->where('site_key', $siteKey)
             ->where('phone', $phone)
                 ->delete();
 
