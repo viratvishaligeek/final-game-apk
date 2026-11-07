@@ -1,6 +1,6 @@
 @extends('frontend.include.app')
 
-@section('title', 'Guessing Community | ' . setting('title', 'Play Online Khaiwal'))
+@section('title', 'Guessing Community | ' . setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))))
 
 @section('meta_description', 'Join game-specific Guessing discussions, read approved community posts, and share your
     thoughts.')

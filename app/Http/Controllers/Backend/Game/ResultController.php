@@ -15,6 +15,7 @@ use App\Services\Admin\GameResultSettlementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class ResultController extends Controller
@@ -78,7 +79,12 @@ class ResultController extends Controller
     public function storeOrUpdate(Request $request)
     {
         $validated = $request->validate([
-            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'game_id' => [
+                'required', 'integer',
+                Rule::exists('games', 'id')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'game_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'is_live_business_date' => ['sometimes', 'boolean'],
             'result' => ['required', 'digits:2'],
@@ -303,7 +309,12 @@ class ResultController extends Controller
     public function revert(Request $request)
     {
         $validated = $request->validate([
-            'game_id' => ['required', 'integer', 'exists:games,id'],
+            'game_id' => [
+                'required', 'integer',
+                Rule::exists('games', 'id')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'game_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
         ]);
 

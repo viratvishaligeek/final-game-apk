@@ -1,5 +1,5 @@
 @extends('frontend.include.app')
-@section('title', $title . ' | ' . setting('title', 'Play Online Khaiwal'))
+@section('title', $title . ' | ' . setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))))
 @section('meta_description', \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags($meta_description))), 160))
 @section('structured_data')
     @php

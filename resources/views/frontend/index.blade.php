@@ -2,8 +2,7 @@
 @section('title',
     filled(setting('meta_title'))
     ? setting('meta_title')
-    : 'Play Online Khaiwal | Satta King Results &
-    Monthly Charts')
+    : ((string) config('sites.current.name', config('app.name', 'Play Online Khaiwal')) . ' | Satta King Results & Monthly Charts'))
 @section('robots_content', request()->hasAny(['year', 'month']) || (int) request()->query('page', 1) > 1 ?
     'noindex,follow' : setting('robots_default', 'index,follow'))
 @section('meta_description', filled(setting('meta_description')) ? setting('meta_description') :
@@ -243,7 +242,7 @@
             <div class="text-center">
                 <h2>Today's & Yesterday's Satta Results<br>
                 </h2>
-                <p>Explore today's and yesterday's market-wise Satta results on Play Online Khaiwal. Check published
+                <p>Explore today's and yesterday's market-wise Satta results on {{ config('sites.current.name', config('app.name', 'Play Online Khaiwal')) }}. Check published
                     results, compare previous-day records and browse historical charts for each market.</p>
             </div>
         </div>

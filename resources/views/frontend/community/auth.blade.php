@@ -1,5 +1,5 @@
 @extends('frontend.include.app')
-@section('title', ($mode === 'login' ? 'Member Login' : 'Create Member Account') . ' | ' . setting('title', 'Play Online Khaiwal'))
+@section('title', ($mode === 'login' ? 'Member Login' : 'Create Member Account') . ' | ' . setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))))
 @section('robots_content', 'noindex,follow')
 @section('content')
 <section class="page-banner page-banner--blue"><div class="wrap"><p class="eyebrow">MEMBER ACCESS</p><h1>{{ $mode === 'login' ? 'Sign in to the' : 'Join the' }} <span>community</span></h1><p>Use your existing member account. These credentials use the site's existing registered users.</p></div></section>

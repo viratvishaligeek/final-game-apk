@@ -1,13 +1,13 @@
 <header class="site-header">
     <div class="header-main wrap">
-        <a class="brand" href="{{ route('index') }}" aria-label="{{ setting('title') }} home">
+        <a class="brand" href="{{ route('index') }}" aria-label="{{ setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))) }} home">
             @if (filled(setting('site_logo')) && is_file(public_path('logos/' . basename(setting('site_logo')))))
                 <img class="brand-emblem" src="{{ asset('logos/' . basename(setting('site_logo'))) }}"
-                    alt="{{ setting('title') }}" loading="eager">
+                    alt="{{ setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))) }}" loading="eager">
             @else
                 <span class="brand-emblem">POK</span>
             @endif
-            <span class="brand-word">{{ setting('title') }}<small>
+            <span class="brand-word">{{ setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))) }}<small>
             </span>
         </a>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav"

@@ -10,11 +10,11 @@
                 <a class="d-inline-flex align-items-center gap-3 text-decoration-none text-white mb-3"
                     href="{{ route('index') }}">
                     @if (filled(setting('site_logo')) && is_file(public_path('logos/' . basename(setting('site_logo')))))
-                        <img src="{{ asset('logos/' . basename(setting('site_logo'))) }}" alt="{{ setting('title') }}"
+                        <img src="{{ asset('logos/' . basename(setting('site_logo'))) }}" alt="{{ setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))) }}"
                             width="55" height="55" class="rounded-3 object-fit-contain" loading="lazy">
                     @endif
                     <span class="fs-4 fw-bold">
-                        {{ setting('title') }}
+                        {{ setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))) }}
                         <small class="d-block text-secondary fs-6 fw-normal">
                             {{ setting('site_tagline') }}
                         </small>
@@ -101,7 +101,7 @@
             <div class="row align-items-center g-2">
                 <div class="col-md-8 text-center text-md-start">
                     <small class="text-white-50">
-                        {{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title')) }}
+                        {{ setting('copyright_text', '© ' . date('Y') . ' ' . setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal')))) }}
                     </small>
                 </div>
             </div>

@@ -68,8 +68,25 @@ Route::get('/optimize-clear', function () {
 //     ]);
 // });
 
+Route::get('/robots.txt', function () {
+    $canonicalSetting = app(AppSettingsService::class)->value('canonical_url');
+    $base = rtrim((string) (filled($canonicalSetting) ? $canonicalSetting : config('sites.current.url', config('app.url'))), '/');
+    $robots = implode("\n", [
+        'User-agent: *',
+        'Disallow: /admin/',
+        'Disallow: /login',
+        'Disallow: /firebase-config.js',
+        'Disallow: /firebase-config.json',
+        'Sitemap: ' . $base . '/sitemap.xml',
+        '',
+    ]);
+
+    return response($robots, 200)->header('Content-Type', 'text/plain; charset=UTF-8');
+})->name('robots');
+
 $buildPublicSitemapEntries = function (): array {
-    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('app.url', 'https://playonlinekhaiwal.com')), '/');
+    $canonicalSetting = app(AppSettingsService::class)->value('canonical_url');
+    $base = rtrim((string) (filled($canonicalSetting) ? $canonicalSetting : config('sites.current.url', config('app.url'))), '/');
     $entries = [$base . '/' => null];
 
     $latestResultUpdates = Result::query()
@@ -141,7 +158,8 @@ Route::get('/sitemap.xml', function () use ($buildPublicSitemapEntries, $renderS
         return $renderSitemapUrlSet($entries);
     }
 
-    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('app.url', 'https://playonlinekhaiwal.com')), '/');
+    $canonicalSetting = app(AppSettingsService::class)->value('canonical_url');
+    $base = rtrim((string) (filled($canonicalSetting) ? $canonicalSetting : config('sites.current.url', config('app.url'))), '/');
     $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     foreach (array_keys($chunks) as $index) {
         $xml .= '<sitemap><loc>' . htmlspecialchars($base . '/sitemap-' . ($index + 1) . '.xml', ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc></sitemap>';

@@ -1,5 +1,5 @@
 @extends('frontend.include.app')
-@section('title', 'Create Guessing Post | ' . setting('title', 'Play Online Khaiwal'))
+@section('title', 'Create Guessing Post | ' . setting('title', config('sites.current.name', config('app.name', 'Play Online Khaiwal'))))
 @section('robots_content', 'noindex,follow')
 @section('content')
 <section class="page-banner page-banner--blue"><div class="wrap"><p class="eyebrow">COMMUNITY DISCUSSION</p><h1>Create a <span>Guessing post</span></h1><p>Choose an active game topic and write a clear, respectful post. Your content is plain text and may require administrator approval.</p></div></section>

@@ -1,16 +1,17 @@
 @php
-    $canonicalBase = rtrim((string) setting('canonical_url', 'https://playonlinekhaiwal.com'), '/');
+    $siteName = filled(setting('title'))
+        ? setting('title')
+        : (string) config('sites.current.name', config('app.name', 'Play Online Khaiwal'));
+    $canonicalSetting = setting('canonical_url');
+    $canonicalBase = rtrim((string) (filled($canonicalSetting) ? $canonicalSetting : config('sites.current.url', config('app.url'))), '/');
     $defaultTitle = filled(setting('meta_title'))
         ? setting('meta_title')
-        : (filled(setting('title'))
-            ? setting('title') . ' | Satta King Results & Monthly Charts'
-            : 'Play Online Khaiwal | Satta King Results & Monthly Charts');
+        : $siteName . ' | Satta King Results & Monthly Charts';
     $defaultDescription = filled(setting('meta_description'))
         ? setting('meta_description')
         : (filled(setting('site_description'))
             ? setting('site_description')
-            : 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on Play Online Khaiwal.');
-    $siteName = filled(setting('title')) ? setting('title') : 'Play Online Khaiwal';
+            : 'Browse Satta King results, Satta Matka market records, and game-wise monthly charts on ' . $siteName . '.');
     $sectionTitle = trim(strip_tags($__env->yieldContent('title', $defaultTitle)));
     $sectionDescription = trim(strip_tags($__env->yieldContent('meta_description', $defaultDescription)));
     $useGlobalSocialDefaults = request()->routeIs('index') && !request()->filled('year') && !request()->filled('month');

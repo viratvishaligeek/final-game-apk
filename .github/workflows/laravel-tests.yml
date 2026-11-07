@@ -78,10 +78,26 @@ jobs:
           php -l app/Http/Controllers/Backend/User/WalletController.php
           php -l tests/Feature/AdminWalletCreditIdempotencyTest.php
           php -l app/Http/Controllers/Backend/Game/ResultController.php
+          php -l app/Http/Controllers/Backend/Game/WinnerController.php
+          php -l app/Http/Controllers/Backend/PagesController.php
+          php -l app/Http/Controllers/Api/Auth/AuthController.php
+          php -l app/Http/Controllers/Api/WalletController.php
+          php -l app/Http/Controllers/Api/ResultChartController.php
+          php -l app/Http/Controllers/Frontend/CommunityAuthController.php
+          php -l app/Http/Controllers/Backend/SettingController.php
+          php -l app/Http/Controllers/Backend/PagesController.php
+          php -l app/Http/Controllers/Frontend/MainController.php
+          php -l routes/extra.php
+          php -l app/Models/Notification.php
+          php -l database/migrations/2026_11_07_000001_scope_password_reset_otps_by_site.php
+          php -l database/migrations/2026_11_07_000002_scope_remaining_unique_keys_by_site.php
+          php -l tests/Feature/SiteIsolationTest.php
           php -l tests/Feature/AdminBidAndSupportChatEnhancementTest.php
           php -l app/Http/Controllers/Backend/SupportChatController.php
           php -l routes/admin.php
           php -l routes/api.php
           php -l routes/channels.php
+      - name: Run multi-site isolation regression tests
+        run: php artisan test tests/Feature/SiteIsolationTest.php
       - name: Run focused bid, chat and channel regression tests
         run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php tests/Feature/AdminWalletCreditIdempotencyTest.php --display-warnings

@@ -75,8 +75,8 @@ class SettingController extends Controller
 
         foreach (
             [
-                'title' => 'Play Online Khaiwal',
-                'canonical_url' => 'https://playonlinekhaiwal.com',
+                'title' => (string) config('sites.current.name', config('app.name', 'Play Online Khaiwal')),
+                'canonical_url' => rtrim((string) config('sites.current.url', config('app.url')), '/'),
                 'robots_default' => 'index,follow',
                 'twitter_card' => 'summary_large_image',
             ] as $key => $default
