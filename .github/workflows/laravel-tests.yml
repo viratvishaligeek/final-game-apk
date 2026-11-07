@@ -104,7 +104,7 @@ jobs:
           php -l app/Http/Controllers/Backend/HomePageController.php
           php -l app/Http/Controllers/Backend/SettingController.php
           php -l app/Models/HomePage.php
-          php -l database/migrations/2026_11_08_000001_add_home_page_presentation_fields.php
+          php -l database/migrations/2026_11_07_000003_add_home_page_presentation_fields.php
           php artisan test tests/Feature/HomePagePresentationFieldsTest.php
       - name: Run focused bid, chat and channel regression tests
         run: php artisan test tests/Feature/AdminBidAndSupportChatEnhancementTest.php tests/Feature/AdminWalletCreditIdempotencyTest.php --display-warnings
