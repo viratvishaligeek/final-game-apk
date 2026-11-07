@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Page;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class PagesController extends Controller
 {
@@ -25,7 +26,14 @@ class PagesController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:pages,name'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('pages', 'name')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'status' => ['required', 'in:active,inactive'],
             'content' => ['nullable', 'string'],
             'is_editable' => ['required', 'in:yes,no'],
@@ -68,7 +76,14 @@ class PagesController extends Controller
         $page = Page::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:pages,name,' . $page->id],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('pages', 'name')
+                    ->where(fn ($query) => $query->where('site_key', config('sites.current_key')))
+                    ->ignore($page->id),
+            ],
             'status' => ['required', 'in:active,inactive'],
             'content' => ['nullable', 'string'],
             'is_editable' => ['required', 'in:yes,no'],
@@ -102,6 +117,7 @@ class PagesController extends Controller
                 'is_editable' => $validated['is_editable'],
             ], $metadata));
         }
+
         return redirect()->route('admin.pages.index')->with('success', 'Page updated successfully.');
     }
 
@@ -113,7 +129,7 @@ class PagesController extends Controller
 
         while (Page::query()
             ->where('slug', $slug)
-            ->when($ignoreId !== null, fn($query) => $query->where('id', '!=', $ignoreId))
+            ->when($ignoreId !== null, fn ($query) => $query->where('id', '!=', $ignoreId))
             ->exists()) {
             $slug = $base . '-' . $suffix++;
         }
@@ -127,6 +143,7 @@ class PagesController extends Controller
 
         if ($page->is_editable === 'yes') {
             $page->delete();
+
             return redirect()
                 ->route('admin.pages.index')
                 ->with('success', 'Page deleted successfully.');
