@@ -284,7 +284,12 @@ class WalletController extends Controller
     {
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'decimal:0,2', 'min:1', 'max:1000000'],
-            'utr' => ['required', 'string', 'max:100', 'unique:wallet_requests,utr'],
+            'utr' => [
+                'required', 'string', 'max:100',
+                Rule::unique('wallet_requests', 'utr')->where(
+                    fn ($query) => $query->where('site_key', config('sites.current_key'))
+                ),
+            ],
             'screenshot' => [
                 'required',
                 'file',
