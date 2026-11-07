@@ -206,6 +206,7 @@ class AuthController extends Controller
 
         DB::table('password_reset_otps')
             ->where('site_key', $siteKey)
+            ->where('site_key', $siteKey)
             ->where('phone', $phone)
             ->delete();
 
@@ -234,7 +235,8 @@ class AuthController extends Controller
 
             if (!$response->successful() || $providerRejected) {
                 DB::table('password_reset_otps')
-                    ->where('phone', $phone)
+                    ->where('site_key', $siteKey)
+            ->where('phone', $phone)
                     ->delete();
 
                 Log::warning('Password reset SMS provider rejected delivery.', [
@@ -250,7 +252,8 @@ class AuthController extends Controller
         } catch (\Throwable $exception) {
             DB::table('password_reset_otps')
                 ->where('site_key', $siteKey)
-                ->where('phone', $phone)
+                ->where('site_key', $siteKey)
+            ->where('phone', $phone)
                 ->delete();
 
             Log::warning('Password reset SMS delivery failed.', [
@@ -305,7 +308,8 @@ class AuthController extends Controller
                 ->findOrFail($user->id);
 
             $otpRecord = DB::table('password_reset_otps')
-                ->where('phone', $phone)
+                ->where('site_key', $siteKey)
+            ->where('phone', $phone)
                 ->orderByDesc('id')
                 ->lockForUpdate()
                 ->first();
@@ -316,7 +320,8 @@ class AuthController extends Controller
 
             if (now()->greaterThan($otpRecord->expires_at)) {
                 DB::table('password_reset_otps')
-                    ->where('phone', $phone)
+                    ->where('site_key', $siteKey)
+            ->where('phone', $phone)
                     ->delete();
 
                 return 'expired';
@@ -333,7 +338,8 @@ class AuthController extends Controller
             $user->tokens()->delete();
 
             DB::table('password_reset_otps')
-                ->where('phone', $phone)
+                ->where('site_key', $siteKey)
+            ->where('phone', $phone)
                 ->delete();
 
             return 'success';
