@@ -60,12 +60,16 @@ class MainController extends Controller
         $monthlyTables = $charts->homepageTables($games, $monthStart, $monthEnd, $monthDays, $chunkSize);
         $monthLabel = $charts->monthLabel($selectedYear, $selectedMonth);
 
-        $homeCanonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('sites.current.url', config('app.url'))), '/') . '/';
+        $siteName = (string) config('sites.current.name', config('app.name', 'Play Online Khaiwal'));
+        $canonicalSetting = app(AppSettingsService::class)->value('canonical_url');
+        $homeCanonical = rtrim((string) (filled($canonicalSetting) ? $canonicalSetting : config('sites.current.url', config('app.url'))), '/') . '/';
+        $metaTitleSetting = app(AppSettingsService::class)->value('meta_title');
+        $metaDescriptionSetting = app(AppSettingsService::class)->value('meta_description');
         $homeGraph = [[
             '@type' => 'WebPage',
-            'name' => (string) app(AppSettingsService::class)->value('meta_title', (string) config('sites.current.name', config('app.name', 'Play Online Khaiwal')) . ' | Satta King Results & Monthly Charts'),
+            'name' => filled($metaTitleSetting) ? (string) $metaTitleSetting : $siteName . ' | Satta King Results & Monthly Charts',
             'url' => $homeCanonical,
-            'description' => app(AppSettingsService::class)->value('meta_description', 'Satta King result records and monthly charts on ' . config('sites.current.name', config('app.name', 'Play Online Khaiwal')) . '.'),
+            'description' => filled($metaDescriptionSetting) ? (string) $metaDescriptionSetting : 'Satta King result records and monthly charts on ' . $siteName . '.',
         ]];
         if ($faqs->isNotEmpty()) {
             $homeGraph[] = [
@@ -125,8 +129,9 @@ class MainController extends Controller
         $availableYears[] = $currentYear;
         $availableYears = array_values(array_unique(array_filter($availableYears, fn(int $availableYear) => $availableYear >= 2000 && $availableYear <= $currentYear)));
         rsort($availableYears);
-        $canonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('sites.current.url', config('app.url'))), '/')
-            . '/result/' . $game->slug;
+        $canonicalSetting = app(AppSettingsService::class)->value('canonical_url');
+        $canonicalBase = filled($canonicalSetting) ? $canonicalSetting : config('sites.current.url', config('app.url'));
+        $canonical = rtrim((string) $canonicalBase, '/') . '/result/' . $game->slug;
 
         return response()
             ->view('frontend.market', compact('game', 'year', 'month', 'monthLabel', 'results', 'canonical', 'currentYear', 'currentMonth', 'availableYears'))
