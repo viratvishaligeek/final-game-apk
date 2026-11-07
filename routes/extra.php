@@ -141,7 +141,7 @@ Route::get('/sitemap.xml', function () use ($buildPublicSitemapEntries, $renderS
         return $renderSitemapUrlSet($entries);
     }
 
-    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('app.url', 'https://playonlinekhaiwal.com')), '/');
+    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('sites.current.url', config('app.url'))), '/');
     $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     foreach (array_keys($chunks) as $index) {
         $xml .= '<sitemap><loc>' . htmlspecialchars($base . '/sitemap-' . ($index + 1) . '.xml', ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc></sitemap>';
