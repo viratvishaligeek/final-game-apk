@@ -69,7 +69,7 @@ Route::get('/optimize-clear', function () {
 // });
 
 $buildPublicSitemapEntries = function (): array {
-    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('app.url', 'https://playonlinekhaiwal.com')), '/');
+    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('sites.current.url', config('app.url'))), '/');
     $entries = [$base . '/' => null];
 
     $latestResultUpdates = Result::query()
