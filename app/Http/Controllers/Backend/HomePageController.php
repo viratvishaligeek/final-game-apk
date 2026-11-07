@@ -43,8 +43,21 @@ class HomePageController extends Controller
             'phone' => ['nullable', 'string', 'max:255'],
             'telegram' => ['nullable', 'string', 'max:255'],
             'background' => ['nullable', 'string', 'max:255'],
+            'image_alt' => ['nullable', 'string', 'max:255'],
+            'button_label' => ['nullable', 'string', 'max:100'],
+            'button_url' => ['nullable', 'string', 'max:1000'],
+            'button_style' => ['nullable', 'in:primary,secondary,outline,whatsapp,telegram'],
+            'layout' => ['nullable', 'in:standard,image-left,image-right,image-top,banner'],
+            'display_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
         ]);
-        HomePage::create($validated);
+        $image = $request->file('image_file')
+            ? app(ProjectStorage::class)->storePublicFile($request->file('image_file'), 'homepage-sections')
+            : null;
+        unset($validated['image_file']);
+        if ($image) {
+            $validated['image'] = $image;
+        }
         return redirect()
             ->route('admin.home-page.index')
             ->with('success', 'Home page section created successfully.');
@@ -78,9 +91,28 @@ class HomePageController extends Controller
             'phone' => ['nullable', 'string', 'max:255',],
             'telegram' => ['nullable', 'string', 'max:255',],
             'background' => ['nullable', 'string', 'max:255',],
+            'image_alt' => ['nullable', 'string', 'max:255'],
+            'button_label' => ['nullable', 'string', 'max:100'],
+            'button_url' => ['nullable', 'string', 'max:1000'],
+            'button_style' => ['nullable', 'in:primary,secondary,outline,whatsapp,telegram'],
+            'layout' => ['nullable', 'in:standard,image-left,image-right,image-top,banner'],
+            'display_order' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:4096'],
+            'remove_image' => ['nullable', 'boolean'],
         ]);
 
+        $oldImage = $homePage->image;
+        if ($request->boolean('remove_image')) {
+            $validated['image'] = null;
+        }
+        if ($request->file('image_file')) {
+            $validated['image'] = app(ProjectStorage::class)->storePublicFile($request->file('image_file'), 'homepage-sections');
+        }
+        unset($validated['image_file'], $validated['remove_image']);
         $homePage->update($validated);
+        if ($oldImage && $oldImage !== $homePage->image) {
+            app(ProjectStorage::class)->deletePublicFile($oldImage);
+        }
 
         return redirect()
             ->route('admin.home-page.index')
@@ -90,6 +122,9 @@ class HomePageController extends Controller
     public function destroy(string $id): RedirectResponse
     {
         $homePage = HomePage::findOrFail($id);
+        if ($homePage->image) {
+            app(ProjectStorage::class)->deletePublicFile($homePage->image);
+        }
         $homePage->delete();
         return redirect()
             ->route('admin.home-page.index')
