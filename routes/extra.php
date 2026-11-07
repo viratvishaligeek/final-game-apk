@@ -84,7 +84,8 @@ Route::get('/robots.txt', function () {
 })->name('robots');
 
 $buildPublicSitemapEntries = function (): array {
-    $base = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('sites.current.url', config('app.url'))), '/');
+    $canonicalSetting = app(AppSettingsService::class)->value('canonical_url');
+    $base = rtrim((string) (filled($canonicalSetting) ? $canonicalSetting : config('sites.current.url', config('app.url'))), '/');
     $entries = [$base . '/' => null];
 
     $latestResultUpdates = Result::query()
