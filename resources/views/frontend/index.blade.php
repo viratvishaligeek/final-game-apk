@@ -242,7 +242,7 @@
             <div class="text-center">
                 <h2>Today's & Yesterday's Satta Results<br>
                 </h2>
-                <p>Explore today's and yesterday's market-wise Satta results on ' . config('sites.current.name', config('app.name', 'Play Online Khaiwal')) . '. Check published
+                <p>Explore today's and yesterday's market-wise Satta results on {{ config('sites.current.name', config('app.name', 'Play Online Khaiwal')) }}. Check published
                     results, compare previous-day records and browse historical charts for each market.</p>
             </div>
         </div>
