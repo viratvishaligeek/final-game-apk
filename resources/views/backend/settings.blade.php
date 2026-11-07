@@ -41,17 +41,23 @@
                         <label class="small mb-1" for="site_logo">Site Logo</label>
                         <input class="form-control" id="site_logo" name="site_logo" type="file"
                             accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                        @php($currentLogo = optional($setting->firstWhere('option', 'site_logo'))->value)
+                        @if($currentLogo)<img src="{{ asset('logos/'.basename($currentLogo)) }}" alt="Current site logo" class="img-thumbnail mt-2" style="max-height:70px">@endif
                     </div>
                     <div class="col-lg-6 mb-3">
                         <label class="small mb-1" for="site_favicon">Site Favicon</label>
                         <input class="form-control" id="site_favicon" name="site_favicon" type="file"
                             accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                        @php($currentFavicon = optional($setting->firstWhere('option', 'site_favicon'))->value)
+                        @if($currentFavicon)<img src="{{ asset('logos/'.basename($currentFavicon)) }}" alt="Current favicon" class="img-thumbnail mt-2" style="max-height:50px">@endif
                     </div>
                     <div class="col-lg-6 mb-3">
                         <label class="small mb-1" for="og_image">Default Open Graph Image</label>
                         <input class="form-control" id="og_image" name="og_image" type="file"
                             accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
                         <small class="text-muted">Used for social previews when an individual page has no dedicated image.</small>
+                        @php($currentOgImage = optional($setting->firstWhere('option', 'og_image'))->value)
+                        @if($currentOgImage)<img src="{{ asset('logos/'.basename($currentOgImage)) }}" alt="Current Open Graph image" class="img-thumbnail mt-2" style="max-height:90px">@endif
                         @error('og_image')<small class="text-danger">{{ $message }}</small>@enderror
                     </div>
                 </div>
