@@ -125,7 +125,7 @@ class MainController extends Controller
         $availableYears[] = $currentYear;
         $availableYears = array_values(array_unique(array_filter($availableYears, fn(int $availableYear) => $availableYear >= 2000 && $availableYear <= $currentYear)));
         rsort($availableYears);
-        $canonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', 'https://playonlinekhaiwal.com'), '/')
+        $canonical = rtrim((string) app(AppSettingsService::class)->value('canonical_url', config('sites.current.url', config('app.url'))), '/')
             . '/result/' . $game->slug;
 
         return response()
