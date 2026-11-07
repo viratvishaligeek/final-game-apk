@@ -120,7 +120,7 @@
                         'guessing_login_url' => ['Guessing Forum Login URL (HTTPS)', 'url'],
                         'guessing_register_url' => ['Guessing Forum Register URL (HTTPS)', 'url'],
                         'guessing_submit_url' => ['Guessing Forum Submit Post URL (HTTPS)', 'url'],
-                        'sticky_social_enabled' => ['Show Floating Social Buttons (0/1)', 'text'],
+                        'sticky_social_enabled' => ['Show Floating Social Buttons', 'toggle'],
                         'announcement_text' => ['Announcement Text', 'textarea'],
                         'meta_title' => ['Default SEO Title', 'text'],
                         'meta_description' => ['Default Meta Description', 'textarea'],
@@ -151,6 +151,11 @@
                             <label class="small mb-1" for="{{ $key }}">{{ $field[0] }}</label>
                             @if ($field[1] === 'textarea')
                                 <textarea class="form-control" id="{{ $key }}" name="{{ $key }}" rows="3">{{ old($key, optional($setting->firstWhere('option', $key))->value) }}</textarea>
+                            @elseif ($field[1] === 'toggle')
+                                <select class="form-select" id="{{ $key }}" name="{{ $key }}">
+                                    <option value="1" {{ old($key, optional($setting->firstWhere('option', $key))->value ?? '1') === '1' ? 'selected' : '' }}>Enabled</option>
+                                    <option value="0" {{ old($key, optional($setting->firstWhere('option', $key))->value ?? '1') === '0' ? 'selected' : '' }}>Disabled</option>
+                                </select>
                             @elseif ($field[1] === 'select')
                                 <select class="form-select" id="{{ $key }}" name="{{ $key }}">
                                     @if ($key === 'robots_default')
