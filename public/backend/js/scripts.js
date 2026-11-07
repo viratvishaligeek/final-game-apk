@@ -1,76 +1,60 @@
 /*!
-    * Start Bootstrap - SB Admin Pro v2.0.5 (https://shop.startbootstrap.com/product/sb-admin-pro)
-    * Copyright 2013-2023 Start Bootstrap
-    * Licensed under SEE_LICENSE (https://github.com/StartBootstrap/sb-admin-pro/blob/master/LICENSE)
-    */
-    window.addEventListener('DOMContentLoaded', event => {
-    // Activate feather
-    feather.replace();
+ * Start Bootstrap - SB Admin Pro v2.0.5
+ * Copyright 2013-2023 Start Bootstrap
+ * Licensed under SEE_LICENSE (https://github.com/StartBootstrap/sb-admin-pro/blob/master/LICENSE)
+ */
+(function ($, window, document) {
+    'use strict';
 
-    // Enable tooltips globally
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Enable popovers globally
-    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-        return new bootstrap.Popover(popoverTriggerEl);
-    });
-
-    // Toggle the side navigation
-    const sidebarToggle = document.body.querySelector('#sidebarToggle');
-    if (sidebarToggle) {
-        // Uncomment Below to persist sidebar toggle between refreshes
-        // if (localStorage.getItem('sb|sidebar-toggle') === 'true') {
-        //     document.body.classList.toggle('sidenav-toggled');
-        // }
-        sidebarToggle.addEventListener('click', event => {
-            event.preventDefault();
-            document.body.classList.toggle('sidenav-toggled');
-            localStorage.setItem('sb|sidebar-toggle', document.body.classList.contains('sidenav-toggled'));
-        });
-    }
-
-    // Close side navigation when width < LG
-    const sidenavContent = document.body.querySelector('#layoutSidenav_content');
-    if (sidenavContent) {
-        sidenavContent.addEventListener('click', event => {
-            const BOOTSTRAP_LG_WIDTH = 992;
-            if (window.innerWidth >= 992) {
-                return;
-            }
-            if (document.body.classList.contains("sidenav-toggled")) {
-                document.body.classList.toggle("sidenav-toggled");
-            }
-        });
-    }
-
-    // Add active state to sidbar nav links
-    let activatedPath = window.location.pathname.match(/([\w-]+\.html)/, '$1');
-
-    if (activatedPath) {
-        activatedPath = activatedPath[0];
-    } else {
-        activatedPath = 'index.html';
-    }
-
-    const targetAnchors = document.body.querySelectorAll('[href="' + activatedPath + '"].nav-link');
-
-    targetAnchors.forEach(targetAnchor => {
-        let parentNode = targetAnchor.parentNode;
-        while (parentNode !== null && parentNode !== document.documentElement) {
-            if (parentNode.classList.contains('collapse')) {
-                parentNode.classList.add('show');
-                const parentNavLink = document.body.querySelector(
-                    '[data-bs-target="#' + parentNode.id + '"]'
-                );
-                parentNavLink.classList.remove('collapsed');
-                parentNavLink.classList.add('active');
-            }
-            parentNode = parentNode.parentNode;
+    $(function () {
+        if (window.feather && typeof window.feather.replace === 'function') {
+            window.feather.replace();
         }
-        targetAnchor.classList.add('active');
+
+        if (window.bootstrap) {
+            $('[data-bs-toggle="tooltip"]').each(function () {
+                if (!window.bootstrap.Tooltip.getInstance(this)) {
+                    window.bootstrap.Tooltip.getOrCreateInstance(this);
+                }
+            });
+            $('[data-bs-toggle="popover"]').each(function () {
+                if (!window.bootstrap.Popover.getInstance(this)) {
+                    window.bootstrap.Popover.getOrCreateInstance(this);
+                }
+            });
+        }
+
+        $(document).off('click.adminLayout', '#sidebarToggle')
+            .on('click.adminLayout', '#sidebarToggle', function (event) {
+                event.preventDefault();
+                $('body').toggleClass('sidenav-toggled');
+                try {
+                    window.localStorage.setItem(
+                        'sb|sidebar-toggle',
+                        $('body').hasClass('sidenav-toggled') ? 'true' : 'false'
+                    );
+                } catch (error) {
+                    // The sidebar remains usable when storage is unavailable.
+                }
+            });
+
+        $('#layoutSidenav_content').off('click.adminLayout').on('click.adminLayout', function () {
+            if (window.innerWidth < 992 && $('body').hasClass('sidenav-toggled')) {
+                $('body').removeClass('sidenav-toggled');
+            }
+        });
+
+        var match = window.location.pathname.match(/([\w-]+\.html)/);
+        var activatedPath = match ? match[0] : 'index.html';
+        $('.nav-link').filter(function () {
+            return $(this).attr('href') === activatedPath;
+        }).each(function () {
+            var $link = $(this).addClass('active');
+            $link.parents('.collapse').each(function () {
+                var $collapse = $(this).addClass('show');
+                $('[data-bs-target="#' + $collapse.attr('id') + '"]')
+                    .removeClass('collapsed').addClass('active');
+            });
+        });
     });
-});
+})(jQuery, window, document);

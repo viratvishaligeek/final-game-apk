@@ -373,7 +373,7 @@
             fallbackRefreshTimer = window.setInterval(() => {
                 void loadPending();
                 void refreshHeaderChatNotifications();
-                window.dispatchEvent(new Event('admin:recovery-tick'));
+                $(window).trigger('admin:recovery-tick');
             }, 30000);
         };
         const stopRealtimeFallback = () => {
@@ -384,7 +384,7 @@
             if (document.visibilityState === 'visible') {
                 void loadPending();
                 void refreshHeaderChatNotifications();
-                window.dispatchEvent(new Event('admin:recovery-tick'));
+                $(window).trigger('admin:recovery-tick');
             }
         });
         if (config.driver === 'pusher' && config.configured && config.key && window.Pusher) {
@@ -401,14 +401,14 @@
                 if (!window.adminPusherLifecycleBound) {
                     window.adminPusherLifecycleBound = true;
                     client.connection.bind('state_change', state => {
-                        window.dispatchEvent(new CustomEvent('admin:broadcast-state', {detail: state}));
+                        $(window).trigger('admin:broadcast-state', [state]);
                         if (state.current === 'connected') {
                             stopRealtimeFallback();
                             void loadPending();
                             void refreshHeaderChatNotifications();
                         } else {
                             startRealtimeFallback();
-                            window.dispatchEvent(new Event('admin:recovery-tick'));
+                            $(window).trigger('admin:recovery-tick');
                         }
                     });
                 }
@@ -416,11 +416,11 @@
                     window.adminPusherChannelsBound = true;
                     client.subscribe('private-admin.payment-alerts.' + config.siteKey).bind('payment.failed', addAlert);
                     client.subscribe('private-admin.user-presence.' + config.siteKey).bind('presence.changed', payload => {
-                        window.dispatchEvent(new CustomEvent('admin:user-presence', {detail: payload}));
+                        $(window).trigger('admin:user-presence', [payload]);
                     });
                     client.subscribe('private-admin.support-chat.' + config.siteKey).bind('support.message.created', payload => {
                         playChatNotification(payload);
-                        window.dispatchEvent(new CustomEvent('admin:support-message', {detail: payload}));
+                        $(window).trigger('admin:support-message', [payload]);
                         void refreshHeaderChatNotifications();
                     });
                 }
@@ -428,9 +428,7 @@
                 else {
                     void loadPending();
                 }
-                window.dispatchEvent(new CustomEvent('admin:broadcast-state', {
-                    detail: {current: client.connection.state}
-                }));
+                $(window).trigger('admin:broadcast-state', [{current: client.connection.state}]);
             } catch (error) {
                 console.error('Admin Pusher realtime connection failed.', error);
                 startRealtimeFallback();

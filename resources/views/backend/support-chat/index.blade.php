@@ -480,12 +480,13 @@
         function notifyAdmin(message) {
             if ('Notification' in window && Notification.permission==='granted') {
                 var notification=new Notification('New support message',{body:message.body||'User sent an attachment.'});
-                notification.onclick=function(){window.focus();notification.close();};
+                $(notification).on('click.adminChat', function () { window.focus(); this.close(); });
             }
         }
 
-        $('#body').on('input.adminChat',function(){
-            this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';
+        $('#body').on('input.adminChat', function () {
+            var $body = $(this);
+            $body.css('height', 'auto').css('height', Math.min($body.prop('scrollHeight'), 120) + 'px');
             updateSendButton();
         });
         $('#attachment').on('change.adminChat',function(){
@@ -527,13 +528,16 @@
                 var types=['audio/webm;codecs=opus','audio/webm','audio/mp4'], mime='';
                 $.each(types,function(_,type){if(MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)){mime=type;return false;}});
                 recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
-                recorder.ondataavailable=function(event){if(event.data && event.data.size)chunks.push(event.data);};
-                recorder.onstop=function(){
+                $(recorder).on('dataavailable.adminChat', function (event) {
+                    var mediaEvent = event.originalEvent || event;
+                    if (mediaEvent.data && mediaEvent.data.size) chunks.push(mediaEvent.data);
+                });
+                $(recorder).on('stop.adminChat', function () {
                     var type=recorder.mimeType||'audio/webm', ext=type.indexOf('mp4')!==-1?'mp4':'webm';
                     recordedFile=new File([new Blob(chunks,{type:type})],'voice-message.'+ext,{type:type});
                     renderComposerPreview(recordedFile,true);
                     if(mediaStream){mediaStream.getTracks().forEach(function(track){track.stop();});mediaStream=null;}
-                };
+                });
                 recorder.start(); $('#record-voice').addClass('text-danger').html('<i class="fas fa-stop"></i>');
             }).catch(function(){window.alert('Microphone permission was denied or unavailable.');});
         });
